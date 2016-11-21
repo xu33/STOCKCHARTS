@@ -2,36 +2,15 @@
 <html>
   <head>
     <title>Sample App</title>
+    <style>
+    	div {
+    		margin-top: 20px;
+    	}
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <div id="container"></div>
-    <script src="/static/predict.js"></script>
-    <script src="/static/ChartWithVolume.js"></script>
-    <script>
-    var fakeData = predict.fakeData
-		var chart = new predict(document.getElementById('root'), {
-			chartWidth: 300,
-			chartHeight: 200,
-			candleData: fakeData.slice(0, 20),
-			predictData: fakeData.slice(-5),
-			needVolume: false,
-      needVolume: true,
-      ticksY: 4
-		})
-
-		chart.draw()
-
-		// 匹配样本
-		 var cv = new ChartWithVolume(document.getElementById('container'), {
-		 	chartWidth:400,
-		 	chartHeight:300,
-		 	candleData: fakeData.slice(0, 60),
-		 	needVolume: true,
-		 	cycle: 20
-		 })
-
-		 cv.draw()
-    </script>
+    <script src="/static/index.js"></script>
   </body>
 </html>

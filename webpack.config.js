@@ -4,14 +4,15 @@ var webpack = require('webpack');
 module.exports = {
   devtool: 'eval',
   entry: {
-    predict: './src/predict.js',
-    ChartWithVolume: './src/ChartWithVolume.js'
+    // predict: './src/predict.js',
+    // ChartWithVolume: './src/ChartWithVolume.js',
+    index: './src/index.js'
   },
   output: {
     path: path.join(__dirname, 'dist'),
     filename: '[name].js',
     publicPath: '/static/',
-    library: '[name]'
+    // library: '[name]'
   },
   module: {
     loaders: [{

@@ -107,7 +107,7 @@ module.exports = {
 
 		var { candleWidth, candleSpace } = this
 		// 量图边框
-		this.paper.rect(px(volX), px(volY), volWidth, volHeight).attr('stroke', STROKE_COLOR)
+		this.paper.rect(px(volX), px(volY), volWidth, volHeight - 1).attr('stroke', STROKE_COLOR)
 
 		var maxVol = candleData.reduce((prev, curr) => {
 			if (curr.volume > prev) {
