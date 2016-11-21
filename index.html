@@ -1,21 +1,35 @@
+<!doctype html>
 <html>
   <head>
-    <meta charset="utf-8"/>
-    <title>kchart</title>
+    <title>Sample App</title>
   </head>
   <body>
-    <!--<div id="container"></div>-->
-    <canvas id="canvas" width="1600" height="1600" style="transform-origin:0 0;transform:scale(0.5, 0.5)"></canvas>
-    <script src="https://d3js.org/d3-array.v1.min.js"></script>
-    <script src="https://d3js.org/d3-collection.v1.min.js"></script>
-    <script src="https://d3js.org/d3-color.v1.min.js"></script>
-    <script src="https://d3js.org/d3-format.v1.min.js"></script>
-    <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
-    <script src="https://d3js.org/d3-time.v1.min.js"></script>
-    <script src="https://d3js.org/d3-time-format.v2.min.js"></script>
-    <script src="https://d3js.org/d3-scale.v1.min.js"></script>
-    <script src="./node_modules/raphael/raphael.js"></script>
-    <script src="./data.js"></script>
-    <script src="./kchart.js"></script>
+    <div id="root"></div>
+    <div id="container"></div>
+    <script src="/static/predict.js"></script>
+    <script src="/static/simpleKchartWithVolume.js"></script>
+    <script>
+    var fakeData = predict.fakeData
+		var chart = new predict(document.getElementById('root'), {
+			chartWidth: 300,
+			chartHeight: 200,
+			candleData: fakeData.slice(0, 20),
+			predictData: fakeData.slice(-5),
+			needVolume: false
+		})
+
+		chart.draw()
+
+		// 匹配样本
+		var cv = new simpleKchartWithVolume(document.getElementById('container'), {
+			chartWidth:200,
+			chartHeight:200,
+			candleData: fakeData.slice(0, 60),
+			needVolume: true,
+			cycle: 20
+		})
+
+		cv.draw()
+    </script>
   </body>
 </html>
