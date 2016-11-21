@@ -20,10 +20,10 @@ const ChartPrototype = require('./libs/ChartPrototype')
 var ChartWithVolume = function(container, { 
 	chartWidth, 
 	chartHeight,
-    candleData, 
-    needVolume, 
-    ticksY, 
-    cycle
+  candleData, 
+  needVolume, 
+  ticksY, 
+  cycle
 }) {
 	this.container = container
 	this.paper = new Raphel(container, chartWidth, chartHeight)
@@ -35,6 +35,8 @@ var ChartWithVolume = function(container, {
 	this.ticksY = ticksY || 4
 	this.cycle = cycle
 }
+
+console.log('ChartWithVolume', ChartWithVolume)
 
 ChartWithVolume.prototype = {
 	clear: function() {
