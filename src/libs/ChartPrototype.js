@@ -153,5 +153,86 @@ module.exports = {
 				'stroke-width': 0
 			})
 		})
+	},
+	createEventLayer: function() {
+		var elem = $('<div>').css({
+			position: 'absolute',
+			left: 0,
+			top: 0,
+			width: this.chartWidth,
+			height: this.chartHeight
+		})
+
+		$(this.container).css({
+			position:'relative'
+		}).append(elem)
+
+		var offset = elem.offset()
+
+		var paper = new Raphel(elem[0], this.chartWidth, this.chartHeight)
+		var scaleLeft
+		var scaleRight
+		var line = (x,y) => {
+			paper.clear()
+			paper.path(createPathString({
+				x: x,
+				y: 0
+			}, {
+				x: x,
+				y: y
+			})).attr({
+				stroke: strokeColor
+			})
+		}
+
+		elem.on('mouseover', e => {
+			scaleLeft = d3.scaleLinear()
+				.domain([0, this.offset])
+				.rangeRound([0, this.shadowXList.length - 1])
+
+			scaleRight = d3.scaleLinear()
+				.domain([this.offset, this.width])
+				.rangeRound([0, this.predictXList.length - 1])	
+		})
+
+		elem.on('mousemove', e => {
+			var x = e.pageX - offset.left
+
+			if (x < this.offset) {
+				// console.log(this.shadowXList)
+
+				var index = scaleLeft(x)
+				var x = this.shadowXList[index]
+
+				if (x === undefined) {
+					return
+				}
+
+				line(x, this.height)				
+			} else {
+				var index = scaleRight(x)
+
+				if (index === 0) {
+					return
+				}
+
+				if (index >= this.predictXList.length) {
+					return
+				}
+
+				var x = this.predictXList[index]
+
+				// console.log(index, x)
+
+				// return
+
+				line(x, this.height)			
+			}
+		})
+
+		elem.on('mouseout', e => {
+			scaleLeft = null
+			scaleRight = null
+		})
 	}
 }
