@@ -55,6 +55,8 @@ module.exports = {
 		// console.log('candleWidth, candleSpace', candleWidth, candleSpace)
 
 		this.shadowXList = []
+		this.paper.setStart()
+
 		candleData.forEach((item, index) => {
 			let { open, close, low, high } = item
 			let x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace))
@@ -99,6 +101,8 @@ module.exports = {
 		this.candleWidth = candleWidth
 		this.candleSpace = candleSpace
 		this.candleY = scaleY
+
+		this.candleSet = this.paper.setFinish()
 	},
 	drawVolumes: function() {
 		var round = Math.round
@@ -357,5 +361,75 @@ module.exports = {
 		})
 
 		this.eventLayer = elem
+	},
+
+	hideCandleSet: function() {
+		if (this.candleSet) {
+			this.candleSet.hide()
+		}
+	},
+
+	showCandleSet: function() {
+		this.candleSet.show()
+	},
+
+	hidePolySet: function() {
+		if (this.polySet) {
+			this.polySet.hide()
+		}
+	},
+
+	showPolySet: function() {
+		if (!this.polySet) {
+			this.drawPolyline()
+		}
+		
+		this.polySet.show()
+	},
+	// 收盘价折线
+	drawPolyline: function() {
+		var p = this.paper
+
+		p.setStart()
+
+		var points = []
+		for (var i = 0; i < this.candleData.length; i++) {
+			var x = this.shadowXList[i]
+			var y = this.candleY(this.candleData[i].close)
+			
+			points.push({
+				x: px(x),
+				y: px(y)
+			})
+		}
+
+		var pathString = createPathString(...points)
+
+		p.path(pathString).attr({
+			stroke: '#999'
+		})
+
+		this.polySet = p.setFinish()
+		this.polySet.hide()
+	},
+	clear: function() {
+		this.paper.clear()
+	},
+	update: function( { candleData, predictData, cycle } ) {
+		this.clear()
+
+		if (candleData !== undefined) {
+			this.candleData = candleData.map(str2number)
+		}
+
+		if (predictData !== undefined) {
+			this.predictData = predictData.map(str2number)
+		}
+		
+		if (cycle !== undefined) {
+			this.cycle = cycle
+		}
+
+		this.draw()
 	}
 }

@@ -38,20 +38,6 @@ const PredictChart = function(container, { chartWidth, chartHeight, candleData, 
 PredictChart.fakeData = fakeData
 
 PredictChart.prototype = {
-	clear: function() {
-		this.paper.clear()
-	},
-	update: function({
-		candleData,
-		predictData
-	}) {
-		this.clear()
-
-		this.candleData = candleData.map(str2number)
-		this.predictData = predictData.map(str2number)
-
-		this.draw()
-	},
 	draw: function() {
 		var volHeight = this.needVolume ? VOL_HEIGHT : 0
 		var { candleData, predictData } = this

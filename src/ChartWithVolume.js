@@ -39,22 +39,6 @@ const ChartWithVolume = function(container, {
 }
 
 ChartWithVolume.prototype = {
-	clear: function() {
-		this.paper.clear()
-	},
-	update: function({ candleData, cycle }) {
-		this.clear()
-
-		if (candleData) {
-			this.candleData = candleData.map(str2number)
-		}
-
-		if (cycle !== undefined) {
-			this.cycle = cycle
-		}
-	
-		this.draw()
-	},
 	draw: function() {
 		var volHeight = this.needVolume ? VOL_HEIGHT : 0
 		var { candleData } = this
@@ -180,9 +164,9 @@ ChartWithVolume.prototype = {
 
 		this.drawCycleBlock()
 		// 事件
-	if (this.options.tooltip) {
-		this.createEventLayerNormal()
-	}
+		if (this.options.tooltip) {
+			this.createEventLayerNormal()
+		}
 	},
 	drawCycleBlock: function() {
 		console.log('drawCycleBlock fire')
@@ -214,7 +198,11 @@ ChartWithVolume.prototype = {
 		var { width, height } = box
 		var x = (this.width - this.offset) / 2 + this.offset
 		var y = this.chartHeight - BOTTOM_TEXT_HEIGHT + height / 2 + (BOTTOM_TEXT_HEIGHT - height) / 2
-		txt.attr('x', x).attr('y', y)
+
+		txt.attr({
+			x: x,
+			y: y
+		})
 
 		// |-
 		this.paper.path(createPathString({
