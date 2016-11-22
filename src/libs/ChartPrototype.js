@@ -55,8 +55,8 @@ module.exports = {
 		// console.log('candleWidth, candleSpace', candleWidth, candleSpace)
 
 		this.shadowXList = []
-		this.paper.setStart()
 
+		this.paper.setStart()
 		candleData.forEach((item, index) => {
 			let { open, close, low, high } = item
 			let x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace))
@@ -103,6 +103,9 @@ module.exports = {
 		this.candleY = scaleY
 
 		this.candleSet = this.paper.setFinish()
+
+		this.drawPolyline()
+		this.hidePolySet()
 	},
 	drawVolumes: function() {
 		var round = Math.round
@@ -380,39 +383,31 @@ module.exports = {
 	},
 
 	showPolySet: function() {
-		if (!this.polySet) {
-			this.drawPolyline()
-		}
-		
 		this.polySet.show()
 	},
 	// 收盘价折线
 	drawPolyline: function() {
-		var p = this.paper
+		this.paper.setStart()
 
-		p.setStart()
-
-		var points = []
-		for (var i = 0; i < this.candleData.length; i++) {
+		var points = this.candleData.map((item, i) => {
 			var x = this.shadowXList[i]
 			var y = this.candleY(this.candleData[i].close)
 			
-			points.push({
+			return {
 				x: px(x),
 				y: px(y)
-			})
-		}
+			}
+		})
 
-		var pathString = createPathString(...points)
-
-		p.path(pathString).attr({
+		this.paper.path( createPathString(...points) ).attr({
 			stroke: '#999'
 		})
 
-		this.polySet = p.setFinish()
-		this.polySet.hide()
+		this.polySet = this.paper.setFinish()
 	},
 	clear: function() {
+		this.candleSet && this.candleSet.clear()
+		this.polySet && this.polySet.clear()
 		this.paper.clear()
 	},
 	update: function( { candleData, predictData, cycle } ) {

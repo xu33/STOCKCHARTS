@@ -18,8 +18,8 @@ app.get('/', function(req, res) {
 });
 
 app.get('/example', function(req, res) {
-	res.sendFile(path.join(__dirname, 'example/index.html'))
-})
+	res.sendFile(path.join(__dirname, 'example/index.html'));
+});
 
 app.listen(3003, function(err) {
   if (err) {

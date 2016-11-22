@@ -22,16 +22,11 @@ window.onload = function() {
 	pc.draw()
 
 	var cwv = new ChartWithVolume(document.getElementById('container'), {
-	 	chartWidth:400,
-	 	chartHeight:300,
+	 	chartWidth: 400,
+	 	chartHeight: 300,
 	 	candleData: fakeData.slice(0, 40),
 	 	needVolume: true,
-	 	cycle: 10,
-	 	// tooltip: function(item) {
-   //  	var { open, close, low, high } = item
-    	
-   //  	return `${open}${close}${low}${high}`
-   //  }
+	 	cycle: 10
 	})
 
 	cwv.draw()
@@ -44,5 +39,10 @@ window.onload = function() {
 	$('#showPolylineBtn').on('click', function(e) {
 		cwv.hideCandleSet()
 		cwv.showPolySet()
+	})
+
+	$('#clearBtn').on('click', function(e) {
+		pc.clear()
+		cwv.clear()
 	})
 }
