@@ -20,7 +20,7 @@ const px = function(value) {
 
 const createPathString = require('./createPathString')
 
-module.exports = {
+const ChartPrototype = {
 	drawHelperLines: function(yScale) {
 		// K线横向辅助线
 		for (var i = 1; i < this.ticksY - 1; i++) {
@@ -55,8 +55,8 @@ module.exports = {
 		// console.log('candleWidth, candleSpace', candleWidth, candleSpace)
 
 		this.shadowXList = []
-
 		this.paper.setStart()
+
 		candleData.forEach((item, index) => {
 			let { open, close, low, high } = item
 			let x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace))
@@ -428,3 +428,5 @@ module.exports = {
 		this.draw()
 	}
 }
+
+module.exports = ChartPrototype
