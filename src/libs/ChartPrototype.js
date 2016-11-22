@@ -1,5 +1,6 @@
 const d3 = require('d3-scale')
-
+const $ = require('jquery')
+const Raphel = require('raphael')
 const {
 	MARGIN_TABLE,
 	CANDLE_WIDTH,
@@ -53,6 +54,7 @@ module.exports = {
 
 		// console.log('candleWidth, candleSpace', candleWidth, candleSpace)
 
+		this.shadowXList = []
 		candleData.forEach((item, index) => {
 			let { open, close, low, high } = item
 			let x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace))
@@ -72,7 +74,7 @@ module.exports = {
 
 			height = Math.abs(y1 - y2)
 
-			console.log('蜡烛块信息:', px(x), px(y1), candleWidth, height)
+			// console.log('蜡烛块信息:', px(x), px(y1), candleWidth, height)
 
 			// 实体块
 			this.paper.rect(x, y1, candleWidth, height).attr({
@@ -81,14 +83,16 @@ module.exports = {
 			})
 
 			// 上下影线
+			var shadowX = px( x + round(candleWidth / 2) )
 			var pathString = createPathString({
-				x: px( x + round(candleWidth / 2) ),
+				x: shadowX,
 				y: px( scaleY(high) )
 			}, {
-				x: px( x + round(candleWidth / 2) ),
+				x: shadowX,
 				y: px( scaleY(low) )
 			})
 
+			this.shadowXList.push(shadowX)
 			this.paper.path(pathString).attr('stroke', color)
 		})
 
@@ -154,6 +158,91 @@ module.exports = {
 			})
 		})
 	},
+	createEventLayerNormal: function() {
+		var elem = $('<div>').css({
+			position: 'absolute',
+			left: 0,
+			top: 0,
+			width: this.chartWidth,
+			height: this.chartHeight
+		})
+
+		$(this.container).css({
+			position:'relative'
+		}).append(elem)
+
+		var offset = elem.offset()
+		var paper = new Raphel(elem[0], this.chartWidth, this.chartHeight)
+		var scaleLeft
+		var floatLine
+		var tooltip
+
+		var line = (x,y) => {
+			if (!floatLine) {
+				floatLine = paper.path(createPathString({
+					x: px(x),
+					y: px(0)
+				}, {
+					x: px(x),
+					y: px(y)
+				})).attr({
+					stroke: STROKE_COLOR
+				})
+			}
+
+			floatLine.attr({
+				path: createPathString({
+					x: px(x),
+					y: px(0)
+				}, {
+					x: px(x),
+					y: px(y)
+				}),
+				stroke: STROKE_COLOR
+			})
+		}
+
+		elem.on('mouseover', e => {
+			scaleLeft = d3.scaleLinear()
+				.domain([0, this.width])
+				.rangeRound([0, this.shadowXList.length - 1])
+
+			tooltip = $('<div>').css({
+				position: 'absolute',
+				top: 10
+			})
+
+			this.eventLayer.append(tooltip)
+		})
+
+		elem.on('mousemove', e => {
+			if (this.shadowXList === undefined) {
+				return
+			}
+
+			var x = e.pageX - offset.left
+			var index = scaleLeft(x)
+			var x = this.shadowXList[index]
+
+			if (x === undefined) {
+				return
+			}
+
+			line(x, this.needVolume ? this.height + FONT_SIZE + VOL_HEIGHT : this.height)
+
+			tooltip.css('left', x + 5).html( this.options.tooltip.call(this, this.candleData[index]) )	
+		})
+
+		elem.on('mouseout', e => {
+			scaleLeft = undefined
+			floatLine = undefined
+			paper.clear()
+			tooltip.remove()
+			tooltip = undefined
+		})
+
+		this.eventLayer = elem
+	},
 	createEventLayer: function() {
 		var elem = $('<div>').css({
 			position: 'absolute',
@@ -168,39 +257,64 @@ module.exports = {
 		}).append(elem)
 
 		var offset = elem.offset()
-
 		var paper = new Raphel(elem[0], this.chartWidth, this.chartHeight)
 		var scaleLeft
 		var scaleRight
+		var floatLine
+		var tooltip
+
 		var line = (x,y) => {
-			paper.clear()
-			paper.path(createPathString({
-				x: x,
-				y: 0
-			}, {
-				x: x,
-				y: y
-			})).attr({
-				stroke: strokeColor
+			if (!floatLine) {
+				floatLine = paper.path(createPathString({
+					x: px(x),
+					y: px(0)
+				}, {
+					x: px(x),
+					y: px(y)
+				})).attr({
+					stroke: STROKE_COLOR
+				})
+			}
+
+			floatLine.attr({
+				path: createPathString({
+					x: px(x),
+					y: px(0)
+				}, {
+					x: px(x),
+					y: px(y)
+				}),
+				stroke: STROKE_COLOR
 			})
 		}
 
-		elem.on('mouseover', e => {
+		elem.on('mouseenter', e => {
 			scaleLeft = d3.scaleLinear()
 				.domain([0, this.offset])
 				.rangeRound([0, this.shadowXList.length - 1])
 
-			scaleRight = d3.scaleLinear()
-				.domain([this.offset, this.width])
-				.rangeRound([0, this.predictXList.length - 1])	
+			if (this.predictXList) {
+				scaleRight = d3.scaleLinear()
+					.domain([this.offset, this.width])
+					.rangeRound([0, this.predictXList.length - 1])
+			}
+
+			tooltip = $('<div>').css({
+				position: 'absolute',
+				top: 10
+			})
+
+			this.eventLayer.append(tooltip)
 		})
 
 		elem.on('mousemove', e => {
+			if (this.shadowXList === undefined) {
+				return
+			}
+
 			var x = e.pageX - offset.left
 
 			if (x < this.offset) {
-				// console.log(this.shadowXList)
-
 				var index = scaleLeft(x)
 				var x = this.shadowXList[index]
 
@@ -208,10 +322,15 @@ module.exports = {
 					return
 				}
 
-				line(x, this.height)				
-			} else {
-				var index = scaleRight(x)
+				line(x, this.needVolume ? this.chartHeight : this.height)	
 
+				tooltip.css('left', x + 5).html( this.options.tooltip.call(this, this.candleData[index]) )		
+			} else {
+				if (this.predictXList === undefined) {
+					return
+				}
+
+				var index = scaleRight(x)
 				if (index === 0) {
 					return
 				}
@@ -221,18 +340,22 @@ module.exports = {
 				}
 
 				var x = this.predictXList[index]
+				line(x, this.needVolume ? this.chartHeight : this.height)	
 
-				// console.log(index, x)
-
-				// return
-
-				line(x, this.height)			
+				tooltip.css('left', x + 5).html( this.options.tooltip.call(this, this.predictData[index]) )
 			}
 		})
 
-		elem.on('mouseout', e => {
-			scaleLeft = null
-			scaleRight = null
+		elem.on('mouseleave', e => {
+			scaleLeft = undefined
+			scaleRight = undefined
+			floatLine = undefined
+			paper.clear()
+
+			tooltip.remove()
+			tooltip = undefined
 		})
+
+		this.eventLayer = elem
 	}
 }

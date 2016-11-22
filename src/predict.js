@@ -19,7 +19,7 @@ const {
 
 const px = require('./libs/px')
 
-const PredictChart = function(container, { chartWidth, chartHeight, candleData, predictData, needVolume, ticksY }) {
+const PredictChart = function(container, { chartWidth, chartHeight, candleData, predictData, needVolume, ticksY, tooltip }) {
 	this.container = container
 	this.paper = new Raphel(container, chartWidth, chartHeight)
 	this.chartWidth = chartWidth
@@ -29,6 +29,10 @@ const PredictChart = function(container, { chartWidth, chartHeight, candleData, 
 	this.predictData = predictData.map(str2number)
 	this.needVolume = needVolume
 	this.ticksY = ticksY
+
+	this.options = {
+		tooltip: tooltip
+	}
 }
 
 PredictChart.fakeData = fakeData
@@ -197,6 +201,11 @@ PredictChart.prototype = {
 		if (this.needVolume) {
 			this.drawVolumes()
 		}
+
+		// 事件
+		if (this.options.tooltip) {
+			this.createEventLayer()
+		}
 	},
 	// 画预测图
 	drawPredictWave: function() {
@@ -224,21 +233,26 @@ PredictChart.prototype = {
 		// low = last_day_close * flor
 		// close = last_day_close * profit 
 
+		this.predictXList = []
 		for (let i = 0; i < predictData.length; i++) {
+			let predictX = linearP(i)
+
 			upString.push({
-				x: linearP(i),
+				x: predictX,
 				y: linearY(predictData[i].high)
 			})
 
 			midString.push({
-				x: linearP(i),
+				x: predictX,
 				y: linearY(predictData[i].close)
 			})
 
 			downString.push({
-				x: linearP(i),
+				x: predictX,
 				y: linearY(predictData[i].low)
 			})
+
+			this.predictXList.push(predictX)
 		}
 
 		// console.log(upString, midString, downString)

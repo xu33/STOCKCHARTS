@@ -4,14 +4,17 @@ var webpack = require('webpack');
 module.exports = {
   devtool: 'eval',
   entry: {
-    // predict: './src/predict.js',
-    // ChartWithVolume: './src/ChartWithVolume.js',
-    index: './src/index.js'
+    PredictChart: './src/predict.js',
+    ChartWithVolume: './src/ChartWithVolume.js',
+  },
+  externals: {
+      // 'd3-scale': 'window.d3',
+      jquery: 'window.$',
+      raphael: 'window.Raphael'
   },
   output: {
     path: path.join(__dirname, 'dist'),
     filename: '[name].js',
-    publicPath: '/static/',
     library: '[name]'
   },
   module: {
