@@ -4,8 +4,6 @@ var webpack = require('webpack');
 module.exports = {
   devtool: 'eval',
   entry: {
-    // predict: './src/predict.js',
-    // ChartWithVolume: './src/ChartWithVolume.js',
     index: './src/index.js'
   },
   output: {

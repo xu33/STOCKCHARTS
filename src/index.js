@@ -1,4 +1,4 @@
-var PredictChart = require('./predict')
+var PredictChart = require('./PredictChart')
 var ChartWithVolume = require('./ChartWithVolume')
 var $ = require('jquery')
 
@@ -11,7 +11,7 @@ window.onload = function() {
 		candleData: fakeData.slice(0, 20),
 		predictData: fakeData.slice(-5),
 	    needVolume: true,
-	    ticksY: 6,
+	    ticksY: 5,
 	    // tooltip: function(item) {
 	    // 	var { open, close, low, high } = item
 	    	
@@ -27,11 +27,11 @@ window.onload = function() {
 	 	candleData: fakeData.slice(0, 40),
 	 	needVolume: true,
 	 	cycle: 10,
-	 	tooltip: function(item) {
-	    	var { open, close, low, high } = item
-	    	
-	    	return `${open}${close}${low}${high}`
-	    }
+	 	// tooltip: function(item) {
+   //  	var { open, close, low, high } = item
+    	
+   //  	return `${open}${close}${low}${high}`
+   //  }
 	})
 
 	cwv.draw()
