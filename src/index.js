@@ -12,11 +12,11 @@ window.onload = function() {
 		predictData: fakeData.slice(-5),
 	    needVolume: true,
 	    ticksY: 5,
-	    // tooltip: function(item) {
-	    // 	var { open, close, low, high } = item
+	    tooltip: function(item) {
+	    	var { open, close, low, high } = item
 	    	
-	    // 	return `${open}${close}${low}${high}`
-	    // }
+	    	return `<div style="height:300px;">${open}${close}${low}${high}</div>`
+	    }
 	})
 
 	pc.draw()

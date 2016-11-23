@@ -210,16 +210,20 @@ const ChartPrototype = {
 		}
 
 		elem.on('mouseover', e => {
-			scaleLeft = d3.scaleLinear()
+			if (scaleLeft === undefined) {
+				scaleLeft = d3.scaleLinear()
 				.domain([0, this.width])
 				.rangeRound([0, this.shadowXList.length - 1])
+			}
+			
+			if (tooltip === undefined) {
+				tooltip = $('<div>').css({
+					position: 'absolute',
+					top: 10
+				})
 
-			tooltip = $('<div>').css({
-				position: 'absolute',
-				top: 10
-			})
-
-			this.eventLayer.append(tooltip)
+				this.eventLayer.append(tooltip)
+			}
 		})
 
 		elem.on('mousemove', e => {
@@ -296,22 +300,26 @@ const ChartPrototype = {
 		}
 
 		elem.on('mouseenter', e => {
-			scaleLeft = d3.scaleLinear()
-				.domain([0, this.offset])
-				.rangeRound([0, this.shadowXList.length - 1])
+			if (scaleLeft === undefined) {
+				scaleLeft = d3.scaleLinear()
+					.domain([0, this.offset])
+					.rangeRound([0, this.shadowXList.length - 1])
 
-			if (this.predictXList) {
-				scaleRight = d3.scaleLinear()
-					.domain([this.offset, this.width])
-					.rangeRound([0, this.predictXList.length - 1])
+				if (this.predictXList) {
+					scaleRight = d3.scaleLinear()
+						.domain([this.offset, this.width])
+						.rangeRound([0, this.predictXList.length - 1])
+				}
 			}
 
-			tooltip = $('<div>').css({
-				position: 'absolute',
-				top: 10
-			})
+			if (tooltip === undefined) {
+				tooltip = $('<div>').css({
+					position: 'absolute',
+					top: 10
+				})
 
-			this.eventLayer.append(tooltip)
+				this.eventLayer.append(tooltip)
+			}
 		})
 
 		elem.on('mousemove', e => {
