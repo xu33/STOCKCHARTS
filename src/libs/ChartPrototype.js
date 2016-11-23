@@ -53,7 +53,7 @@ const ChartPrototype = {
 		}
 
 		// console.log('candleWidth, candleSpace', candleWidth, candleSpace)
-
+		this.closeYList = []
 		this.shadowXList = []
 		this.paper.setStart()
 
@@ -77,6 +77,8 @@ const ChartPrototype = {
 			height = Math.abs(y1 - y2)
 
 			// console.log('蜡烛块信息:', px(x), px(y1), candleWidth, height)
+
+			this.closeYList.push(y1)
 
 			// 实体块
 			this.paper.rect(x, y1, candleWidth, height).attr({
@@ -165,6 +167,28 @@ const ChartPrototype = {
 			})
 		})
 	},
+	createTooltip: function() {
+		let tooltip = $('<div>').css({
+			position: 'absolute',
+			top: 10
+		})
+
+		if (this.options.tooltip.className) {
+			tooltip.addClass(this.options.tooltip.className)
+		}
+
+		return tooltip
+	},
+	getTooltipHtml: function(data) {
+		let fn = this.options.tooltip.fn
+		let html = ''
+
+		if (fn) {
+			html = fn(data)
+		}
+
+		return html
+	},
 	createEventLayerNormal: function() {
 		var elem = $('<div>').css({
 			position: 'absolute',
@@ -209,7 +233,7 @@ const ChartPrototype = {
 			})
 		}
 
-		elem.on('mouseover', e => {
+		elem.on('mouseenter', e => {
 			if (scaleLeft === undefined) {
 				scaleLeft = d3.scaleLinear()
 				.domain([0, this.width])
@@ -217,10 +241,7 @@ const ChartPrototype = {
 			}
 			
 			if (tooltip === undefined) {
-				tooltip = $('<div>').css({
-					position: 'absolute',
-					top: 10
-				})
+				tooltip = this.createTooltip()
 
 				this.eventLayer.append(tooltip)
 			}
@@ -234,17 +255,35 @@ const ChartPrototype = {
 			var x = e.pageX - offset.left
 			var index = scaleLeft(x)
 			var x = this.shadowXList[index]
+			var item
+			var top
 
 			if (x === undefined) {
 				return
 			}
 
 			line(x, this.needVolume ? this.height + FONT_SIZE + VOL_HEIGHT : this.height)
+			item = this.candleData[index]
+			top = this.closeYList[index]
 
-			tooltip.css('left', x + 5).html( this.options.tooltip.call(this, this.candleData[index]) )	
+			if (x >= this.width - tooltip.width()) {
+				tooltip.css({
+					'top': top,
+					'left': '',
+					'right': this.chartWidth - this.width + 5
+				})
+			} else {
+				tooltip.css({
+					'top': top,
+					'left': x + 5,
+					'right': ''
+				})
+			}
+
+			tooltip.html( this.getTooltipHtml(item) )
 		})
 
-		elem.on('mouseout', e => {
+		elem.on('mouseleave', e => {
 			scaleLeft = undefined
 			floatLine = undefined
 			paper.clear()
@@ -313,21 +352,19 @@ const ChartPrototype = {
 			}
 
 			if (tooltip === undefined) {
-				tooltip = $('<div>').css({
-					position: 'absolute',
-					top: 10
-				})
+				tooltip = this.createTooltip()
 
 				this.eventLayer.append(tooltip)
 			}
 		})
-
-		elem.on('mousemove', e => {
+		.on('mousemove', e => {
 			if (this.shadowXList === undefined) {
 				return
 			}
 
 			var x = e.pageX - offset.left
+			var item
+			var top
 
 			if (x < this.offset) {
 				var index = scaleLeft(x)
@@ -339,13 +376,15 @@ const ChartPrototype = {
 
 				line(x, this.needVolume ? this.chartHeight : this.height)	
 
-				tooltip.css('left', x + 5).html( this.options.tooltip.call(this, this.candleData[index]) )		
+				item = this.candleData[index]
+				top = this.closeYList[index]
 			} else {
 				if (this.predictXList === undefined) {
 					return
 				}
 
 				var index = scaleRight(x)
+
 				if (index === 0) {
 					return
 				}
@@ -355,23 +394,108 @@ const ChartPrototype = {
 				}
 
 				var x = this.predictXList[index]
+
 				line(x, this.needVolume ? this.chartHeight : this.height)	
-
-				tooltip.css('left', x + 5).html( this.options.tooltip.call(this, this.predictData[index]) )
+				item = this.predictData[index]
+				top = this.predictCloseYList[index]
 			}
-		})
 
-		elem.on('mouseleave', e => {
+			// console.log(x, this.width, tooltip.width())
+
+			if (x >= this.width - tooltip.width()) {
+				tooltip.css({
+					'top': top,
+					'left': '',
+					'right': this.chartWidth - this.width + 5
+				})
+			} else {
+				tooltip.css({
+					'top': top,
+					'left': x + 5,
+					'right': ''
+				})
+			}
+
+			tooltip.html( this.getTooltipHtml(item) )
+		})
+		.on('mouseleave', e => {
 			scaleLeft = undefined
 			scaleRight = undefined
 			floatLine = undefined
 			paper.clear()
-
 			tooltip.remove()
 			tooltip = undefined
 		})
 
 		this.eventLayer = elem
+	},
+
+	handleMouseMove: function(e, scaleLeft, scaleRight, offset, floatLine, tooltip, line) {
+		if (this.shadowXList === undefined) {
+				return
+			}
+
+			var x = e.pageX - offset.left
+			var item
+			var top
+
+			if (x < this.offset) {
+				var index = scaleLeft(x)
+				var x = this.shadowXList[index]
+
+				if (x === undefined) {
+					return
+				}
+
+				line(x, this.needVolume ? this.chartHeight : this.height)	
+
+				item = this.candleData[index]
+				top = this.closeYList[index]
+			} else {
+				if (this.predictXList === undefined) {
+					return
+				}
+
+				var index = scaleRight(x)
+
+				if (index === 0) {
+					return
+				}
+
+				if (index >= this.predictXList.length) {
+					return
+				}
+
+				var x = this.predictXList[index]
+
+				line(x, this.needVolume ? this.chartHeight : this.height)	
+
+				item = this.predictData[index]
+
+				top = this.predictCloseYList[index]
+			}
+
+			// console.log(x, this.width, tooltip.width())
+
+			if (x >= this.width - tooltip.width()) {
+				tooltip.css({
+					'top': top,
+					'left': '',
+					'right': this.chartWidth - this.width + 5
+				})
+			} else {
+				tooltip.css({
+					'top': top,
+					'left': x + 5,
+					'right': ''
+				})
+			}
+
+			tooltip.html( this.getTooltipHtml(item) )
+	},
+
+	handleMouseEnd: function() {
+
 	},
 
 	hideCandleSet: function() {

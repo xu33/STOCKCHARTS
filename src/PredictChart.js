@@ -219,6 +219,7 @@ PredictChart.prototype = {
 		// low = last_day_close * flor
 		// close = last_day_close * profit 
 
+		this.predictCloseYList = []
 		this.predictXList = []
 		for (let i = 0; i < predictData.length; i++) {
 			let predictX = linearP(i)
@@ -232,6 +233,8 @@ PredictChart.prototype = {
 				x: predictX,
 				y: linearY(predictData[i].close)
 			})
+
+			this.predictCloseYList.push(linearY(predictData[i].close))
 
 			downString.push({
 				x: predictX,

@@ -12,11 +12,16 @@ window.onload = function() {
 		predictData: fakeData.slice(-5),
 	    needVolume: true,
 	    ticksY: 5,
-	    tooltip: function(item) {
-	    	var { open, close, low, high } = item
-	    	
-	    	return `<div style="height:300px;">${open}${close}${low}${high}</div>`
-	    }
+	    tooltip: {
+	    	className: 'tooltip',
+	    	fn: function(item) {
+	    		// console.log('item', item)
+
+		    	var { open, close, low, high } = item
+		    	
+		    	return `<div style="height:300px;">${open}${close}${low}${high}</div>`
+		    }
+	  }
 	})
 
 	pc.draw()
@@ -26,7 +31,17 @@ window.onload = function() {
 	 	chartHeight: 300,
 	 	candleData: fakeData.slice(0, 40),
 	 	needVolume: true,
-	 	cycle: 10
+	 	cycle: 10,
+	 	tooltip: {
+	    	className: 'tooltip',
+	    	fn: function(item) {
+	    		// console.log('item', item)
+
+		    	var { open, close, low, high } = item
+		    	
+		    	return `<div style="height:300px;">${open}${close}${low}${high}</div>`
+		    }
+	  }
 	})
 
 	cwv.draw()
