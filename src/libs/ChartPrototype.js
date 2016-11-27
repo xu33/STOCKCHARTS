@@ -1,23 +1,17 @@
 const d3 = require('d3-scale')
 const $ = require('jquery')
 const Raphel = require('raphael')
+
 const {
-	MARGIN_TABLE,
-	CANDLE_WIDTH,
 	OUTTER_MARGIN,
 	VOL_HEIGHT,
 	FONT_SIZE,
 	STROKE_COLOR,
 	WIN_COLOR,
-	LOSS_COLOR,
-	PIXEL_FIX
+	LOSS_COLOR
 } = require('./config')
 
-const px = function(value) {
-	value = Math.floor(value)
-	return value + PIXEL_FIX
-}
-
+const px = require('./px')
 const createPathString = require('./createPathString')
 
 const ChartPrototype = {
