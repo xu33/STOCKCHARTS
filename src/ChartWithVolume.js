@@ -1,5 +1,5 @@
 const str2number = require('./libs/str2number')
-const d3 = require('d3-scale')
+const scaleLinear = require('./libs/scaleLinear')
 const Raphel = require('raphael')
 const {
 	OUTTER_MARGIN,
@@ -81,7 +81,7 @@ ChartWithVolume.prototype = {
 		// 预测部分图形的偏移量
 		this.offset = this.width * predictPercent
 
-		var yScale = d3.scaleLinear().domain([0, this.ticksY - 1]).rangeRound([0, this.height])
+		var yScale = scaleLinear().domain([0, this.ticksY - 1]).rangeRound([0, this.height])
 
 		// 预测部分半透明虚框
 		var pathString = createPathString({
