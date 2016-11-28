@@ -495,7 +495,7 @@ const ChartPrototype = {
 	},
 
 	handleMouseEnd: function() {
-
+		
 	},
 
 	hideCandleSet: function() {
