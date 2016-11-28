@@ -10,7 +10,7 @@ module.exports = {
   externals: {
       jquery: 'window.$',
       raphael: 'window.Raphael',
-      // 'd3-scale': 'window.d3'
+      'd3-scale': 'window.d3'
   },
   output: {
     path: path.join(__dirname, 'dist'),

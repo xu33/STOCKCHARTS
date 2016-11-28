@@ -1,6 +1,6 @@
 const str2number = require('./libs/str2number')
 const fakeData = require('./fake_data/pre.js')
-const d3 = require('d3-scale')
+const scaleLinear = require('./libs/scaleLinear')
 const Raphel = require('raphael')
 const predictPercent = 0.7 // 预测部分偏移量
 const ChartPrototype = require('./libs/ChartPrototype')
@@ -78,7 +78,7 @@ PredictChart.prototype = {
 		// 预测部分图形的偏移量
 		this.offset = this.width * predictPercent
 
-		var yScale = d3.scaleLinear().domain([0, this.ticksY - 1]).rangeRound([0, this.height])
+		var yScale = scaleLinear().domain([0, this.ticksY - 1]).rangeRound([0, this.height])
 
 		// 预测部分半透明虚框
 		var pathString = createPathString({
@@ -114,7 +114,7 @@ PredictChart.prototype = {
 		})
 		
 		// y轴信息
-		var priceScale = d3.scaleLinear().domain([0, this.ticksY - 1]).rangeRound([low, high])
+		var priceScale = scaleLinear().domain([0, this.ticksY - 1]).rangeRound([low, high])
 
 		for (var i = 0; i < this.ticksY; i++) {
 			var x = this.width
@@ -199,7 +199,7 @@ PredictChart.prototype = {
 
 		var color1 = '#80b5ff'
 		var color2 = '#e63232'
-		var linearP = d3.scaleLinear().domain([0, predictData.length]).rangeRound([this.offset, this.width])
+		var linearP = scaleLinear().domain([0, predictData.length]).rangeRound([this.offset, this.width])
 		var linearY = this.candleY
 		var upString = []
 		var midString = []

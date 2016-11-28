@@ -1,23 +1,17 @@
-const d3 = require('d3-scale')
+const scaleLinear = require('./scaleLinear')
 const $ = require('jquery')
 const Raphel = require('raphael')
+
 const {
-	MARGIN_TABLE,
-	CANDLE_WIDTH,
 	OUTTER_MARGIN,
 	VOL_HEIGHT,
 	FONT_SIZE,
 	STROKE_COLOR,
 	WIN_COLOR,
-	LOSS_COLOR,
-	PIXEL_FIX
+	LOSS_COLOR
 } = require('./config')
 
-const px = function(value) {
-	value = Math.floor(value)
-	return value + PIXEL_FIX
-}
-
+const px = require('./px')
 const createPathString = require('./createPathString')
 
 const ChartPrototype = {
@@ -41,7 +35,7 @@ const ChartPrototype = {
 	drawCandles: function(baseWidth) {
 		var round = Math.round
 		var { candleData, predictData, low, high } = this
-		var scaleY = d3.scaleLinear().domain([low, high]).rangeRound([this.height, 0])	
+		var scaleY = scaleLinear().domain([low, high]).rangeRound([this.height, 0])	
 		var totalWidth = baseWidth - OUTTER_MARGIN * 2
 		var count = candleData.length 
 		var candleWidth = (2 * totalWidth) / (3 * count - 1)
@@ -130,7 +124,7 @@ const ChartPrototype = {
 			return prev
 		}, candleData[0].volume)
 
-		var volLinear = d3.scaleLinear().domain([0, maxVol]).rangeRound([0, volHeight])
+		var volLinear = scaleLinear().domain([0, maxVol]).rangeRound([0, volHeight])
 
 		// 量柱横向辅助线
 		var p1 = {
@@ -235,7 +229,7 @@ const ChartPrototype = {
 
 		elem.on('mouseenter', e => {
 			if (scaleLeft === undefined) {
-				scaleLeft = d3.scaleLinear()
+				scaleLeft = scaleLinear()
 				.domain([0, this.width])
 				.rangeRound([0, this.shadowXList.length - 1])
 			}
@@ -340,12 +334,12 @@ const ChartPrototype = {
 
 		elem.on('mouseenter', e => {
 			if (scaleLeft === undefined) {
-				scaleLeft = d3.scaleLinear()
+				scaleLeft = scaleLinear()
 					.domain([0, this.offset])
 					.rangeRound([0, this.shadowXList.length - 1])
 
 				if (this.predictXList) {
-					scaleRight = d3.scaleLinear()
+					scaleRight = scaleLinear()
 						.domain([this.offset, this.width])
 						.rangeRound([0, this.predictXList.length - 1])
 				}
