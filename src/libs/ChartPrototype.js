@@ -526,7 +526,8 @@ const ChartPrototype = {
 		})
 
 		this.paper.path( createPathString(...points) ).attr({
-			stroke: '#999'
+			stroke: '#297cda',
+			'stroke-width': 2
 		})
 
 		this.polySet = this.paper.setFinish()

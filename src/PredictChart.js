@@ -65,6 +65,8 @@ PredictChart.prototype = {
 		// 测量宽度
 		var tempText = this.paper.text(this.high)
 		var yAxisTextWidth = tempText.getBBox().width
+
+		console.log('yAxisTextWidth', yAxisTextWidth)
 		
 		tempText.remove()
 

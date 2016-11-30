@@ -2,7 +2,7 @@ var PredictChart = require('./PredictChart')
 var ChartWithVolume = require('./ChartWithVolume')
 var $ = require('jquery')
 
-window.onload = function() {
+// window.onload = function() {
 	var fakeData = PredictChart.fakeData
 
 	var pc = new PredictChart(document.getElementById('root'), {
@@ -27,21 +27,21 @@ window.onload = function() {
 	pc.draw()
 
 	var cwv = new ChartWithVolume(document.getElementById('container'), {
-	 	chartWidth: 400,
-	 	chartHeight: 300,
+	 	chartWidth: 360,
+	 	chartHeight: 312,
 	 	candleData: fakeData.slice(0, 40),
 	 	needVolume: true,
 	 	cycle: 10,
-	 	tooltip: {
-	    	className: 'tooltip',
-	    	fn: function(item) {
-	    		// console.log('item', item)
+	 	// tooltip: {
+	  //   	className: 'tooltip',
+	  //   	fn: function(item) {
+	  //   		// console.log('item', item)
 
-		    	var { open, close, low, high } = item
+		 //    	var { open, close, low, high } = item
 		    	
-		    	return `<div style="height:300px;">${open}${close}${low}${high}</div>`
-		    }
-	  }
+		 //    	return `<div style="height:300px;">${open}${close}${low}${high}</div>`
+		 //    }
+	  // }
 	})
 
 	cwv.draw()
@@ -60,4 +60,4 @@ window.onload = function() {
 		pc.clear()
 		cwv.clear()
 	})
-}
+// }
