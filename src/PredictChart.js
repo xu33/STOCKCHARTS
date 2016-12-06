@@ -1,10 +1,11 @@
 const str2number = require('./libs/str2number')
-const fakeData = require('./fake_data/pre.js')
 const scaleLinear = require('./libs/scaleLinear')
+const UnitUtil = require('./libs/UnitUtil')
 const Raphel = require('raphael')
 const predictPercent = 0.7 // 预测部分偏移量
 const ChartPrototype = require('./libs/ChartPrototype')
 const createPathString = require('./libs/createPathString')
+const objectAssign = require('object-assign')
 
 const {
 	OUTTER_MARGIN,
@@ -14,12 +15,13 @@ const {
 	STROKE_COLOR,
 	DASH_COLOR,
 	FONT_SIZE,
-	TEXT_COLOR
+	TEXT_COLOR,
+	TEXT_MARGIN
 } = require('./libs/config')
 
 const px = require('./libs/px')
 
-const PredictChart = function(container, { chartWidth, chartHeight, candleData, predictData, needVolume, ticksY, tooltip }) {
+const PredictChart = function(container, { chartWidth, chartHeight, candleData, predictData, needVolume, ticksY, tooltip, yAxisFormater }) {
 	this.container = container
 	this.paper = new Raphel(container, chartWidth, chartHeight)
 	this.chartWidth = chartWidth
@@ -31,47 +33,65 @@ const PredictChart = function(container, { chartWidth, chartHeight, candleData, 
 	this.ticksY = ticksY
 
 	this.options = {
-		tooltip: tooltip
+		tooltip: tooltip,
+    yAxisFormater: yAxisFormater
 	}
 }
 
-PredictChart.fakeData = fakeData
-
 PredictChart.prototype = {
 	draw: function() {
-		var volHeight = this.needVolume ? VOL_HEIGHT : 0
 		var { candleData, predictData } = this
-		var fakeData = candleData.concat(predictData)
+		var all = candleData.concat(predictData)
 
-		var low = fakeData.reduce((prev, curr) => {
+		var low = all.reduce((prev, curr) => {
 			if (curr.low < prev) {
 				return curr.low
 			}
 
 			return prev
-		}, fakeData[0].low)
+		}, all[0].low)
 
-		var high = fakeData.reduce((prev, curr) => {
+		var high = all.reduce((prev, curr) => {
 			if (curr.high > prev) {
 				return curr.high
 			}
 
 			return prev
-		}, fakeData[0].high)
+		}, all[0].high)
 
-		this.low = low.toFixed(2)
-		this.high = high.toFixed(2)
+    if (this.options.yAxisFormater) {
+      this.low = this.options.yAxisFormater(low)
+      this.high = this.options.yAxisFormater(high)
+    } else {
+      this.low = low.toFixed(2)
+      this.high = high.toFixed(2)
+    }
+
+    var maxVol = candleData.reduce((prev, curr) => Math.max(curr.volume, prev), candleData[0].volume)
 
 		// 测量宽度
-		var tempText = this.paper.text(this.high)
-		var yAxisTextWidth = tempText.getBBox().width
+    var maxVolDisplay = UnitUtil.million(maxVol)
+    var widest
 
-		console.log('yAxisTextWidth', yAxisTextWidth)
-		
-		tempText.remove()
+    if (encodeURI(maxVolDisplay).length > encodeURI(this.high).length) {
+      widest = maxVolDisplay
+    } else {
+      widest = this.high
+    }
 
-		this.width = this.chartWidth - yAxisTextWidth // 总宽度减y轴文字宽度
-		this.height = this.chartHeight - volHeight - FONT_SIZE // 总高度减量柱高度减x轴文字高度
+    var tempText = this.paper.text(0, 0, widest)
+    var bbox = tempText.getBBox()
+    this.yAxisTextWidth = bbox.width
+    tempText.remove()
+
+		var yAxisTextWidth = this.yAxisTextWidth
+		this.width = this.chartWidth - yAxisTextWidth - TEXT_MARGIN // 总宽度减y轴文字宽度
+
+    if (this.needVolume) {
+      this.height = this.chartHeight - VOL_HEIGHT - FONT_SIZE - TEXT_MARGIN * 2 // 总高度减量柱高度减x轴文字高度
+    } else {
+      this.height = this.chartHeight - FONT_SIZE - TEXT_MARGIN
+    }
 
 		this.paper.rect(px(0), px(0), this.width, this.height).attr({
 			stroke: STROKE_COLOR
@@ -98,69 +118,79 @@ PredictChart.prototype = {
 		})
 
 		this.paper.path(pathString).attr({
-			'fill': '#f5f9fd',
+			'fill': '#e7f2fc',
 			'stroke-width': 0,
-			'fill-opacity': 0.5
+			'fill-opacity': 0.6
 		})
 
 		// 虚框左侧虚线
+    let x1 = px(this.offset)
+    let y1 = px(0)
+    let x2 = px(this.offset)
+    let y2
+    if (this.needVolume) {
+      y2 = px(this.height + VOL_HEIGHT + FONT_SIZE + TEXT_MARGIN * 2)
+    } else {
+      y2 = px(this.height)
+    }
+
 		this.paper.path(createPathString({
-			x: px(this.offset),
-			y: px(0)	
+			x: x1,
+			y: y1
 		}, {
-			x: px(this.offset),
-			y: this.needVolume ? px(this.height + volHeight + FONT_SIZE) : px(this.height)
+			x: x2,
+			y: y2
 		})).attr({
 			stroke: DASH_COLOR,
 			"stroke-dasharray": '- '
 		})
 		
-		// y轴信息
-		var priceScale = scaleLinear().domain([0, this.ticksY - 1]).rangeRound([low, high])
+		// y轴文字信息
+		var priceScale = scaleLinear().domain([0, this.ticksY - 1]).range([low, high])
 
 		for (var i = 0; i < this.ticksY; i++) {
-			var x = this.width
-			var y = yScale(i)
-			var elem = this.paper.text(x, y, priceScale(i).toFixed(2)).attr('fill', '#999')
-			var box = elem.getBBox()
-			var {width, height} = box
+			let x = this.width
+			let y = yScale(i)
+      let txt = priceScale(i)
+
+      if (this.options.yAxisFormater) {
+        txt = this.options.yAxisFormater(txt)
+      } else {
+        txt = Number(txt).toFixed(2)
+      }
+
+			let elem = this.paper.text(x, y, txt).attr('fill', '#999')
+			let box = elem.getBBox()
+			let { width, height } = box
+
+      console.log('txt:', txt, width)
+
+			x = x + (width >> 1) + TEXT_MARGIN
+
+			y = i === 0 ? 
+				(this.height - y - height / 2) :
+				(this.height - y + height / 2)
 
 			elem.attr({
-				x: x + width - 10
+				x: x, 
+				y: y
 			})
-
-			if (i === 0) {
-				elem.attr({
-					y: this.height - y - height / 2
-				})
-			} else if (i === this.ticksY - 1) {
-				elem.attr({
-					y: this.height - y + height / 2
-				})
-			}
 		}
 
-		// x轴信息
-		var dates = [candleData[0].time, candleData[candleData.length - 1].time, predictData[predictData.length - 1].time]
-
-		dates = dates.map(v => {
-			var d = new Date(v),
-		        month = '' + (d.getMonth() + 1),
-		        day = '' + d.getDate(),
-		        year = d.getFullYear();
-
-		    if (month.length < 2) month = '0' + month;
-		    if (day.length < 2) day = '0' + day;
-
-		    return [year, month, day].join('-');
-		})
+		// x轴文字信息
+		var dates = [
+			candleData[0].time, 
+			candleData[candleData.length - 1].time, 
+			predictData[predictData.length - 1].time
+		]
 
 		dates.forEach((item, index, arr) => {
 			var elem = this.paper.text(0, 0, item).attr('fill', '#999')
 			var box = elem.getBBox()
 			var { width, height } = box
 
-			var x, y = this.height + height / 2 + (FONT_SIZE - height) / 2
+			var x
+			var y = this.height + height / 2 + TEXT_MARGIN
 
 			if (index === 0) {
 				x = 0 + width / 2
@@ -182,12 +212,12 @@ PredictChart.prototype = {
 
 		// 横向辅助线
 		this.drawHelperLines(yScale)
-
 		this.drawCandles(this.offset)
 		this.drawPredictWave()
 
+    // 量线
 		if (this.needVolume) {
-			this.drawVolumes()
+      this.drawVolumes()
 		}
 
 		// 事件
@@ -214,15 +244,9 @@ PredictChart.prototype = {
 			close: lastCandle.close
 		})
 
-		// console.log(predictData.length)
-
-		// 预测波动折线，计算公式，后面的要转成0.xx
-		// high = last_day_close * ceil
-		// low = last_day_close * flor
-		// close = last_day_close * profit 
-
 		this.predictCloseYList = []
 		this.predictXList = []
+
 		for (let i = 0; i < predictData.length; i++) {
 			let predictX = linearP(i)
 
@@ -268,6 +292,6 @@ PredictChart.prototype = {
 	}
 }
 
-Object.assign(PredictChart.prototype, ChartPrototype)
+objectAssign(PredictChart.prototype, ChartPrototype)
 
 module.exports = PredictChart

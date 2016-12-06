@@ -1,63 +1,90 @@
 var PredictChart = require('./PredictChart')
 var ChartWithVolume = require('./ChartWithVolume')
 var $ = require('jquery')
+var fakeData = require('./fake_data/pre.js')
+var moment = require('moment')
 
-// window.onload = function() {
-	var fakeData = PredictChart.fakeData
+// fakeData = fakeData.map(function(item) {
+//   item.time = moment(item.time).format('YYYY-MM-DD')
+//   return item
+// })
 
-	var pc = new PredictChart(document.getElementById('root'), {
-		chartWidth: 400,
-		chartHeight: 300,
-		candleData: fakeData.slice(0, 20),
-		predictData: fakeData.slice(-5),
-	    needVolume: true,
-	    ticksY: 5,
-	    tooltip: {
-	    	className: 'tooltip',
-	    	fn: function(item) {
-	    		// console.log('item', item)
+// console.log(fakeData.length)
 
-		    	var { open, close, low, high } = item
-		    	
-		    	return `<div style="height:300px;">${open}${close}${low}${high}</div>`
-		    }
-	  }
-	})
+var predictData = fakeData.slice(-5)
+var last = fakeData[fakeData.length - 6]
 
-	pc.draw()
+predictData = predictData.map(o => {
+  o.close = last.close * (1 + o.profit)
+  o.low = last.close * (1 + o.flor)
+  o.high = last.close * (1 + o.ceil)
 
-	var cwv = new ChartWithVolume(document.getElementById('container'), {
-	 	chartWidth: 360,
-	 	chartHeight: 312,
-	 	candleData: fakeData.slice(0, 40),
-	 	needVolume: true,
-	 	cycle: 10,
-	 	// tooltip: {
-	  //   	className: 'tooltip',
-	  //   	fn: function(item) {
-	  //   		// console.log('item', item)
+  console.log(o)
 
-		 //    	var { open, close, low, high } = item
-		    	
-		 //    	return `<div style="height:300px;">${open}${close}${low}${high}</div>`
-		 //    }
-	  // }
-	})
+  return o
+})
 
-	cwv.draw()
+var pc = new PredictChart(document.getElementById('root'), {
+  	chartWidth: 515,
+  	chartHeight: 220,
+  	candleData: fakeData.slice(0, 20),
+  	predictData: fakeData.slice(-5),
+    needVolume: true,
+    ticksY: 5,
+    tooltip: {
+    	className: 'tooltip',
+    	fn: function(item) {
+    		console.log('item', item)
 
-	$('#showCandlesBtn').on('click', function(e) {
-		cwv.hidePolySet()
-		cwv.showCandleSet()
-	})
+	    	var { open, close, low, high } = item
+        
+	    	return `<div style="height:300px;">
+          <div>开${open}</div>
+          <div>高${high}</div>
+          <div>收${close}</div>
+          <div>低${low}</div>
+        </div>`
+	    }
+  },
+  yAxisFormater: function(value) {
+    return Number(value).toFixed(2)
+  }
+})
 
-	$('#showPolylineBtn').on('click', function(e) {
-		cwv.hideCandleSet()
-		cwv.showPolySet()
-	})
+pc.draw()
 
-	$('#clearBtn').on('click', function(e) {
-		pc.clear()
-		cwv.clear()
-	})
-// }
+// var cwv = new ChartWithVolume(document.getElementById('container'), {
+//  	chartWidth: 360,
+//  	chartHeight: 312,
+//  	candleData: fakeData.slice(0, 40),
+//  	needVolume: true,
+//  	cycle: 10,
+//   tooltip: {
+//     className: 'tooltip',
+//     fn: function(item) {
+//       console.log('item', item)
+//
+//       var { open, close, low, high } = item
+//       var arr = [open, close, low, high]
+//
+//       return `<div style="height:300px;">
+//           <div>开${open}</div>
+//           <div>高${high}</div>
+//           <div>收${close}</div>
+//           <div>低${low}</div>
+//         </div>`
+//     }
+//   }
+// })
+
+// cwv.draw()
+
+$('#showCandlesBtn').on('click', function(e) {
+	pc.hidePolySet()
+  pc.showCandleSet()
+})
+
+$('#showPolylineBtn').on('click', function(e) {
+  pc.hideCandleSet()
+  pc.showPolySet()
+})

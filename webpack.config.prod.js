@@ -9,8 +9,7 @@ module.exports = {
   },
   externals: {
       jquery: 'window.$',
-      raphael: 'window.Raphael',
-      'd3-scale': 'window.d3'
+      raphael: 'window.Raphael'
   },
   output: {
     path: path.join(__dirname, 'dist'),

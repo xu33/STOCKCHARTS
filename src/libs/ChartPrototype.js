@@ -1,6 +1,8 @@
 const scaleLinear = require('./scaleLinear')
 const $ = require('jquery')
 const Raphel = require('raphael')
+const str2number = require('./str2number')
+const UnitUtil = require('./UnitUtil')
 
 const {
 	OUTTER_MARGIN,
@@ -8,13 +10,18 @@ const {
 	FONT_SIZE,
 	STROKE_COLOR,
 	WIN_COLOR,
-	LOSS_COLOR
+	LOSS_COLOR,
+	EQUAL_COLOR,
+  TEXT_MARGIN
 } = require('./config')
 
 const px = require('./px')
 const createPathString = require('./createPathString')
 
 const ChartPrototype = {
+  drawBasic: function() {
+
+  },
 	drawHelperLines: function(yScale) {
 		// K线横向辅助线
 		for (var i = 1; i < this.ticksY - 1; i++) {
@@ -61,14 +68,21 @@ const ChartPrototype = {
 				y2 = scaleY(close)
 
 				color = LOSS_COLOR
-			} else {
+			} else if (open < close) {
 				y1 = scaleY(close)
 				y2 = scaleY(open)
 
 				color = WIN_COLOR
+			} else {
+				y1 = y2 = scaleY(open)
+				color = EQUAL_COLOR
 			}
 
 			height = Math.abs(y1 - y2)
+
+			if (height < 1) {
+				height = 1
+			}
 
 			// console.log('蜡烛块信息:', px(x), px(y1), candleWidth, height)
 
@@ -107,52 +121,70 @@ const ChartPrototype = {
 		var round = Math.round
 		// 量线，绘制量柱
 		var volX = 0
-		var volY = this.height + FONT_SIZE // 加文字高度
+		var volY = this.height + FONT_SIZE + TEXT_MARGIN * 2 // 加文字高度
 		var volWidth = this.width
 		var volHeight = VOL_HEIGHT
 		var candleData = this.candleData
-
 		var { candleWidth, candleSpace } = this
+
 		// 量图边框
-		this.paper.rect(px(volX), px(volY), volWidth, volHeight - 1).attr('stroke', STROKE_COLOR)
+		this.paper
+      .rect(px(volX), px(volY), volWidth, volHeight - 1)
+      .attr('stroke', STROKE_COLOR)
 
-		var maxVol = candleData.reduce((prev, curr) => {
-			if (curr.volume > prev) {
-				return curr.volume
-			}
-
-			return prev
-		}, candleData[0].volume)
-
-		var volLinear = scaleLinear().domain([0, maxVol]).rangeRound([0, volHeight])
+		var maxVol = candleData.reduce((prev, curr) => Math.max(curr.volume, prev), candleData[0].volume)
+    var minVol = candleData.reduce((prev, curr) => Math.min(curr.volume, prev), candleData[0].volume)
+		var volScale = scaleLinear().domain([minVol, maxVol]).rangeRound([0, volHeight])
 
 		// 量柱横向辅助线
+    var helperLineY = this.height + FONT_SIZE + TEXT_MARGIN * 2 + (volHeight >> 1)
 		var p1 = {
 			x: px(0),
-			y: px( this.height + FONT_SIZE + (volHeight >> 1) )
+			y: px(helperLineY)
 		}
-
 		var p2 = {
 			x: px(this.width),
-			y: px( this.height + FONT_SIZE + (volHeight >> 1) )
+			y: px(helperLineY)
 		}
-
 		this.paper.path(createPathString(p1, p2)).attr({
 			stroke: STROKE_COLOR
 		})
 
-		// 量柱
+    var arr = [minVol, (maxVol + minVol) / 2, maxVol]
+    var offsetY = this.height + TEXT_MARGIN * 2 + FONT_SIZE
+    var paper = this.paper
+    for (var i = 0; i < 3; i++) {
+      let txt = paper.text(0, 0, UnitUtil.million(arr[i])).attr('fill', '#999999')
+      let box = txt.getBBox()
+      let x = this.width + TEXT_MARGIN + box.width / 2
+      let y = offsetY + volHeight - volHeight / 2 * i
+
+      if (i === 0) {
+        y -= box.height / 2
+      } else if (i === 2) {
+        y += box.height / 2
+      }
+
+      txt.attr({
+        x,
+        y
+      })
+    }
+
+    // 量柱
 		candleData.forEach((item, index, arr) => {
 			let x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace))
-			let h = volLinear(item.volume)
-			let y = this.height + FONT_SIZE + volHeight - h
+			let h = volScale(item.volume)
+			let y = this.height + FONT_SIZE + TEXT_MARGIN * 2 + volHeight - h
 			let { open, close } = item
 			let color
 
 			if (open > close) {
-				color = '#55a500'
+				color = LOSS_COLOR
+			} else if (open < close) {
+				color = WIN_COLOR
 			} else {
-				color = '#e63232'
+				color = EQUAL_COLOR
 			}
 
 			this.paper.rect(x, y, candleWidth, h).attr({
@@ -160,6 +192,8 @@ const ChartPrototype = {
 				'stroke-width': 0
 			})
 		})
+
+    return true
 	},
 	createTooltip: function() {
 		let tooltip = $('<div>').css({
@@ -173,12 +207,12 @@ const ChartPrototype = {
 
 		return tooltip
 	},
-	getTooltipHtml: function(data) {
+	getTooltipHtml: function(data, index) {
 		let fn = this.options.tooltip.fn
 		let html = ''
 
 		if (fn) {
-			html = fn(data)
+			html = fn(data, index)
 		}
 
 		return html
@@ -256,7 +290,9 @@ const ChartPrototype = {
 				return
 			}
 
-			line(x, this.needVolume ? this.height + FONT_SIZE + VOL_HEIGHT : this.height)
+			var y = this.needVolume ? this.height + FONT_SIZE + VOL_HEIGHT : this.height
+			line(x, y)
+
 			item = this.candleData[index]
 			top = this.closeYList[index]
 
@@ -274,7 +310,7 @@ const ChartPrototype = {
 				})
 			}
 
-			tooltip.html( this.getTooltipHtml(item) )
+			tooltip.html( this.getTooltipHtml(item, index) )
 		})
 
 		elem.on('mouseleave', e => {
@@ -288,11 +324,12 @@ const ChartPrototype = {
 		this.eventLayer = elem
 	},
 	createEventLayer: function() {
+    var layerWidth = this.chartWidth - this.yAxisTextWidth
 		var elem = $('<div>').css({
 			position: 'absolute',
 			left: 0,
 			top: 0,
-			width: this.chartWidth,
+			width: layerWidth,
 			height: this.chartHeight
 		})
 
@@ -301,7 +338,7 @@ const ChartPrototype = {
 		}).append(elem)
 
 		var offset = elem.offset()
-		var paper = new Raphel(elem[0], this.chartWidth, this.chartHeight)
+		var paper = new Raphel(elem[0], layerWidth, this.chartHeight)
 		var scaleLeft
 		var scaleRight
 		var floatLine
@@ -328,7 +365,7 @@ const ChartPrototype = {
 					x: px(x),
 					y: px(y)
 				}),
-				stroke: STROKE_COLOR
+				stroke: '#aeaeae'
 			})
 		}
 
@@ -372,6 +409,8 @@ const ChartPrototype = {
 
 				item = this.candleData[index]
 				top = this.closeYList[index]
+
+				tooltip.html( this.getTooltipHtml(item, 'normal') )
 			} else {
 				if (this.predictXList === undefined) {
 					return
@@ -392,6 +431,8 @@ const ChartPrototype = {
 				line(x, this.needVolume ? this.chartHeight : this.height)	
 				item = this.predictData[index]
 				top = this.predictCloseYList[index]
+
+				tooltip.html( this.getTooltipHtml(item, 'predict') )
 			}
 
 			// console.log(x, this.width, tooltip.width())
@@ -400,7 +441,7 @@ const ChartPrototype = {
 				tooltip.css({
 					'top': top,
 					'left': '',
-					'right': this.chartWidth - this.width + 5
+					'right': layerWidth - this.width + 5
 				})
 			} else {
 				tooltip.css({
@@ -409,8 +450,6 @@ const ChartPrototype = {
 					'right': ''
 				})
 			}
-
-			tooltip.html( this.getTooltipHtml(item) )
 		})
 		.on('mouseleave', e => {
 			scaleLeft = undefined
@@ -422,74 +461,6 @@ const ChartPrototype = {
 		})
 
 		this.eventLayer = elem
-	},
-
-	handleMouseMove: function(e, scaleLeft, scaleRight, offset, floatLine, tooltip, line) {
-		if (this.shadowXList === undefined) {
-				return
-			}
-
-			var x = e.pageX - offset.left
-			var item
-			var top
-
-			if (x < this.offset) {
-				var index = scaleLeft(x)
-				var x = this.shadowXList[index]
-
-				if (x === undefined) {
-					return
-				}
-
-				line(x, this.needVolume ? this.chartHeight : this.height)	
-
-				item = this.candleData[index]
-				top = this.closeYList[index]
-			} else {
-				if (this.predictXList === undefined) {
-					return
-				}
-
-				var index = scaleRight(x)
-
-				if (index === 0) {
-					return
-				}
-
-				if (index >= this.predictXList.length) {
-					return
-				}
-
-				var x = this.predictXList[index]
-
-				line(x, this.needVolume ? this.chartHeight : this.height)	
-
-				item = this.predictData[index]
-
-				top = this.predictCloseYList[index]
-			}
-
-			// console.log(x, this.width, tooltip.width())
-
-			if (x >= this.width - tooltip.width()) {
-				tooltip.css({
-					'top': top,
-					'left': '',
-					'right': this.chartWidth - this.width + 5
-				})
-			} else {
-				tooltip.css({
-					'top': top,
-					'left': x + 5,
-					'right': ''
-				})
-			}
-
-			tooltip.html( this.getTooltipHtml(item) )
-	},
-
-	handleMouseEnd: function() {
-		
 	},
 
 	hideCandleSet: function() {
@@ -515,10 +486,16 @@ const ChartPrototype = {
 	drawPolyline: function() {
 		this.paper.setStart()
 
-		var points = this.candleData.map((item, i) => {
+		var points = this.candleData.map((item, i, arr) => {
 			var x = this.shadowXList[i]
 			var y = this.candleY(this.candleData[i].close)
 			
+			if (i === 0) {
+				x = 0
+			} else if (i === arr.length - 1) {
+				x = this.offset
+			}
+
 			return {
 				x: px(x),
 				y: px(y)
@@ -535,6 +512,10 @@ const ChartPrototype = {
 	clear: function() {
 		this.candleSet && this.candleSet.clear()
 		this.polySet && this.polySet.clear()
+
+    if (this.eventLayer) {
+      this.eventLayer.off().remove()
+    }
 		this.paper.clear()
 	},
 	update: function( { candleData, predictData, cycle } ) {

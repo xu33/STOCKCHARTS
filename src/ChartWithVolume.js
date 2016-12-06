@@ -1,6 +1,7 @@
 const str2number = require('./libs/str2number')
 const scaleLinear = require('./libs/scaleLinear')
 const Raphel = require('raphael')
+const objectAssign = require('object-assign')
 const {
 	OUTTER_MARGIN,
 	VOL_HEIGHT,
@@ -8,7 +9,8 @@ const {
 	PIXEL_FIX,
 	STROKE_COLOR,
 	FONT_SIZE,
-	TEXT_COLOR
+	TEXT_COLOR,
+  TEXT_MARGIN
 } = require('./libs/config')
 const px = require('./libs/px')
 const createPathString = require('./libs/createPathString')
@@ -62,8 +64,9 @@ ChartWithVolume.prototype = {
 		this.low = low
 		this.high = high
 
-		this.width = this.chartWidth - 40 // 总宽度减y轴文字宽度
-		this.height = this.chartHeight - volHeight - FONT_SIZE - BOTTOM_TEXT_HEIGHT // 总高度减量柱高度减x轴文字高度减底部标注高度
+		// this.width = this.chartWidth - 40 // 总宽度减y轴文字宽度
+    this.width = this.chartWidth
+		this.height = this.chartHeight - volHeight - FONT_SIZE - TEXT_MARGIN * 2 - BOTTOM_TEXT_HEIGHT // 总高度减量柱高度减x轴文字高度减底部标注高度
 
 		this.paper.rect(0, 0, this.width, this.height).attr({
 			stroke: STROKE_COLOR
@@ -92,10 +95,10 @@ ChartWithVolume.prototype = {
 			y: 0
 		}, {
 			x: this.width,
-			y: this.height + volHeight + FONT_SIZE
+			y: this.height + volHeight + FONT_SIZE + TEXT_MARGIN * 2
 		}, {
 			x: this.offset,
-			y: this.height + volHeight + FONT_SIZE
+			y: this.height + volHeight + FONT_SIZE + TEXT_MARGIN * 2
 		}, {
 			x: this.offset,
 			y: 0
@@ -115,29 +118,13 @@ ChartWithVolume.prototype = {
 		    candleData[candleData.length - 1].time
 		]
 
-		// console.log(dates)
-
-		dates = dates.map(v => {
-
-			var d = new Date(v),
-		        month = '' + (d.getMonth() + 1),
-		        day = '' + d.getDate(),
-		        year = d.getFullYear();
-
-		    if (month.length < 2) month = '0' + month;
-		    if (day.length < 2) day = '0' + day;
-
-		    return [year, month, day].join('-');
-		})
-
-		// console.log(dates)
-
 		dates.forEach((item, index, arr) => {
 			var elem = this.paper.text(0, 0, item).attr('fill', '#999')
 			var box = elem.getBBox()
 			var { width, height } = box
 
-			var x, y = this.height + height / 2 + (FONT_SIZE - height) / 2
+			var x
+      var y = this.height + height / 2 + TEXT_MARGIN
 
 			if (index === 0) {
 				x = 0 + width / 2
@@ -154,7 +141,7 @@ ChartWithVolume.prototype = {
 		})
 
 		// K线横向辅助线
-		this.drawHelperLines(yScale)
+		// this.drawHelperLines(yScale)
 		this.drawCandles(this.width)
 
 		// 绘制量柱
@@ -228,6 +215,6 @@ ChartWithVolume.prototype = {
 	}
 }
 
-Object.assign(ChartWithVolume.prototype, ChartPrototype)
+objectAssign(ChartWithVolume.prototype, ChartPrototype)
 
 module.exports = ChartWithVolume

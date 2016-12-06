@@ -8,13 +8,15 @@ const MARGIN_TABLE = {
 const PIXEL_FIX = 0.5
 const OUTTER_MARGIN = 2
 const VOL_HEIGHT = 66
-const FONT_SIZE = 20
+const FONT_SIZE = 12
 const WIN_COLOR = '#e63232'
 const LOSS_COLOR = '#55a500'
+const EQUAL_COLOR = '#999999'
 const STROKE_COLOR = '#d8d8d8'
 const DASH_COLOR = '#999999'
 const BOTTOM_TEXT_HEIGHT = 20
 const TEXT_COLOR = '#0287fe'
+const TEXT_MARGIN = 10
 
 module.exports = {
 	MARGIN_TABLE,
@@ -27,5 +29,7 @@ module.exports = {
 	STROKE_COLOR,
 	DASH_COLOR,
 	BOTTOM_TEXT_HEIGHT,
-	TEXT_COLOR
+	TEXT_COLOR,
+	TEXT_MARGIN,
+	EQUAL_COLOR
 }
