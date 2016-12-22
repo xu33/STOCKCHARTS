@@ -5,7 +5,7 @@
   "main": "data.js",
   "scripts": {
     "start": "supervisor server.js",
-    "webpack": "webpack --config webpack.config.prod.js --watch -p",
+    "webpack": "webpack --config webpack.config.prod.js --watch --progress",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

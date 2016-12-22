@@ -53,7 +53,6 @@ const ChartPrototype = {
 			candleWidth = totalWidth / count
 		}
 
-		// console.log('candleWidth, candleSpace', candleWidth, candleSpace)
 		this.closeYList = []
 		this.shadowXList = []
 		this.paper.setStart()
@@ -89,10 +88,12 @@ const ChartPrototype = {
 			this.closeYList.push(y1)
 
 			// 实体块
-			this.paper.rect(x, y1, candleWidth, height).attr({
-				'fill': color,
-				'stroke-width': 0
-			})
+      if (candleWidth >= 3) {
+        this.paper.rect(x, y1, candleWidth, height).attr({
+          'fill': color,
+          'stroke-width': 0
+        })
+      }
 
 			// 上下影线
 			var shadowX = px( x + round(candleWidth / 2) )
@@ -111,7 +112,6 @@ const ChartPrototype = {
 		this.candleWidth = candleWidth
 		this.candleSpace = candleSpace
 		this.candleY = scaleY
-
 		this.candleSet = this.paper.setFinish()
 
 		this.drawPolyline()
@@ -344,6 +344,10 @@ const ChartPrototype = {
 		var floatLine
 		var tooltip
 
+    $(window).on('resize', (e) => {
+      offset = elem.offset()
+    })
+
 		var line = (x,y) => {
 			if (!floatLine) {
 				floatLine = paper.path(createPathString({
@@ -452,6 +456,7 @@ const ChartPrototype = {
 			}
 		})
 		.on('mouseleave', e => {
+      console.log('mouseleave fire')
 			scaleLeft = undefined
 			scaleRight = undefined
 			floatLine = undefined

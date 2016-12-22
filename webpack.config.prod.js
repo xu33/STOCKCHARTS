@@ -2,7 +2,6 @@ var path = require('path');
 var webpack = require('webpack');
 
 module.exports = {
-  devtool: 'eval',
   entry: {
     PredictChart: './src/PredictChart.js',
     ChartWithVolume: './src/ChartWithVolume.js',
@@ -25,5 +24,8 @@ module.exports = {
       },
       include: path.join(__dirname, 'src')
     }]
-  }
+  },
+  plugins: [
+    
+  ]
 };

@@ -163,8 +163,6 @@ PredictChart.prototype = {
 			let box = elem.getBBox()
 			let { width, height } = box
 
-      console.log('txt:', txt, width)
-
 			x = x + (width >> 1) + TEXT_MARGIN
 
 			y = i === 0 ? 

@@ -1,1 +1,1147 @@
-var ChartWithVolume=function(t){function n(r){if(e[r])return e[r].exports;var i=e[r]={exports:{},id:r,loaded:!1};return t[r].call(i.exports,i,i.exports,n),i.loaded=!0,i.exports}var e={};return n.m=t,n.c=e,n.p="",n(0)}([function(module,exports,__webpack_require__){eval("'use strict';\n\nvar str2number = __webpack_require__(5);\nvar scaleLinear = __webpack_require__(4);\nvar Raphel = __webpack_require__(6);\nvar objectAssign = __webpack_require__(8);\n\nvar _require = __webpack_require__(1),\n    OUTTER_MARGIN = _require.OUTTER_MARGIN,\n    VOL_HEIGHT = _require.VOL_HEIGHT,\n    BOTTOM_TEXT_HEIGHT = _require.BOTTOM_TEXT_HEIGHT,\n    PIXEL_FIX = _require.PIXEL_FIX,\n    STROKE_COLOR = _require.STROKE_COLOR,\n    FONT_SIZE = _require.FONT_SIZE,\n    TEXT_COLOR = _require.TEXT_COLOR,\n    TEXT_MARGIN = _require.TEXT_MARGIN;\n\nvar px = __webpack_require__(3);\nvar createPathString = __webpack_require__(2);\nvar ChartPrototype = __webpack_require__(7);\n\nvar ChartWithVolume = function ChartWithVolume(container, _ref) {\n\tvar chartWidth = _ref.chartWidth,\n\t    chartHeight = _ref.chartHeight,\n\t    candleData = _ref.candleData,\n\t    needVolume = _ref.needVolume,\n\t    ticksY = _ref.ticksY,\n\t    cycle = _ref.cycle,\n\t    tooltip = _ref.tooltip;\n\n\tthis.container = container;\n\tthis.paper = new Raphel(container, chartWidth, chartHeight);\n\tthis.chartWidth = chartWidth;\n\tthis.chartHeight = chartHeight;\n\n\tthis.candleData = candleData.map(str2number);\n\tthis.needVolume = needVolume || false;\n\tthis.ticksY = ticksY || 4;\n\tthis.cycle = cycle;\n\n\tthis.options = {\n\t\ttooltip: tooltip\n\t};\n};\n\nChartWithVolume.prototype = {\n\tdraw: function draw() {\n\t\tvar _this = this;\n\n\t\tvar volHeight = this.needVolume ? VOL_HEIGHT : 0;\n\t\tvar candleData = this.candleData;\n\n\n\t\tvar low = candleData.reduce(function (prev, curr) {\n\t\t\tif (curr.low < prev) {\n\t\t\t\treturn curr.low;\n\t\t\t}\n\n\t\t\treturn prev;\n\t\t}, candleData[0].low);\n\n\t\tvar high = candleData.reduce(function (prev, curr) {\n\t\t\tif (curr.high > prev) {\n\t\t\t\treturn curr.high;\n\t\t\t}\n\n\t\t\treturn prev;\n\t\t}, candleData[0].high);\n\n\t\tthis.low = low;\n\t\tthis.high = high;\n\n\t\t// this.width = this.chartWidth - 40 // 总宽度减y轴文字宽度\n\t\tthis.width = this.chartWidth;\n\t\tthis.height = this.chartHeight - volHeight - FONT_SIZE - TEXT_MARGIN * 2 - BOTTOM_TEXT_HEIGHT; // 总高度减量柱高度减x轴文字高度减底部标注高度\n\n\t\tthis.paper.rect(0, 0, this.width, this.height).attr({\n\t\t\tstroke: STROKE_COLOR\n\t\t});\n\n\t\tvar total = candleData.length;\n\t\t// var predictPercent = (total - this.cycle) / total\n\n\t\t// console.log('predictPercent:', predictPercent)\n\n\t\t// predictPercent = predictPercent.toFixed(2)\n\n\t\tvar predictPercent = 0.7;\n\n\t\t// 预测部分图形的偏移量\n\t\tthis.offset = this.width * predictPercent;\n\n\t\tvar yScale = scaleLinear().domain([0, this.ticksY - 1]).rangeRound([0, this.height]);\n\n\t\t// 预测部分半透明虚框\n\t\tvar pathString = createPathString({\n\t\t\tx: this.offset,\n\t\t\ty: 0\n\t\t}, {\n\t\t\tx: this.width,\n\t\t\ty: 0\n\t\t}, {\n\t\t\tx: this.width,\n\t\t\ty: this.height + volHeight + FONT_SIZE + TEXT_MARGIN * 2\n\t\t}, {\n\t\t\tx: this.offset,\n\t\t\ty: this.height + volHeight + FONT_SIZE + TEXT_MARGIN * 2\n\t\t}, {\n\t\t\tx: this.offset,\n\t\t\ty: 0\n\t\t});\n\n\t\tthis.paper.path(pathString).attr({\n\t\t\t'fill': '#f5f9fd',\n\t\t\t'stroke-width': 1,\n\t\t\t'fill-opacity': 0.5,\n\t\t\t'stroke': '#79c0ff'\n\t\t});\n\n\t\t// x轴信息\n\t\tvar dates = [candleData[0].time, candleData[candleData.length - this.cycle].time, candleData[candleData.length - 1].time];\n\n\t\tdates.forEach(function (item, index, arr) {\n\t\t\tvar elem = _this.paper.text(0, 0, item).attr('fill', '#999');\n\t\t\tvar box = elem.getBBox();\n\t\t\tvar width = box.width,\n\t\t\t    height = box.height;\n\n\n\t\t\tvar x;\n\t\t\tvar y = _this.height + height / 2 + TEXT_MARGIN;\n\n\t\t\tif (index === 0) {\n\t\t\t\tx = 0 + width / 2;\n\t\t\t} else if (index === 1) {\n\t\t\t\tx = _this.offset - width / 2;\n\t\t\t} else {\n\t\t\t\tx = _this.width - width / 2;\n\t\t\t}\n\n\t\t\telem.attr({\n\t\t\t\tx: x,\n\t\t\t\ty: y\n\t\t\t});\n\t\t});\n\n\t\t// K线横向辅助线\n\t\t// this.drawHelperLines(yScale)\n\t\tthis.drawCandles(this.width);\n\n\t\t// 绘制量柱\n\t\tif (this.needVolume) {\n\t\t\tthis.drawVolumes();\n\t\t}\n\n\t\tthis.drawCycleBlock();\n\t\t// 事件\n\t\tif (this.options.tooltip) {\n\t\t\tthis.createEventLayerNormal();\n\t\t}\n\t},\n\tdrawCycleBlock: function drawCycleBlock() {\n\t\tconsole.log('drawCycleBlock fire');\n\t\t// 后续走势标注\n\t\tthis.paper.path(createPathString({\n\t\t\tx: this.offset,\n\t\t\ty: this.chartHeight - BOTTOM_TEXT_HEIGHT\n\t\t}, {\n\t\t\tx: this.offset,\n\t\t\ty: this.chartHeight\n\t\t})).attr({\n\t\t\tstroke: TEXT_COLOR\n\t\t});\n\n\t\tthis.paper.path(createPathString({\n\t\t\tx: this.width,\n\t\t\ty: this.chartHeight - BOTTOM_TEXT_HEIGHT\n\t\t}, {\n\t\t\tx: this.width,\n\t\t\ty: this.chartHeight\n\t\t})).attr({\n\t\t\tstroke: TEXT_COLOR\n\t\t});\n\n\t\t// 后续走势\n\t\tvar txt = this.paper.text(this.offset, this.chartHeight - BOTTOM_TEXT_HEIGHT, '后续走势').attr('fill', '#0287fe');\n\n\t\tvar box = txt.getBBox();\n\t\tvar width = box.width,\n\t\t    height = box.height;\n\n\t\tvar x = (this.width - this.offset) / 2 + this.offset;\n\t\tvar y = this.chartHeight - BOTTOM_TEXT_HEIGHT + height / 2 + (BOTTOM_TEXT_HEIGHT - height) / 2;\n\n\t\ttxt.attr({\n\t\t\tx: x,\n\t\t\ty: y\n\t\t});\n\n\t\t// |-\n\t\tthis.paper.path(createPathString({\n\t\t\tx: this.offset,\n\t\t\ty: this.chartHeight - BOTTOM_TEXT_HEIGHT / 2\n\t\t}, {\n\t\t\tx: x - width / 2,\n\t\t\ty: this.chartHeight - BOTTOM_TEXT_HEIGHT / 2\n\t\t})).attr({\n\t\t\tstroke: '#0287fe'\n\t\t});\n\n\t\t// -|\n\t\tthis.paper.path(createPathString({\n\t\t\tx: this.width,\n\t\t\ty: this.chartHeight - BOTTOM_TEXT_HEIGHT / 2\n\t\t}, {\n\t\t\tx: x + width / 2,\n\t\t\ty: this.chartHeight - BOTTOM_TEXT_HEIGHT / 2\n\t\t})).attr({\n\t\t\tstroke: '#0287fe'\n\t\t});\n\t}\n};\n\nobjectAssign(ChartWithVolume.prototype, ChartPrototype);\n\nmodule.exports = ChartWithVolume;\n\n//////////////////\n// WEBPACK FOOTER\n// ./src/ChartWithVolume.js\n// module id = 0\n// module chunks = 1\n//# sourceURL=webpack:///./src/ChartWithVolume.js?")},function(module,exports){eval("'use strict';\n\nvar MARGIN_TABLE = {\n\t10: 4,\n\t20: 3,\n\t40: 1,\n\t60: 1\n};\n\nvar PIXEL_FIX = 0.5;\nvar OUTTER_MARGIN = 2;\nvar VOL_HEIGHT = 66;\nvar FONT_SIZE = 12;\nvar WIN_COLOR = '#e63232';\nvar LOSS_COLOR = '#55a500';\nvar EQUAL_COLOR = '#999999';\nvar STROKE_COLOR = '#d8d8d8';\nvar DASH_COLOR = '#999999';\nvar BOTTOM_TEXT_HEIGHT = 20;\nvar TEXT_COLOR = '#0287fe';\nvar TEXT_MARGIN = 10;\n\nmodule.exports = {\n\tMARGIN_TABLE: MARGIN_TABLE,\n\tOUTTER_MARGIN: OUTTER_MARGIN,\n\tVOL_HEIGHT: VOL_HEIGHT,\n\tFONT_SIZE: FONT_SIZE,\n\tPIXEL_FIX: PIXEL_FIX,\n\tWIN_COLOR: WIN_COLOR,\n\tLOSS_COLOR: LOSS_COLOR,\n\tSTROKE_COLOR: STROKE_COLOR,\n\tDASH_COLOR: DASH_COLOR,\n\tBOTTOM_TEXT_HEIGHT: BOTTOM_TEXT_HEIGHT,\n\tTEXT_COLOR: TEXT_COLOR,\n\tTEXT_MARGIN: TEXT_MARGIN,\n\tEQUAL_COLOR: EQUAL_COLOR\n};\n\n//////////////////\n// WEBPACK FOOTER\n// ./src/libs/config.js\n// module id = 1\n// module chunks = 0 1\n//# sourceURL=webpack:///./src/libs/config.js?")},function(module,exports){eval('"use strict";\n\nvar createPathString = function createPathString() {\n\tfor (var _len = arguments.length, points = Array(_len), _key = 0; _key < _len; _key++) {\n\t\tpoints[_key] = arguments[_key];\n\t}\n\n\tvar pathString = "M" + points[0].x + "," + points[0].y;\n\n\tfor (var i = 1; i < points.length; i++) {\n\t\tpathString += "L" + points[i].x + "," + points[i].y;\n\t}\n\n\treturn pathString;\n};\n\nmodule.exports = createPathString;\n\n//////////////////\n// WEBPACK FOOTER\n// ./src/libs/createPathString.js\n// module id = 2\n// module chunks = 0 1\n//# sourceURL=webpack:///./src/libs/createPathString.js?')},function(module,exports){eval('"use strict";\n\nvar pixelFix = 0.5;\n\nvar px = function px(value) {\n\tvalue = Math.floor(value);\n\treturn value + pixelFix;\n};\n\nmodule.exports = px;\n\n//////////////////\n// WEBPACK FOOTER\n// ./src/libs/px.js\n// module id = 3\n// module chunks = 0 1\n//# sourceURL=webpack:///./src/libs/px.js?')},function(module,exports){eval("\"use strict\";\n\nvar scaleLinear = function scaleLinear() {\n  var min, max;\n\n  var normalize = function normalize(x) {\n    return (x - min) / (max - min);\n  };\n\n  var domain = function domain(arr) {\n    min = arr[0];\n    max = arr[arr.length - 1];\n\n    return this;\n  };\n\n  var range = function range(arr) {\n    var a = arr[0];\n    var b = arr[arr.length - 1];\n\n    a = +a;\n    b -= a;\n\n    return function (x) {\n      return a + b * normalize(x);\n    };\n  };\n\n  var rangeRound = function rangeRound(arr) {\n    var a = arr[0];\n    var b = arr[arr.length - 1];\n\n    a = +a;\n    b -= a;\n\n    return function (x) {\n      return Math.round(a + b * normalize(x));\n    };\n  };\n\n  return {\n    domain: domain,\n    range: range,\n    rangeRound: rangeRound\n  };\n};\n\n// const scaleLinear = require('d3-scale').scaleLinear\n\nmodule.exports = scaleLinear;\n\n//////////////////\n// WEBPACK FOOTER\n// ./src/libs/scaleLinear.js\n// module id = 4\n// module chunks = 0 1\n//# sourceURL=webpack:///./src/libs/scaleLinear.js?")},function(module,exports){eval("'use strict';\n\nmodule.exports = function (stock) {\n\tvar keys = ['low', 'high', 'open', 'close'];\n\n\tkeys.forEach(function (key) {\n\t\tstock[key] = Number(stock[key]);\n\t});\n\n\treturn stock;\n};\n\n//////////////////\n// WEBPACK FOOTER\n// ./src/libs/str2number.js\n// module id = 5\n// module chunks = 0 1\n//# sourceURL=webpack:///./src/libs/str2number.js?")},function(module,exports){eval('module.exports = window.Raphael;\n\n//////////////////\n// WEBPACK FOOTER\n// external "window.Raphael"\n// module id = 6\n// module chunks = 0 1\n//# sourceURL=webpack:///external_%22window.Raphael%22?')},function(module,exports,__webpack_require__){eval("'use strict';\n\nfunction _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }\n\nvar scaleLinear = __webpack_require__(4);\nvar $ = __webpack_require__(9);\nvar Raphel = __webpack_require__(6);\nvar str2number = __webpack_require__(5);\nvar UnitUtil = __webpack_require__(10);\n\nvar _require = __webpack_require__(1),\n    OUTTER_MARGIN = _require.OUTTER_MARGIN,\n    VOL_HEIGHT = _require.VOL_HEIGHT,\n    FONT_SIZE = _require.FONT_SIZE,\n    STROKE_COLOR = _require.STROKE_COLOR,\n    WIN_COLOR = _require.WIN_COLOR,\n    LOSS_COLOR = _require.LOSS_COLOR,\n    EQUAL_COLOR = _require.EQUAL_COLOR,\n    TEXT_MARGIN = _require.TEXT_MARGIN;\n\nvar px = __webpack_require__(3);\nvar createPathString = __webpack_require__(2);\n\nvar ChartPrototype = {\n\tdrawBasic: function drawBasic() {},\n\tdrawHelperLines: function drawHelperLines(yScale) {\n\t\t// K线横向辅助线\n\t\tfor (var i = 1; i < this.ticksY - 1; i++) {\n\t\t\tvar x1 = px(0);\n\t\t\tvar y1 = px(this.height - yScale(i));\n\t\t\tvar x2 = px(this.width);\n\t\t\tvar y2 = px(this.height - yScale(i));\n\n\t\t\t// console.log(x1, y1, x2, y2)\n\n\t\t\tvar pathString = createPathString({ x: x1, y: y1 }, { x: x2, y: y2 });\n\n\t\t\tthis.paper.path(pathString).attr({\n\t\t\t\tstroke: STROKE_COLOR\n\t\t\t});\n\t\t}\n\t},\n\tdrawCandles: function drawCandles(baseWidth) {\n\t\tvar _this = this;\n\n\t\tvar round = Math.round;\n\t\tvar candleData = this.candleData,\n\t\t    predictData = this.predictData,\n\t\t    low = this.low,\n\t\t    high = this.high;\n\n\t\tvar scaleY = scaleLinear().domain([low, high]).rangeRound([this.height, 0]);\n\t\tvar totalWidth = baseWidth - OUTTER_MARGIN * 2;\n\t\tvar count = candleData.length;\n\t\tvar candleWidth = 2 * totalWidth / (3 * count - 1);\n\t\tvar candleSpace = candleWidth / 2;\n\n\t\tif (candleSpace < 1) {\n\t\t\tcandleSpace = 0;\n\t\t\tcandleWidth = totalWidth / count;\n\t\t}\n\n\t\t// console.log('candleWidth, candleSpace', candleWidth, candleSpace)\n\t\tthis.closeYList = [];\n\t\tthis.shadowXList = [];\n\t\tthis.paper.setStart();\n\n\t\tcandleData.forEach(function (item, index) {\n\t\t\tvar open = item.open,\n\t\t\t    close = item.close,\n\t\t\t    low = item.low,\n\t\t\t    high = item.high;\n\n\t\t\tvar x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace));\n\t\t\tvar y1 = void 0,\n\t\t\t    y2 = void 0,\n\t\t\t    color = void 0,\n\t\t\t    height = void 0;\n\n\t\t\tif (open > close) {\n\t\t\t\ty1 = scaleY(open);\n\t\t\t\ty2 = scaleY(close);\n\n\t\t\t\tcolor = LOSS_COLOR;\n\t\t\t} else if (open < close) {\n\t\t\t\ty1 = scaleY(close);\n\t\t\t\ty2 = scaleY(open);\n\n\t\t\t\tcolor = WIN_COLOR;\n\t\t\t} else {\n\t\t\t\ty1 = y2 = scaleY(open);\n\t\t\t\tcolor = EQUAL_COLOR;\n\t\t\t}\n\n\t\t\theight = Math.abs(y1 - y2);\n\n\t\t\tif (height < 1) {\n\t\t\t\theight = 1;\n\t\t\t}\n\n\t\t\t// console.log('蜡烛块信息:', px(x), px(y1), candleWidth, height)\n\n\t\t\t_this.closeYList.push(y1);\n\n\t\t\t// 实体块\n\t\t\t_this.paper.rect(x, y1, candleWidth, height).attr({\n\t\t\t\t'fill': color,\n\t\t\t\t'stroke-width': 0\n\t\t\t});\n\n\t\t\t// 上下影线\n\t\t\tvar shadowX = px(x + round(candleWidth / 2));\n\t\t\tvar pathString = createPathString({\n\t\t\t\tx: shadowX,\n\t\t\t\ty: px(scaleY(high))\n\t\t\t}, {\n\t\t\t\tx: shadowX,\n\t\t\t\ty: px(scaleY(low))\n\t\t\t});\n\n\t\t\t_this.shadowXList.push(shadowX);\n\t\t\t_this.paper.path(pathString).attr('stroke', color);\n\t\t});\n\n\t\tthis.candleWidth = candleWidth;\n\t\tthis.candleSpace = candleSpace;\n\t\tthis.candleY = scaleY;\n\n\t\tthis.candleSet = this.paper.setFinish();\n\n\t\tthis.drawPolyline();\n\t\tthis.hidePolySet();\n\t},\n\tdrawVolumes: function drawVolumes() {\n\t\tvar _this2 = this;\n\n\t\tvar round = Math.round;\n\t\t// 量线，绘制量柱\n\t\tvar volX = 0;\n\t\tvar volY = this.height + FONT_SIZE + TEXT_MARGIN * 2; // 加文字高度\n\t\tvar volWidth = this.width;\n\t\tvar volHeight = VOL_HEIGHT;\n\t\tvar candleData = this.candleData;\n\t\tvar candleWidth = this.candleWidth,\n\t\t    candleSpace = this.candleSpace;\n\n\t\t// 量图边框\n\n\t\tthis.paper.rect(px(volX), px(volY), volWidth, volHeight - 1).attr('stroke', STROKE_COLOR);\n\n\t\tvar maxVol = candleData.reduce(function (prev, curr) {\n\t\t\treturn Math.max(curr.volume, prev);\n\t\t}, candleData[0].volume);\n\t\tvar minVol = candleData.reduce(function (prev, curr) {\n\t\t\treturn Math.min(curr.volume, prev);\n\t\t}, candleData[0].volume);\n\t\tvar volScale = scaleLinear().domain([minVol, maxVol]).rangeRound([0, volHeight]);\n\n\t\t// 量柱横向辅助线\n\t\tvar helperLineY = this.height + FONT_SIZE + TEXT_MARGIN * 2 + (volHeight >> 1);\n\t\tvar p1 = {\n\t\t\tx: px(0),\n\t\t\ty: px(helperLineY)\n\t\t};\n\t\tvar p2 = {\n\t\t\tx: px(this.width),\n\t\t\ty: px(helperLineY)\n\t\t};\n\t\tthis.paper.path(createPathString(p1, p2)).attr({\n\t\t\tstroke: STROKE_COLOR\n\t\t});\n\n\t\tvar arr = [minVol, (maxVol + minVol) / 2, maxVol];\n\t\tvar offsetY = this.height + TEXT_MARGIN * 2 + FONT_SIZE;\n\t\tvar paper = this.paper;\n\t\tfor (var i = 0; i < 3; i++) {\n\t\t\tvar txt = paper.text(0, 0, UnitUtil.million(arr[i])).attr('fill', '#999999');\n\t\t\tvar box = txt.getBBox();\n\t\t\tvar x = this.width + TEXT_MARGIN + box.width / 2;\n\t\t\tvar y = offsetY + volHeight - volHeight / 2 * i;\n\n\t\t\tif (i === 0) {\n\t\t\t\ty -= box.height / 2;\n\t\t\t} else if (i === 2) {\n\t\t\t\ty += box.height / 2;\n\t\t\t}\n\n\t\t\ttxt.attr({\n\t\t\t\tx: x,\n\t\t\t\ty: y\n\t\t\t});\n\t\t}\n\n\t\t// 量柱\n\t\tcandleData.forEach(function (item, index, arr) {\n\t\t\tvar x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace));\n\t\t\tvar h = volScale(item.volume);\n\t\t\tvar y = _this2.height + FONT_SIZE + TEXT_MARGIN * 2 + volHeight - h;\n\t\t\tvar open = item.open,\n\t\t\t    close = item.close;\n\n\t\t\tvar color = void 0;\n\n\t\t\tif (open > close) {\n\t\t\t\tcolor = LOSS_COLOR;\n\t\t\t} else if (open < close) {\n\t\t\t\tcolor = WIN_COLOR;\n\t\t\t} else {\n\t\t\t\tcolor = EQUAL_COLOR;\n\t\t\t}\n\n\t\t\t_this2.paper.rect(x, y, candleWidth, h).attr({\n\t\t\t\tfill: color,\n\t\t\t\t'stroke-width': 0\n\t\t\t});\n\t\t});\n\n\t\treturn true;\n\t},\n\tcreateTooltip: function createTooltip() {\n\t\tvar tooltip = $('<div>').css({\n\t\t\tposition: 'absolute',\n\t\t\ttop: 10\n\t\t});\n\n\t\tif (this.options.tooltip.className) {\n\t\t\ttooltip.addClass(this.options.tooltip.className);\n\t\t}\n\n\t\treturn tooltip;\n\t},\n\tgetTooltipHtml: function getTooltipHtml(data, index) {\n\t\tvar fn = this.options.tooltip.fn;\n\t\tvar html = '';\n\n\t\tif (fn) {\n\t\t\thtml = fn(data, index);\n\t\t}\n\n\t\treturn html;\n\t},\n\tcreateEventLayerNormal: function createEventLayerNormal() {\n\t\tvar _this3 = this;\n\n\t\tvar elem = $('<div>').css({\n\t\t\tposition: 'absolute',\n\t\t\tleft: 0,\n\t\t\ttop: 0,\n\t\t\twidth: this.chartWidth,\n\t\t\theight: this.chartHeight\n\t\t});\n\n\t\t$(this.container).css({\n\t\t\tposition: 'relative'\n\t\t}).append(elem);\n\n\t\tvar offset = elem.offset();\n\t\tvar paper = new Raphel(elem[0], this.chartWidth, this.chartHeight);\n\t\tvar scaleLeft;\n\t\tvar floatLine;\n\t\tvar tooltip;\n\n\t\tvar line = function line(x, y) {\n\t\t\tif (!floatLine) {\n\t\t\t\tfloatLine = paper.path(createPathString({\n\t\t\t\t\tx: px(x),\n\t\t\t\t\ty: px(0)\n\t\t\t\t}, {\n\t\t\t\t\tx: px(x),\n\t\t\t\t\ty: px(y)\n\t\t\t\t})).attr({\n\t\t\t\t\tstroke: STROKE_COLOR\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tfloatLine.attr({\n\t\t\t\tpath: createPathString({\n\t\t\t\t\tx: px(x),\n\t\t\t\t\ty: px(0)\n\t\t\t\t}, {\n\t\t\t\t\tx: px(x),\n\t\t\t\t\ty: px(y)\n\t\t\t\t}),\n\t\t\t\tstroke: STROKE_COLOR\n\t\t\t});\n\t\t};\n\n\t\telem.on('mouseenter', function (e) {\n\t\t\tif (scaleLeft === undefined) {\n\t\t\t\tscaleLeft = scaleLinear().domain([0, _this3.width]).rangeRound([0, _this3.shadowXList.length - 1]);\n\t\t\t}\n\n\t\t\tif (tooltip === undefined) {\n\t\t\t\ttooltip = _this3.createTooltip();\n\n\t\t\t\t_this3.eventLayer.append(tooltip);\n\t\t\t}\n\t\t});\n\n\t\telem.on('mousemove', function (e) {\n\t\t\tif (_this3.shadowXList === undefined) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\tvar x = e.pageX - offset.left;\n\t\t\tvar index = scaleLeft(x);\n\t\t\tvar x = _this3.shadowXList[index];\n\t\t\tvar item;\n\t\t\tvar top;\n\n\t\t\tif (x === undefined) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\tvar y = _this3.needVolume ? _this3.height + FONT_SIZE + VOL_HEIGHT : _this3.height;\n\t\t\tline(x, y);\n\n\t\t\titem = _this3.candleData[index];\n\t\t\ttop = _this3.closeYList[index];\n\n\t\t\tif (x >= _this3.width - tooltip.width()) {\n\t\t\t\ttooltip.css({\n\t\t\t\t\t'top': top,\n\t\t\t\t\t'left': '',\n\t\t\t\t\t'right': _this3.chartWidth - _this3.width + 5\n\t\t\t\t});\n\t\t\t} else {\n\t\t\t\ttooltip.css({\n\t\t\t\t\t'top': top,\n\t\t\t\t\t'left': x + 5,\n\t\t\t\t\t'right': ''\n\t\t\t\t});\n\t\t\t}\n\n\t\t\ttooltip.html(_this3.getTooltipHtml(item, index));\n\t\t});\n\n\t\telem.on('mouseleave', function (e) {\n\t\t\tscaleLeft = undefined;\n\t\t\tfloatLine = undefined;\n\t\t\tpaper.clear();\n\t\t\ttooltip.remove();\n\t\t\ttooltip = undefined;\n\t\t});\n\n\t\tthis.eventLayer = elem;\n\t},\n\tcreateEventLayer: function createEventLayer() {\n\t\tvar _this4 = this;\n\n\t\tvar layerWidth = this.chartWidth - this.yAxisTextWidth;\n\t\tvar elem = $('<div>').css({\n\t\t\tposition: 'absolute',\n\t\t\tleft: 0,\n\t\t\ttop: 0,\n\t\t\twidth: layerWidth,\n\t\t\theight: this.chartHeight\n\t\t});\n\n\t\t$(this.container).css({\n\t\t\tposition: 'relative'\n\t\t}).append(elem);\n\n\t\tvar offset = elem.offset();\n\t\tvar paper = new Raphel(elem[0], layerWidth, this.chartHeight);\n\t\tvar scaleLeft;\n\t\tvar scaleRight;\n\t\tvar floatLine;\n\t\tvar tooltip;\n\n\t\tvar line = function line(x, y) {\n\t\t\tif (!floatLine) {\n\t\t\t\tfloatLine = paper.path(createPathString({\n\t\t\t\t\tx: px(x),\n\t\t\t\t\ty: px(0)\n\t\t\t\t}, {\n\t\t\t\t\tx: px(x),\n\t\t\t\t\ty: px(y)\n\t\t\t\t})).attr({\n\t\t\t\t\tstroke: STROKE_COLOR\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tfloatLine.attr({\n\t\t\t\tpath: createPathString({\n\t\t\t\t\tx: px(x),\n\t\t\t\t\ty: px(0)\n\t\t\t\t}, {\n\t\t\t\t\tx: px(x),\n\t\t\t\t\ty: px(y)\n\t\t\t\t}),\n\t\t\t\tstroke: '#aeaeae'\n\t\t\t});\n\t\t};\n\n\t\telem.on('mouseenter', function (e) {\n\t\t\tif (scaleLeft === undefined) {\n\t\t\t\tscaleLeft = scaleLinear().domain([0, _this4.offset]).rangeRound([0, _this4.shadowXList.length - 1]);\n\n\t\t\t\tif (_this4.predictXList) {\n\t\t\t\t\tscaleRight = scaleLinear().domain([_this4.offset, _this4.width]).rangeRound([0, _this4.predictXList.length - 1]);\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif (tooltip === undefined) {\n\t\t\t\ttooltip = _this4.createTooltip();\n\n\t\t\t\t_this4.eventLayer.append(tooltip);\n\t\t\t}\n\t\t}).on('mousemove', function (e) {\n\t\t\tif (_this4.shadowXList === undefined) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\tvar x = e.pageX - offset.left;\n\t\t\tvar item;\n\t\t\tvar top;\n\n\t\t\tif (x < _this4.offset) {\n\t\t\t\tvar index = scaleLeft(x);\n\t\t\t\tvar x = _this4.shadowXList[index];\n\n\t\t\t\tif (x === undefined) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\tline(x, _this4.needVolume ? _this4.chartHeight : _this4.height);\n\n\t\t\t\titem = _this4.candleData[index];\n\t\t\t\ttop = _this4.closeYList[index];\n\n\t\t\t\ttooltip.html(_this4.getTooltipHtml(item, 'normal'));\n\t\t\t} else {\n\t\t\t\tif (_this4.predictXList === undefined) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\tvar index = scaleRight(x);\n\n\t\t\t\tif (index === 0) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\tif (index >= _this4.predictXList.length) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\tvar x = _this4.predictXList[index];\n\n\t\t\t\tline(x, _this4.needVolume ? _this4.chartHeight : _this4.height);\n\t\t\t\titem = _this4.predictData[index];\n\t\t\t\ttop = _this4.predictCloseYList[index];\n\n\t\t\t\ttooltip.html(_this4.getTooltipHtml(item, 'predict'));\n\t\t\t}\n\n\t\t\t// console.log(x, this.width, tooltip.width())\n\n\t\t\tif (x >= _this4.width - tooltip.width()) {\n\t\t\t\ttooltip.css({\n\t\t\t\t\t'top': top,\n\t\t\t\t\t'left': '',\n\t\t\t\t\t'right': layerWidth - _this4.width + 5\n\t\t\t\t});\n\t\t\t} else {\n\t\t\t\ttooltip.css({\n\t\t\t\t\t'top': top,\n\t\t\t\t\t'left': x + 5,\n\t\t\t\t\t'right': ''\n\t\t\t\t});\n\t\t\t}\n\t\t}).on('mouseleave', function (e) {\n\t\t\tscaleLeft = undefined;\n\t\t\tscaleRight = undefined;\n\t\t\tfloatLine = undefined;\n\t\t\tpaper.clear();\n\t\t\ttooltip.remove();\n\t\t\ttooltip = undefined;\n\t\t});\n\n\t\tthis.eventLayer = elem;\n\t},\n\n\thideCandleSet: function hideCandleSet() {\n\t\tif (this.candleSet) {\n\t\t\tthis.candleSet.hide();\n\t\t}\n\t},\n\n\tshowCandleSet: function showCandleSet() {\n\t\tthis.candleSet.show();\n\t},\n\n\thidePolySet: function hidePolySet() {\n\t\tif (this.polySet) {\n\t\t\tthis.polySet.hide();\n\t\t}\n\t},\n\n\tshowPolySet: function showPolySet() {\n\t\tthis.polySet.show();\n\t},\n\t// 收盘价折线\n\tdrawPolyline: function drawPolyline() {\n\t\tvar _this5 = this;\n\n\t\tthis.paper.setStart();\n\n\t\tvar points = this.candleData.map(function (item, i, arr) {\n\t\t\tvar x = _this5.shadowXList[i];\n\t\t\tvar y = _this5.candleY(_this5.candleData[i].close);\n\n\t\t\tif (i === 0) {\n\t\t\t\tx = 0;\n\t\t\t} else if (i === arr.length - 1) {\n\t\t\t\tx = _this5.offset;\n\t\t\t}\n\n\t\t\treturn {\n\t\t\t\tx: px(x),\n\t\t\t\ty: px(y)\n\t\t\t};\n\t\t});\n\n\t\tthis.paper.path(createPathString.apply(undefined, _toConsumableArray(points))).attr({\n\t\t\tstroke: '#297cda',\n\t\t\t'stroke-width': 2\n\t\t});\n\n\t\tthis.polySet = this.paper.setFinish();\n\t},\n\tclear: function clear() {\n\t\tthis.candleSet && this.candleSet.clear();\n\t\tthis.polySet && this.polySet.clear();\n\n\t\tif (this.eventLayer) {\n\t\t\tthis.eventLayer.off().remove();\n\t\t}\n\t\tthis.paper.clear();\n\t},\n\tupdate: function update(_ref) {\n\t\tvar candleData = _ref.candleData,\n\t\t    predictData = _ref.predictData,\n\t\t    cycle = _ref.cycle;\n\n\t\tthis.clear();\n\n\t\tif (candleData !== undefined) {\n\t\t\tthis.candleData = candleData.map(str2number);\n\t\t}\n\n\t\tif (predictData !== undefined) {\n\t\t\tthis.predictData = predictData.map(str2number);\n\t\t}\n\n\t\tif (cycle !== undefined) {\n\t\t\tthis.cycle = cycle;\n\t\t}\n\n\t\tthis.draw();\n\t}\n};\n\nmodule.exports = ChartPrototype;\n\n//////////////////\n// WEBPACK FOOTER\n// ./src/libs/ChartPrototype.js\n// module id = 7\n// module chunks = 0 1\n//# sourceURL=webpack:///./src/libs/ChartPrototype.js?")},function(module,exports){eval("'use strict';\n/* eslint-disable no-unused-vars */\nvar hasOwnProperty = Object.prototype.hasOwnProperty;\nvar propIsEnumerable = Object.prototype.propertyIsEnumerable;\n\nfunction toObject(val) {\n\tif (val === null || val === undefined) {\n\t\tthrow new TypeError('Object.assign cannot be called with null or undefined');\n\t}\n\n\treturn Object(val);\n}\n\nfunction shouldUseNative() {\n\ttry {\n\t\tif (!Object.assign) {\n\t\t\treturn false;\n\t\t}\n\n\t\t// Detect buggy property enumeration order in older V8 versions.\n\n\t\t// https://bugs.chromium.org/p/v8/issues/detail?id=4118\n\t\tvar test1 = new String('abc');  // eslint-disable-line\n\t\ttest1[5] = 'de';\n\t\tif (Object.getOwnPropertyNames(test1)[0] === '5') {\n\t\t\treturn false;\n\t\t}\n\n\t\t// https://bugs.chromium.org/p/v8/issues/detail?id=3056\n\t\tvar test2 = {};\n\t\tfor (var i = 0; i < 10; i++) {\n\t\t\ttest2['_' + String.fromCharCode(i)] = i;\n\t\t}\n\t\tvar order2 = Object.getOwnPropertyNames(test2).map(function (n) {\n\t\t\treturn test2[n];\n\t\t});\n\t\tif (order2.join('') !== '0123456789') {\n\t\t\treturn false;\n\t\t}\n\n\t\t// https://bugs.chromium.org/p/v8/issues/detail?id=3056\n\t\tvar test3 = {};\n\t\t'abcdefghijklmnopqrst'.split('').forEach(function (letter) {\n\t\t\ttest3[letter] = letter;\n\t\t});\n\t\tif (Object.keys(Object.assign({}, test3)).join('') !==\n\t\t\t\t'abcdefghijklmnopqrst') {\n\t\t\treturn false;\n\t\t}\n\n\t\treturn true;\n\t} catch (e) {\n\t\t// We don't expect any of the above to throw, but better to be safe.\n\t\treturn false;\n\t}\n}\n\nmodule.exports = shouldUseNative() ? Object.assign : function (target, source) {\n\tvar from;\n\tvar to = toObject(target);\n\tvar symbols;\n\n\tfor (var s = 1; s < arguments.length; s++) {\n\t\tfrom = Object(arguments[s]);\n\n\t\tfor (var key in from) {\n\t\t\tif (hasOwnProperty.call(from, key)) {\n\t\t\t\tto[key] = from[key];\n\t\t\t}\n\t\t}\n\n\t\tif (Object.getOwnPropertySymbols) {\n\t\t\tsymbols = Object.getOwnPropertySymbols(from);\n\t\t\tfor (var i = 0; i < symbols.length; i++) {\n\t\t\t\tif (propIsEnumerable.call(from, symbols[i])) {\n\t\t\t\t\tto[symbols[i]] = from[symbols[i]];\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\treturn to;\n};\n\n\n//////////////////\n// WEBPACK FOOTER\n// ./~/object-assign/index.js\n// module id = 8\n// module chunks = 0 1\n//# sourceURL=webpack:///./~/object-assign/index.js?")},function(module,exports){eval('module.exports = window.$;\n\n//////////////////\n// WEBPACK FOOTER\n// external "window.$"\n// module id = 9\n// module chunks = 0 1\n//# sourceURL=webpack:///external_%22window.$%22?')},function(module,exports){eval("'use strict';\n\nvar _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i[\"return\"]) _i[\"return\"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError(\"Invalid attempt to destructure non-iterable instance\"); } }; }();\n\n/**\r\n * Created by shinan on 2016/12/6.\r\n */\n\nvar UnitUtil = {\n  millionBillion: function millionBillion(n) {\n    var a = [[1e4, '万'], [1e8, '亿']];\n\n    for (var i = a.length - 1; i >= 0; i--) {\n      var _a$i = _slicedToArray(a[i], 2),\n          size = _a$i[0],\n          unit = _a$i[1];\n\n      if (n > size) {\n        var ret = (n / size).toFixed(2);\n\n        if (i == 0) {\n          ret = parseInt(ret);\n        }\n\n        return ret + unit;\n      }\n    }\n\n    return n;\n  },\n  million: function million(n) {\n    var ret = parseInt(n / 1e4);\n\n    return ret + '\\u4E07';\n  }\n};\n\nmodule.exports = UnitUtil;\n\n//////////////////\n// WEBPACK FOOTER\n// ./src/libs/UnitUtil.js\n// module id = 10\n// module chunks = 0 1\n//# sourceURL=webpack:///./src/libs/UnitUtil.js?")}]);
+var ChartWithVolume =
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId])
+/******/ 			return installedModules[moduleId].exports;
+
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			exports: {},
+/******/ 			id: moduleId,
+/******/ 			loaded: false
+/******/ 		};
+
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+
+/******/ 		// Flag the module as loaded
+/******/ 		module.loaded = true;
+
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+
+
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(0);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var str2number = __webpack_require__(1);
+	var scaleLinear = __webpack_require__(2);
+	var Raphel = __webpack_require__(3);
+	var objectAssign = __webpack_require__(4);
+
+	var _require = __webpack_require__(5),
+	    OUTTER_MARGIN = _require.OUTTER_MARGIN,
+	    VOL_HEIGHT = _require.VOL_HEIGHT,
+	    BOTTOM_TEXT_HEIGHT = _require.BOTTOM_TEXT_HEIGHT,
+	    PIXEL_FIX = _require.PIXEL_FIX,
+	    STROKE_COLOR = _require.STROKE_COLOR,
+	    FONT_SIZE = _require.FONT_SIZE,
+	    TEXT_COLOR = _require.TEXT_COLOR,
+	    TEXT_MARGIN = _require.TEXT_MARGIN;
+
+	var px = __webpack_require__(6);
+	var createPathString = __webpack_require__(7);
+	var ChartPrototype = __webpack_require__(8);
+
+	var ChartWithVolume = function ChartWithVolume(container, _ref) {
+		var chartWidth = _ref.chartWidth,
+		    chartHeight = _ref.chartHeight,
+		    candleData = _ref.candleData,
+		    needVolume = _ref.needVolume,
+		    ticksY = _ref.ticksY,
+		    cycle = _ref.cycle,
+		    tooltip = _ref.tooltip;
+
+		this.container = container;
+		this.paper = new Raphel(container, chartWidth, chartHeight);
+		this.chartWidth = chartWidth;
+		this.chartHeight = chartHeight;
+
+		this.candleData = candleData.map(str2number);
+		this.needVolume = needVolume || false;
+		this.ticksY = ticksY || 4;
+		this.cycle = cycle;
+
+		this.options = {
+			tooltip: tooltip
+		};
+	};
+
+	ChartWithVolume.prototype = {
+		draw: function draw() {
+			var _this = this;
+
+			var volHeight = this.needVolume ? VOL_HEIGHT : 0;
+			var candleData = this.candleData;
+
+
+			var low = candleData.reduce(function (prev, curr) {
+				if (curr.low < prev) {
+					return curr.low;
+				}
+
+				return prev;
+			}, candleData[0].low);
+
+			var high = candleData.reduce(function (prev, curr) {
+				if (curr.high > prev) {
+					return curr.high;
+				}
+
+				return prev;
+			}, candleData[0].high);
+
+			this.low = low;
+			this.high = high;
+
+			// 总宽度减y轴文字宽度
+			// this.width = this.chartWidth - 40
+			this.width = this.chartWidth;
+			this.height = this.chartHeight - volHeight - FONT_SIZE - TEXT_MARGIN * 2;
+			// 总高度减量柱高度减x轴文字高度减底部标注高度
+			// this.height = this.chartHeight - volHeight - FONT_SIZE - TEXT_MARGIN * 2 - BOTTOM_TEXT_HEIGHT
+
+			this.paper.rect(0, 0, this.width, this.height).attr({
+				stroke: STROKE_COLOR
+			});
+
+			var total = candleData.length;
+
+			var predictPercent = (total - this.cycle) / total;
+
+			console.log('predictPercent:', predictPercent);
+
+			predictPercent = predictPercent.toFixed(2);
+
+			// var predictPercent = 0.7
+
+			// 预测部分图形的偏移量
+			this.offset = this.width * predictPercent;
+			var yScale = scaleLinear().domain([0, this.ticksY - 1]).rangeRound([0, this.height]);
+
+			// 预测部分半透明虚框
+			var pathString = createPathString({
+				x: this.offset,
+				y: 0
+			}, {
+				x: this.width,
+				y: 0
+			}, {
+				x: this.width,
+				y: this.height + volHeight + FONT_SIZE + TEXT_MARGIN * 2
+			}, {
+				x: this.offset,
+				y: this.height + volHeight + FONT_SIZE + TEXT_MARGIN * 2
+			}, {
+				x: this.offset,
+				y: 0
+			});
+
+			this.paper.path(pathString).attr({
+				'fill': '#e7f2fc',
+				'stroke-width': 1,
+				'fill-opacity': 0.5,
+				'stroke': '#79c0ff'
+			});
+
+			// x轴信息
+			var dates = [candleData[0].time, candleData[candleData.length - this.cycle].time];
+
+			dates.forEach(function (item, index, arr) {
+				var elem = _this.paper.text(0, 0, item).attr('fill', '#999');
+				var box = elem.getBBox();
+				var width = box.width,
+				    height = box.height;
+
+
+				var x;
+				var y = _this.height + height / 2 + TEXT_MARGIN;
+
+				if (index === 0) {
+					x = 0 + width / 2;
+				} else if (index === 1) {
+					x = _this.offset - width / 2;
+				} else {
+					x = _this.width - width / 2;
+				}
+
+				elem.attr({
+					x: x,
+					y: y
+				});
+			});
+
+			// K线横向辅助线
+			// this.drawHelperLines(yScale)
+			this.drawCandles(this.width);
+
+			// 绘制量柱
+			if (this.needVolume) {
+				this.drawVolumes();
+			}
+
+			// this.drawCycleBlock()
+			// 事件
+			if (this.options.tooltip) {
+				this.createEventLayerNormal();
+			}
+		},
+		drawCycleBlock: function drawCycleBlock() {
+			console.log('drawCycleBlock fire');
+			// 后续走势标注
+			this.paper.path(createPathString({
+				x: this.offset,
+				y: this.chartHeight - BOTTOM_TEXT_HEIGHT
+			}, {
+				x: this.offset,
+				y: this.chartHeight
+			})).attr({
+				stroke: TEXT_COLOR
+			});
+
+			this.paper.path(createPathString({
+				x: this.width,
+				y: this.chartHeight - BOTTOM_TEXT_HEIGHT
+			}, {
+				x: this.width,
+				y: this.chartHeight
+			})).attr({
+				stroke: TEXT_COLOR
+			});
+
+			// 后续走势
+			var txt = this.paper.text(this.offset, this.chartHeight - BOTTOM_TEXT_HEIGHT, '后续走势').attr('fill', '#0287fe');
+
+			var box = txt.getBBox();
+			var width = box.width,
+			    height = box.height;
+
+			var x = (this.width - this.offset) / 2 + this.offset;
+			var y = this.chartHeight - BOTTOM_TEXT_HEIGHT + height / 2 + (BOTTOM_TEXT_HEIGHT - height) / 2;
+
+			txt.attr({
+				x: x,
+				y: y
+			});
+
+			// |-
+			this.paper.path(createPathString({
+				x: this.offset,
+				y: this.chartHeight - BOTTOM_TEXT_HEIGHT / 2
+			}, {
+				x: x - width / 2,
+				y: this.chartHeight - BOTTOM_TEXT_HEIGHT / 2
+			})).attr({
+				stroke: '#0287fe'
+			});
+
+			// -|
+			this.paper.path(createPathString({
+				x: this.width,
+				y: this.chartHeight - BOTTOM_TEXT_HEIGHT / 2
+			}, {
+				x: x + width / 2,
+				y: this.chartHeight - BOTTOM_TEXT_HEIGHT / 2
+			})).attr({
+				stroke: '#0287fe'
+			});
+		}
+	};
+
+	objectAssign(ChartWithVolume.prototype, ChartPrototype);
+
+	module.exports = ChartWithVolume;
+
+/***/ },
+/* 1 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	module.exports = function (stock) {
+		var keys = ['low', 'high', 'open', 'close'];
+
+		keys.forEach(function (key) {
+			stock[key] = Number(stock[key]);
+		});
+
+		return stock;
+	};
+
+/***/ },
+/* 2 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	var scaleLinear = function scaleLinear() {
+	  var min, max;
+
+	  var normalize = function normalize(x) {
+	    return (x - min) / (max - min);
+	  };
+
+	  var domain = function domain(arr) {
+	    min = arr[0];
+	    max = arr[arr.length - 1];
+
+	    return this;
+	  };
+
+	  var range = function range(arr) {
+	    var a = arr[0];
+	    var b = arr[arr.length - 1];
+
+	    a = +a;
+	    b -= a;
+
+	    return function (x) {
+	      return a + b * normalize(x);
+	    };
+	  };
+
+	  var rangeRound = function rangeRound(arr) {
+	    var a = arr[0];
+	    var b = arr[arr.length - 1];
+
+	    a = +a;
+	    b -= a;
+
+	    return function (x) {
+	      return Math.round(a + b * normalize(x));
+	    };
+	  };
+
+	  return {
+	    domain: domain,
+	    range: range,
+	    rangeRound: rangeRound
+	  };
+	};
+
+	// const scaleLinear = require('d3-scale').scaleLinear
+
+	module.exports = scaleLinear;
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	module.exports = window.Raphael;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	'use strict';
+	/* eslint-disable no-unused-vars */
+	var hasOwnProperty = Object.prototype.hasOwnProperty;
+	var propIsEnumerable = Object.prototype.propertyIsEnumerable;
+
+	function toObject(val) {
+		if (val === null || val === undefined) {
+			throw new TypeError('Object.assign cannot be called with null or undefined');
+		}
+
+		return Object(val);
+	}
+
+	function shouldUseNative() {
+		try {
+			if (!Object.assign) {
+				return false;
+			}
+
+			// Detect buggy property enumeration order in older V8 versions.
+
+			// https://bugs.chromium.org/p/v8/issues/detail?id=4118
+			var test1 = new String('abc');  // eslint-disable-line
+			test1[5] = 'de';
+			if (Object.getOwnPropertyNames(test1)[0] === '5') {
+				return false;
+			}
+
+			// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+			var test2 = {};
+			for (var i = 0; i < 10; i++) {
+				test2['_' + String.fromCharCode(i)] = i;
+			}
+			var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
+				return test2[n];
+			});
+			if (order2.join('') !== '0123456789') {
+				return false;
+			}
+
+			// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+			var test3 = {};
+			'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
+				test3[letter] = letter;
+			});
+			if (Object.keys(Object.assign({}, test3)).join('') !==
+					'abcdefghijklmnopqrst') {
+				return false;
+			}
+
+			return true;
+		} catch (e) {
+			// We don't expect any of the above to throw, but better to be safe.
+			return false;
+		}
+	}
+
+	module.exports = shouldUseNative() ? Object.assign : function (target, source) {
+		var from;
+		var to = toObject(target);
+		var symbols;
+
+		for (var s = 1; s < arguments.length; s++) {
+			from = Object(arguments[s]);
+
+			for (var key in from) {
+				if (hasOwnProperty.call(from, key)) {
+					to[key] = from[key];
+				}
+			}
+
+			if (Object.getOwnPropertySymbols) {
+				symbols = Object.getOwnPropertySymbols(from);
+				for (var i = 0; i < symbols.length; i++) {
+					if (propIsEnumerable.call(from, symbols[i])) {
+						to[symbols[i]] = from[symbols[i]];
+					}
+				}
+			}
+		}
+
+		return to;
+	};
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var MARGIN_TABLE = {
+		10: 4,
+		20: 3,
+		40: 1,
+		60: 1
+	};
+
+	var PIXEL_FIX = 0.5;
+	var OUTTER_MARGIN = 2;
+	var VOL_HEIGHT = 66;
+	var FONT_SIZE = 12;
+	var WIN_COLOR = '#e63232';
+	var LOSS_COLOR = '#55a500';
+	var EQUAL_COLOR = '#999999';
+	var STROKE_COLOR = '#d8d8d8';
+	var DASH_COLOR = '#999999';
+	var BOTTOM_TEXT_HEIGHT = 20;
+	var TEXT_COLOR = '#0287fe';
+	var TEXT_MARGIN = 10;
+
+	module.exports = {
+		MARGIN_TABLE: MARGIN_TABLE,
+		OUTTER_MARGIN: OUTTER_MARGIN,
+		VOL_HEIGHT: VOL_HEIGHT,
+		FONT_SIZE: FONT_SIZE,
+		PIXEL_FIX: PIXEL_FIX,
+		WIN_COLOR: WIN_COLOR,
+		LOSS_COLOR: LOSS_COLOR,
+		STROKE_COLOR: STROKE_COLOR,
+		DASH_COLOR: DASH_COLOR,
+		BOTTOM_TEXT_HEIGHT: BOTTOM_TEXT_HEIGHT,
+		TEXT_COLOR: TEXT_COLOR,
+		TEXT_MARGIN: TEXT_MARGIN,
+		EQUAL_COLOR: EQUAL_COLOR
+	};
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	var pixelFix = 0.5;
+
+	var px = function px(value) {
+		value = Math.floor(value);
+		return value + pixelFix;
+	};
+
+	module.exports = px;
+
+/***/ },
+/* 7 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	var createPathString = function createPathString() {
+		for (var _len = arguments.length, points = Array(_len), _key = 0; _key < _len; _key++) {
+			points[_key] = arguments[_key];
+		}
+
+		var pathString = "M" + points[0].x + "," + points[0].y;
+
+		for (var i = 1; i < points.length; i++) {
+			pathString += "L" + points[i].x + "," + points[i].y;
+		}
+
+		return pathString;
+	};
+
+	module.exports = createPathString;
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+	var scaleLinear = __webpack_require__(2);
+	var $ = __webpack_require__(9);
+	var Raphel = __webpack_require__(3);
+	var str2number = __webpack_require__(1);
+	var UnitUtil = __webpack_require__(10);
+
+	var _require = __webpack_require__(5),
+	    OUTTER_MARGIN = _require.OUTTER_MARGIN,
+	    VOL_HEIGHT = _require.VOL_HEIGHT,
+	    FONT_SIZE = _require.FONT_SIZE,
+	    STROKE_COLOR = _require.STROKE_COLOR,
+	    WIN_COLOR = _require.WIN_COLOR,
+	    LOSS_COLOR = _require.LOSS_COLOR,
+	    EQUAL_COLOR = _require.EQUAL_COLOR,
+	    TEXT_MARGIN = _require.TEXT_MARGIN;
+
+	var px = __webpack_require__(6);
+	var createPathString = __webpack_require__(7);
+
+	var ChartPrototype = {
+		drawBasic: function drawBasic() {},
+		drawHelperLines: function drawHelperLines(yScale) {
+			// K线横向辅助线
+			for (var i = 1; i < this.ticksY - 1; i++) {
+				var x1 = px(0);
+				var y1 = px(this.height - yScale(i));
+				var x2 = px(this.width);
+				var y2 = px(this.height - yScale(i));
+
+				// console.log(x1, y1, x2, y2)
+
+				var pathString = createPathString({ x: x1, y: y1 }, { x: x2, y: y2 });
+
+				this.paper.path(pathString).attr({
+					stroke: STROKE_COLOR
+				});
+			}
+		},
+		drawCandles: function drawCandles(baseWidth) {
+			var _this = this;
+
+			var round = Math.round;
+			var candleData = this.candleData,
+			    predictData = this.predictData,
+			    low = this.low,
+			    high = this.high;
+
+			var scaleY = scaleLinear().domain([low, high]).rangeRound([this.height, 0]);
+			var totalWidth = baseWidth - OUTTER_MARGIN * 2;
+			var count = candleData.length;
+			var candleWidth = 2 * totalWidth / (3 * count - 1);
+			var candleSpace = candleWidth / 2;
+
+			if (candleSpace < 1) {
+				candleSpace = 0;
+				candleWidth = totalWidth / count;
+			}
+
+			this.closeYList = [];
+			this.shadowXList = [];
+			this.paper.setStart();
+
+			candleData.forEach(function (item, index) {
+				var open = item.open,
+				    close = item.close,
+				    low = item.low,
+				    high = item.high;
+
+				var x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace));
+				var y1 = void 0,
+				    y2 = void 0,
+				    color = void 0,
+				    height = void 0;
+
+				if (open > close) {
+					y1 = scaleY(open);
+					y2 = scaleY(close);
+
+					color = LOSS_COLOR;
+				} else if (open < close) {
+					y1 = scaleY(close);
+					y2 = scaleY(open);
+
+					color = WIN_COLOR;
+				} else {
+					y1 = y2 = scaleY(open);
+					color = EQUAL_COLOR;
+				}
+
+				height = Math.abs(y1 - y2);
+
+				if (height < 1) {
+					height = 1;
+				}
+
+				// console.log('蜡烛块信息:', px(x), px(y1), candleWidth, height)
+
+				_this.closeYList.push(y1);
+
+				// 实体块
+				if (candleWidth >= 3) {
+					_this.paper.rect(x, y1, candleWidth, height).attr({
+						'fill': color,
+						'stroke-width': 0
+					});
+				}
+
+				// 上下影线
+				var shadowX = px(x + round(candleWidth / 2));
+				var pathString = createPathString({
+					x: shadowX,
+					y: px(scaleY(high))
+				}, {
+					x: shadowX,
+					y: px(scaleY(low))
+				});
+
+				_this.shadowXList.push(shadowX);
+				_this.paper.path(pathString).attr('stroke', color);
+			});
+
+			this.candleWidth = candleWidth;
+			this.candleSpace = candleSpace;
+			this.candleY = scaleY;
+			this.candleSet = this.paper.setFinish();
+
+			this.drawPolyline();
+			this.hidePolySet();
+		},
+		drawVolumes: function drawVolumes() {
+			var _this2 = this;
+
+			var round = Math.round;
+			// 量线，绘制量柱
+			var volX = 0;
+			var volY = this.height + FONT_SIZE + TEXT_MARGIN * 2; // 加文字高度
+			var volWidth = this.width;
+			var volHeight = VOL_HEIGHT;
+			var candleData = this.candleData;
+			var candleWidth = this.candleWidth,
+			    candleSpace = this.candleSpace;
+
+			// 量图边框
+
+			this.paper.rect(px(volX), px(volY), volWidth, volHeight - 1).attr('stroke', STROKE_COLOR);
+
+			var maxVol = candleData.reduce(function (prev, curr) {
+				return Math.max(curr.volume, prev);
+			}, candleData[0].volume);
+			var minVol = candleData.reduce(function (prev, curr) {
+				return Math.min(curr.volume, prev);
+			}, candleData[0].volume);
+			var volScale = scaleLinear().domain([minVol, maxVol]).rangeRound([0, volHeight]);
+
+			// 量柱横向辅助线
+			var helperLineY = this.height + FONT_SIZE + TEXT_MARGIN * 2 + (volHeight >> 1);
+			var p1 = {
+				x: px(0),
+				y: px(helperLineY)
+			};
+			var p2 = {
+				x: px(this.width),
+				y: px(helperLineY)
+			};
+			this.paper.path(createPathString(p1, p2)).attr({
+				stroke: STROKE_COLOR
+			});
+
+			var arr = [minVol, (maxVol + minVol) / 2, maxVol];
+			var offsetY = this.height + TEXT_MARGIN * 2 + FONT_SIZE;
+			var paper = this.paper;
+			for (var i = 0; i < 3; i++) {
+				var txt = paper.text(0, 0, UnitUtil.million(arr[i])).attr('fill', '#999999');
+				var box = txt.getBBox();
+				var x = this.width + TEXT_MARGIN + box.width / 2;
+				var y = offsetY + volHeight - volHeight / 2 * i;
+
+				if (i === 0) {
+					y -= box.height / 2;
+				} else if (i === 2) {
+					y += box.height / 2;
+				}
+
+				txt.attr({
+					x: x,
+					y: y
+				});
+			}
+
+			// 量柱
+			candleData.forEach(function (item, index, arr) {
+				var x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace));
+				var h = volScale(item.volume);
+				var y = _this2.height + FONT_SIZE + TEXT_MARGIN * 2 + volHeight - h;
+				var open = item.open,
+				    close = item.close;
+
+				var color = void 0;
+
+				if (open > close) {
+					color = LOSS_COLOR;
+				} else if (open < close) {
+					color = WIN_COLOR;
+				} else {
+					color = EQUAL_COLOR;
+				}
+
+				_this2.paper.rect(x, y, candleWidth, h).attr({
+					fill: color,
+					'stroke-width': 0
+				});
+			});
+
+			return true;
+		},
+		createTooltip: function createTooltip() {
+			var tooltip = $('<div>').css({
+				position: 'absolute',
+				top: 10
+			});
+
+			if (this.options.tooltip.className) {
+				tooltip.addClass(this.options.tooltip.className);
+			}
+
+			return tooltip;
+		},
+		getTooltipHtml: function getTooltipHtml(data, index) {
+			var fn = this.options.tooltip.fn;
+			var html = '';
+
+			if (fn) {
+				html = fn(data, index);
+			}
+
+			return html;
+		},
+		createEventLayerNormal: function createEventLayerNormal() {
+			var _this3 = this;
+
+			var elem = $('<div>').css({
+				position: 'absolute',
+				left: 0,
+				top: 0,
+				width: this.chartWidth,
+				height: this.chartHeight
+			});
+
+			$(this.container).css({
+				position: 'relative'
+			}).append(elem);
+
+			var offset = elem.offset();
+			var paper = new Raphel(elem[0], this.chartWidth, this.chartHeight);
+			var scaleLeft;
+			var floatLine;
+			var tooltip;
+
+			var line = function line(x, y) {
+				if (!floatLine) {
+					floatLine = paper.path(createPathString({
+						x: px(x),
+						y: px(0)
+					}, {
+						x: px(x),
+						y: px(y)
+					})).attr({
+						stroke: STROKE_COLOR
+					});
+				}
+
+				floatLine.attr({
+					path: createPathString({
+						x: px(x),
+						y: px(0)
+					}, {
+						x: px(x),
+						y: px(y)
+					}),
+					stroke: STROKE_COLOR
+				});
+			};
+
+			elem.on('mouseenter', function (e) {
+				if (scaleLeft === undefined) {
+					scaleLeft = scaleLinear().domain([0, _this3.width]).rangeRound([0, _this3.shadowXList.length - 1]);
+				}
+
+				if (tooltip === undefined) {
+					tooltip = _this3.createTooltip();
+
+					_this3.eventLayer.append(tooltip);
+				}
+			});
+
+			elem.on('mousemove', function (e) {
+				if (_this3.shadowXList === undefined) {
+					return;
+				}
+
+				var x = e.pageX - offset.left;
+				var index = scaleLeft(x);
+				var x = _this3.shadowXList[index];
+				var item;
+				var top;
+
+				if (x === undefined) {
+					return;
+				}
+
+				var y = _this3.needVolume ? _this3.height + FONT_SIZE + VOL_HEIGHT : _this3.height;
+				line(x, y);
+
+				item = _this3.candleData[index];
+				top = _this3.closeYList[index];
+
+				if (x >= _this3.width - tooltip.width()) {
+					tooltip.css({
+						'top': top,
+						'left': '',
+						'right': _this3.chartWidth - _this3.width + 5
+					});
+				} else {
+					tooltip.css({
+						'top': top,
+						'left': x + 5,
+						'right': ''
+					});
+				}
+
+				tooltip.html(_this3.getTooltipHtml(item, index));
+			});
+
+			elem.on('mouseleave', function (e) {
+				scaleLeft = undefined;
+				floatLine = undefined;
+				paper.clear();
+				tooltip.remove();
+				tooltip = undefined;
+			});
+
+			this.eventLayer = elem;
+		},
+		createEventLayer: function createEventLayer() {
+			var _this4 = this;
+
+			var layerWidth = this.chartWidth - this.yAxisTextWidth;
+			var elem = $('<div>').css({
+				position: 'absolute',
+				left: 0,
+				top: 0,
+				width: layerWidth,
+				height: this.chartHeight
+			});
+
+			$(this.container).css({
+				position: 'relative'
+			}).append(elem);
+
+			var offset = elem.offset();
+			var paper = new Raphel(elem[0], layerWidth, this.chartHeight);
+			var scaleLeft;
+			var scaleRight;
+			var floatLine;
+			var tooltip;
+
+			$(window).on('resize', function (e) {
+				offset = elem.offset();
+			});
+
+			var line = function line(x, y) {
+				if (!floatLine) {
+					floatLine = paper.path(createPathString({
+						x: px(x),
+						y: px(0)
+					}, {
+						x: px(x),
+						y: px(y)
+					})).attr({
+						stroke: STROKE_COLOR
+					});
+				}
+
+				floatLine.attr({
+					path: createPathString({
+						x: px(x),
+						y: px(0)
+					}, {
+						x: px(x),
+						y: px(y)
+					}),
+					stroke: '#aeaeae'
+				});
+			};
+
+			elem.on('mouseenter', function (e) {
+				if (scaleLeft === undefined) {
+					scaleLeft = scaleLinear().domain([0, _this4.offset]).rangeRound([0, _this4.shadowXList.length - 1]);
+
+					if (_this4.predictXList) {
+						scaleRight = scaleLinear().domain([_this4.offset, _this4.width]).rangeRound([0, _this4.predictXList.length - 1]);
+					}
+				}
+
+				if (tooltip === undefined) {
+					tooltip = _this4.createTooltip();
+
+					_this4.eventLayer.append(tooltip);
+				}
+			}).on('mousemove', function (e) {
+				if (_this4.shadowXList === undefined) {
+					return;
+				}
+
+				var x = e.pageX - offset.left;
+				var item;
+				var top;
+
+				if (x < _this4.offset) {
+					var index = scaleLeft(x);
+					var x = _this4.shadowXList[index];
+
+					if (x === undefined) {
+						return;
+					}
+
+					line(x, _this4.needVolume ? _this4.chartHeight : _this4.height);
+
+					item = _this4.candleData[index];
+					top = _this4.closeYList[index];
+
+					tooltip.html(_this4.getTooltipHtml(item, 'normal'));
+				} else {
+					if (_this4.predictXList === undefined) {
+						return;
+					}
+
+					var index = scaleRight(x);
+
+					if (index === 0) {
+						return;
+					}
+
+					if (index >= _this4.predictXList.length) {
+						return;
+					}
+
+					var x = _this4.predictXList[index];
+
+					line(x, _this4.needVolume ? _this4.chartHeight : _this4.height);
+					item = _this4.predictData[index];
+					top = _this4.predictCloseYList[index];
+
+					tooltip.html(_this4.getTooltipHtml(item, 'predict'));
+				}
+
+				// console.log(x, this.width, tooltip.width())
+
+				if (x >= _this4.width - tooltip.width()) {
+					tooltip.css({
+						'top': top,
+						'left': '',
+						'right': layerWidth - _this4.width + 5
+					});
+				} else {
+					tooltip.css({
+						'top': top,
+						'left': x + 5,
+						'right': ''
+					});
+				}
+			}).on('mouseleave', function (e) {
+				console.log('mouseleave fire');
+				scaleLeft = undefined;
+				scaleRight = undefined;
+				floatLine = undefined;
+				paper.clear();
+				tooltip.remove();
+				tooltip = undefined;
+			});
+
+			this.eventLayer = elem;
+		},
+
+		hideCandleSet: function hideCandleSet() {
+			if (this.candleSet) {
+				this.candleSet.hide();
+			}
+		},
+
+		showCandleSet: function showCandleSet() {
+			this.candleSet.show();
+		},
+
+		hidePolySet: function hidePolySet() {
+			if (this.polySet) {
+				this.polySet.hide();
+			}
+		},
+
+		showPolySet: function showPolySet() {
+			this.polySet.show();
+		},
+		// 收盘价折线
+		drawPolyline: function drawPolyline() {
+			var _this5 = this;
+
+			this.paper.setStart();
+
+			var points = this.candleData.map(function (item, i, arr) {
+				var x = _this5.shadowXList[i];
+				var y = _this5.candleY(_this5.candleData[i].close);
+
+				if (i === 0) {
+					x = 0;
+				} else if (i === arr.length - 1) {
+					x = _this5.offset;
+				}
+
+				return {
+					x: px(x),
+					y: px(y)
+				};
+			});
+
+			this.paper.path(createPathString.apply(undefined, _toConsumableArray(points))).attr({
+				stroke: '#297cda',
+				'stroke-width': 2
+			});
+
+			this.polySet = this.paper.setFinish();
+		},
+		clear: function clear() {
+			this.candleSet && this.candleSet.clear();
+			this.polySet && this.polySet.clear();
+
+			if (this.eventLayer) {
+				this.eventLayer.off().remove();
+			}
+			this.paper.clear();
+		},
+		update: function update(_ref) {
+			var candleData = _ref.candleData,
+			    predictData = _ref.predictData,
+			    cycle = _ref.cycle;
+
+			this.clear();
+
+			if (candleData !== undefined) {
+				this.candleData = candleData.map(str2number);
+			}
+
+			if (predictData !== undefined) {
+				this.predictData = predictData.map(str2number);
+			}
+
+			if (cycle !== undefined) {
+				this.cycle = cycle;
+			}
+
+			this.draw();
+		}
+	};
+
+	module.exports = ChartPrototype;
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	module.exports = window.$;
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+	/**
+	 * Created by shinan on 2016/12/6.
+	 */
+
+	var UnitUtil = {
+	  millionBillion: function millionBillion(n) {
+	    var a = [[1e4, '万'], [1e8, '亿']];
+
+	    for (var i = a.length - 1; i >= 0; i--) {
+	      var _a$i = _slicedToArray(a[i], 2),
+	          size = _a$i[0],
+	          unit = _a$i[1];
+
+	      if (n > size) {
+	        var ret = (n / size).toFixed(2);
+
+	        if (i == 0) {
+	          ret = parseInt(ret);
+	        }
+
+	        return ret + unit;
+	      }
+	    }
+
+	    return n;
+	  },
+	  million: function million(n) {
+	    var ret = parseInt(n / 1e4);
+
+	    return ret + '\u4E07';
+	  }
+	};
+
+	module.exports = UnitUtil;
+
+/***/ }
+/******/ ]);

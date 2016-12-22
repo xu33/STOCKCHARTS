@@ -64,26 +64,29 @@ ChartWithVolume.prototype = {
 		this.low = low
 		this.high = high
 
-		// this.width = this.chartWidth - 40 // 总宽度减y轴文字宽度
+    // 总宽度减y轴文字宽度
+		// this.width = this.chartWidth - 40
     this.width = this.chartWidth
-		this.height = this.chartHeight - volHeight - FONT_SIZE - TEXT_MARGIN * 2 - BOTTOM_TEXT_HEIGHT // 总高度减量柱高度减x轴文字高度减底部标注高度
+    this.height = this.chartHeight - volHeight - FONT_SIZE - TEXT_MARGIN * 2
+    // 总高度减量柱高度减x轴文字高度减底部标注高度
+		// this.height = this.chartHeight - volHeight - FONT_SIZE - TEXT_MARGIN * 2 - BOTTOM_TEXT_HEIGHT
 
 		this.paper.rect(0, 0, this.width, this.height).attr({
 			stroke: STROKE_COLOR
 		})
 
 		var total = candleData.length
-		// var predictPercent = (total - this.cycle) / total
 
-		// console.log('predictPercent:', predictPercent)
+		var predictPercent = (total - this.cycle) / total
 
-		// predictPercent = predictPercent.toFixed(2)
+		console.log('predictPercent:', predictPercent)
 
-		var predictPercent = 0.7
+		predictPercent = predictPercent.toFixed(2)
+
+		// var predictPercent = 0.7
 
 		// 预测部分图形的偏移量
 		this.offset = this.width * predictPercent
-
 		var yScale = scaleLinear().domain([0, this.ticksY - 1]).rangeRound([0, this.height])
 
 		// 预测部分半透明虚框
@@ -105,7 +108,7 @@ ChartWithVolume.prototype = {
 		})
 
 		this.paper.path(pathString).attr({
-			'fill': '#f5f9fd',
+			'fill': '#e7f2fc',
 			'stroke-width': 1,
 			'fill-opacity': 0.5,
 			'stroke': '#79c0ff',
@@ -115,7 +118,7 @@ ChartWithVolume.prototype = {
 		var dates = [
 			candleData[0].time,
 		    candleData[candleData.length - this.cycle].time,
-		    candleData[candleData.length - 1].time
+		    // candleData[candleData.length - 1].time
 		]
 
 		dates.forEach((item, index, arr) => {
@@ -149,7 +152,7 @@ ChartWithVolume.prototype = {
 			this.drawVolumes()
 		}
 
-		this.drawCycleBlock()
+		// this.drawCycleBlock()
 		// 事件
 		if (this.options.tooltip) {
 			this.createEventLayerNormal()
