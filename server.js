@@ -21,6 +21,10 @@ app.get('/example', function(req, res) {
 	res.sendFile(path.join(__dirname, 'example/index.html'));
 });
 
+app.get('/d3', (req, res) => {
+  res.sendFile(path.join(__dirname, 'example/d3.html'))
+})
+
 app.listen(3003, function(err) {
   if (err) {
     return console.error(err);

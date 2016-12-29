@@ -4,7 +4,8 @@ var webpack = require('webpack');
 module.exports = {
   devtool: 'eval',
   entry: {
-    index: './src/index.js'
+    index: './src/index.js',
+    predict: './src/Predict.js'
   },
   output: {
     path: path.join(__dirname, 'dist'),
