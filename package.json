@@ -33,6 +33,7 @@
     "webpack-dev-middleware": "^1.8.4"
   },
   "devDependencies": {
+    "style-loader": "^0.13.1",
     "webpack": "^1.13.3"
   }
 }

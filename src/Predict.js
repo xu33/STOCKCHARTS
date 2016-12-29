@@ -1,50 +1,86 @@
 /**
  * Created by shinan on 2016/12/29.
  */
+import './css/d3.css'
 const d3 = require('d3')
-// const scaleX = d3.scaleLinear().domain([10, 30]).range([0, 400])
-// const axis = d3.axisBottom(scaleX).tickValues([1, 2, 3, 3, 3]).tickSize(0, 0).tickPadding(15)
-//
-// d3.select('body').append('svg')
-//   .attr('width', 500)
-//   .attr('height', 400)
-// .append('g')
-//   .attr('class', 'y-axis')
-//   .attr('transform', 'translate(0, 0)')
-//   .call(axis)
+const svg = d3.select('body').append('svg')
+var data = require('./fake_data/pre.js').slice(0, 30)
 
-var data = [
-  {x:0, y:18},
-  {x:20, y:27},
-  {x:40, y:56},
-  {x:60, y:34},
-  {x:80, y:41},
-  {x:100, y:35},
-  {x:120, y:100},
-  {x:140, y:37},
-  {x:160, y:26},
-  {x:180, y:21}
-];
+const width = 400
+const height = 300
 
-var width = 240,
-  height = 120;
+svg.attr('width', 500).attr('height', 400)
+var scaleX = d3.scaleBand().domain(data.map((o, i) => i)).range([0, width]).padding(0.4)
 
-var s = d3.select('body').append('svg');
+console.log(scaleX.bandwidth())
 
-s.attr({
-  'width': width,
-  'height': height,
-});
+var min1 = data.reduce((prev, curr) => {
+  return curr.low < prev.low ? curr : prev
+})
 
-var area = d3.area()
-  .x(function(d) { return d.x; })
-  .y0(0)
-  .y1(function(d) { return d.y; });
 
-s.append('path')
-  .attr({
-    'd':area(data),
-    'stroke':'#c00',
-    'fill':'rgba(255,0,0,.3)',
-    'transform':'translate(2,2)'
-  });
+
+var min = d3.min(data, d => d.low)
+var max = d3.max(data, d => d.high)
+
+console.log(min, max)
+
+var scaleY = d3.scaleLinear().domain([min, max]).range([0, height])
+var line = d3.line().x(d=>d.x).y(d=>d.y)
+
+svg.append('g')
+  .selectAll('rect')
+  .data(data)
+  .enter()
+  .append('rect')
+  .attr('class', 'bar')
+  .attr('x', (d, i) => scaleX(i))
+  .attr('y', d => {
+    return height - scaleY(Math.max(d.open, d.close))
+  })
+  .attr('width', scaleX.bandwidth())
+  .attr('height', d => {
+    return scaleY(Math.max(d.open, d.close)) - scaleY(Math.min(d.open, d.close))
+  })
+  .attr('fill', d => {
+    return d.open > d.close ? 'red' : 'green'
+  })
+
+svg.selectAll('path.shadow')
+  .data(data)
+  .enter()
+  .append('path')
+  .attr('class', 'shadow')
+  .attr('d', (d, i) => {
+    var x = scaleX(i) + scaleX.bandwidth() / 2
+    var y1 = height- scaleY(d.high)
+    var y2 = height - scaleY(d.low)
+
+    return line([{x: x, y: y1}, {x: x, y: y2}])
+  })
+  .attr('stroke', d => {
+    return d.open > d.close ? 'red' : 'green'
+  })
+
+var scaleXReal = d3.scaleOrdinal()
+  .domain(['2011-01-01', '2011-01-02', '2011-01-03'])
+  .range([0, 300, 400])
+
+var axisX = d3.axisBottom(scaleXReal).tickSize(0)
+var axisY = d3.axisLeft(scaleY).tickSize(0).tickFormat(vol => vol.toFixed(2)).ticks(4)
+var axisBottom = d3.axisBottom(scaleXReal).tickSize(height).tickFormat('')
+var axisRight = d3.axisRight(scaleY).ticks(4).tickSize(width).tickFormat('')
+
+var o = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, ${height})`).call(axisX)
+svg.append('g').attr('class', 'axis').attr('transform', `translate(${width}, 0)`).call(axisY)
+svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(axisBottom)
+svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(axisRight)
+o.selectAll('.tick text').attr('text-anchor', 'end')
+o.select('.tick text').attr('text-anchor', 'start')
+
+// var scaleLinear = d3.scaleLinear
+// var s = scaleLinear().domain([0.122, 0.555]).range([0, 300])
+// var s1 = scaleLinear().domain([0.12, 0.55]).range([0, 300])
+// console.log(s(0.155))
+// console.log(s1(0.15))
+

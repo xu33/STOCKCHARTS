@@ -2,7 +2,6 @@ var path = require('path');
 var webpack = require('webpack');
 
 module.exports = {
-  devtool: 'eval',
   entry: {
     index: './src/index.js',
     predict: './src/Predict.js'
@@ -21,6 +20,9 @@ module.exports = {
         presets: ['es2015']
       },
       include: path.join(__dirname, 'src')
+    }, {
+      test: /\.css$/,
+      loader: 'style!css'
     }]
   }
 };

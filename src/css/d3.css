@@ -1,0 +1,30 @@
+* {
+    margin:0;
+    padding:0;
+}
+
+svg {
+    margin-left:20px;
+    margin-top:20px;
+}
+
+.axis text {
+    fill: #ccc;
+}
+
+.axis path {
+    stroke: #ccc;
+}
+
+.bar {
+    /*fill: #FF0000;*/
+}
+
+.shadow {
+    stroke-width: 1px;
+    fill: none;
+}
+
+.tick line {
+    stroke: #ccc;
+}
