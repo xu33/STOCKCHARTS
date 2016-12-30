@@ -8,6 +8,10 @@ svg {
     margin-top:20px;
 }
 
+rect, line {
+    shape-rendering:crispEdges;
+}
+
 .axis text {
     fill: #ccc;
 }
@@ -27,4 +31,19 @@ svg {
 
 .tick line {
     stroke: #ccc;
+}
+
+.predict {
+    fill: #e7f2fc;
+    fill-opacity: 0.6;
+}
+
+.ceil, .flor {
+    stroke: #80b5ff;
+    fill: none;
+}
+
+.profit {
+    stroke: #e63232;
+    fill: none;
 }

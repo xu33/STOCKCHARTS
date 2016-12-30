@@ -2,15 +2,16 @@ var path = require('path');
 var webpack = require('webpack');
 
 module.exports = {
+  devtool: 'eval-cheap-source-map',
   entry: {
     index: './src/index.js',
     predict: './src/Predict.js'
   },
   output: {
     path: path.join(__dirname, 'dist'),
+    sourceMapFilename: '[file].map',
     filename: '[name].js',
-    publicPath: '/static/',
-    library: '[name]'
+    publicPath: '/static/'
   },
   module: {
     loaders: [{
@@ -24,5 +25,27 @@ module.exports = {
       test: /\.css$/,
       loader: 'style!css'
     }]
-  }
+  },
+  plugins: [
+    new webpack.SourceMapDevToolPlugin({
+      // 像loaders一样匹配文件
+      test: /\.js$/,
+
+      // 如果文件名设置了，输出这个文件
+      // 参考 `sourceMapFileName`
+      filename: '[file].map',
+
+      // This line is appended to the original asset processed. For
+      // instance '[url]' would get replaced with an url to the
+      // sourcemap.
+      append: false,
+
+
+      module: true, // If false, separate sourcemaps aren't generated.
+      columns: false, // If false, column mappings are ignored.
+
+      // Use simpler line to line mappings for the matched modules.
+      lineToLine: true
+    })
+  ]
 };
