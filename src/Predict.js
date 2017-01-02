@@ -10,9 +10,10 @@ var candleData = oriData.klineList
 var predictData = oriData.chartDataList
 
 const PREDICT_PERCENT = 0.7
-const MARGIN_BOTTOM = 20
+const MARGIN_BOTTOM = 15
 const MARGIN_RIGHT = 2
 const TEXT_MARGIN = 5
+const VOL_HEIGHT = 66
 
 class Predict {
   constructor(selector, options) {
@@ -23,16 +24,24 @@ class Predict {
       .attr('width', options.width)
       .attr('height', options.height)
 
-    this.options.height = options.height - MARGIN_BOTTOM
+    this.totalHeight = this.options.height
+
+    this.candleStickAreaHeight = options.height - MARGIN_BOTTOM
     this.options.width = options.width - MARGIN_RIGHT
+
+    if (this.options.volume) {
+      this.candleStickAreaHeight -= VOL_HEIGHT
+    }
 
     let { candleData, predictData } = options
     let all = candleData.concat(predictData)
 
     let min = d3.min(all, d => d.low)
     let max = d3.max(all, d => d.high)
-    let scaleY = d3.scaleLinear().domain([min, max]).range([this.options.height, 0])
+    let scaleY = d3.scaleLinear().domain([min, max]).range([this.candleStickAreaHeight, 0])
 
+    this.min = min
+    this.max = max
     this.scaleY = scaleY
     this.render()
   }
@@ -40,7 +49,8 @@ class Predict {
   // 预测线
   predictLines() {
     var { svg, scaleY } = this
-    var { height, width, candleData, predictData } = this.options
+    var { width, candleData, predictData } = this.options
+    var height = this.candleStickAreaHeight
     var offset = width * PREDICT_PERCENT
     var g = svg.append('g').attr('transform', `translate(${offset}, 0)`)
     // 预测部分虚框
@@ -99,36 +109,61 @@ class Predict {
       .datum(predictData)
       .attr('class', 'flor')
       .attr('d', lineFlor)
+
+    // 分割虚线
+    var helpLine = d3.line()
+      .y(d => d.y)
+      .x(d => d.x)
+
+    g.append('path')
+    .datum([{
+      x: 0,
+      y: 0
+    }, {
+      x: 0,
+      y: this.options.volume ? this.totalHeight : height
+    }])
+    .attr('d', helpLine)
+    .attr('stroke', '#ccc')
+    .attr("stroke-dasharray", '5, 3')
   }
 
   // 蜡烛线
   candleSticks() {
     var { svg, scaleY } = this
-    var { height, width, candleData } = this.options
+    var { width, candleData } = this.options
+    var height = this.candleStickAreaHeight
     var offset = width * PREDICT_PERCENT
-    var scaleX = d3.scaleBand().domain(candleData.map((o, i) => i)).range([0, offset]).padding(0.4)
+    var scaleX = d3.scaleBand()
+      .domain(candleData.map((o, i) => i))
+      .range([0, offset])
+      .padding(0.4)
 
-    svg
-      .selectAll('rect')
+    this.scaleBandX = scaleX    
+
+    var group = svg.append('g').attr('class', 'candles')
+    group.selectAll('rect')
       .data(candleData)
       .enter()
       .append('rect')
       .attr('class', 'bar')
       .attr('x', (d, i) => scaleX(i))
-      .attr('y', d => {
-        return scaleY(Math.max(d.open, d.close))
-      })
+      .attr('y', d => scaleY(Math.max(d.open, d.close)))
       .attr('width', scaleX.bandwidth())
       .attr('height', d => {
-        return scaleY(Math.min(d.open, d.close)) - scaleY(Math.max(d.open, d.close))
+        var h = scaleY(Math.min(d.open, d.close)) - scaleY(Math.max(d.open, d.close))
+        if (h < 1) {
+          h = 1
+        }
+
+        return h
       })
       .attr('fill', d => {
-        return d.open > d.close ? WIN_COLOR : LOSS_COLOR
+        return d.close > d.open ? WIN_COLOR : LOSS_COLOR
       })
 
-    var line = d3.line().x(d=>d.x).y(d=>d.y)
-
-    svg.selectAll('path.shadow')
+    var line = d3.line().x(d => d.x).y(d => d.y)
+    group.selectAll('path.shadow')
       .data(candleData)
       .enter()
       .append('path')
@@ -141,28 +176,71 @@ class Predict {
         return line([{x: x, y: y1}, {x: x, y: y2}])
       })
       .attr('stroke', d => {
-        return d.open > d.close ? WIN_COLOR : LOSS_COLOR
+        return d.close > d.open ? WIN_COLOR : LOSS_COLOR
       })
+
+      this.candleGroup = group
+  }
+
+  // 量线
+  volumes() {
+    var { svg } = this
+    var { width, candleData } = this.options
+    var height = this.candleStickAreaHeight
+    var min = d3.min(candleData, d => d.volume)
+    var max = d3.max(candleData, d => d.volume)
+    var VOL_HEIGHT = 66
+    var offset = width * PREDICT_PERCENT
+
+    var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 0])
+    var group = svg.append('g').attr('transform', `translate(0, ${height + MARGIN_BOTTOM - 1})`)
+
+    group.append('rect')
+    .attr('x', 0)
+    .attr('y', 0)
+    .attr('width', width)
+    .attr('height', VOL_HEIGHT)
+    .attr('class', 'volume')
+
+    var scaleX = this.scaleBandX
+    group.selectAll('.bar').data(candleData).enter()
+      .append('rect')
+      .attr('class', 'bar')
+      .attr('x', (d, i) => scaleX(i))
+      .attr('y', d => scaleY(d.volume))
+      .attr('width', scaleX.bandwidth())
+      .attr('height', d => VOL_HEIGHT - scaleY(d.volume))
+      .attr('fill', d => d.open > d.close ? WIN_COLOR : LOSS_COLOR)
+
+      group.selectAll('.bar').data(candleData).enter()
+      .append('rect')
+      .attr('class', 'bar')
   }
 
   // 数轴&辅助线
   axis() {
     var { svg, scaleY } = this
-    var { height, width, candleData, predictData } = this.options
+    var { width, candleData, predictData } = this.options
+    var height = this.candleStickAreaHeight
     var offset = width * PREDICT_PERCENT
 
     var scaleXReal = d3.scaleOrdinal()
       .domain([candleData[0].time, candleData[candleData.length - 1].time, predictData[predictData.length - 1].time])
       .range([0, offset, width])
 
+    let { min, max } = this
+    let scaleYReal = d3.scaleOrdinal()
+      .domain([min, min + (max - min) / 2, max])
+      .range([height, height / 2, 0])
+
     // 底部X轴
     var axisX = d3.axisBottom(scaleXReal).tickSize(0).tickPadding(TEXT_MARGIN)
     // 右侧Y轴
-    var axisY = d3.axisLeft(scaleY).tickSize(0).ticks(2, '.2f').tickPadding(TEXT_MARGIN)
+    var axisY = d3.axisLeft(scaleYReal).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(d => d.toFixed(2))
     // 顶部X轴（辅助线）
-    var topAxis = d3.axisBottom(scaleXReal).tickSize(height).tickFormat('')
+    var topAxis = d3.axisBottom(scaleXReal).tickSize(0).tickFormat('')
     // 左侧Y轴
-    var leftAxis = d3.axisRight(scaleY).tickSize(width).ticks(2).tickFormat('')
+    var leftAxis = d3.axisRight(scaleYReal).tickSize(width).tickFormat('')
 
     svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(topAxis)
     svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(leftAxis)
@@ -174,20 +252,204 @@ class Predict {
     axisXElement.select('.tick text').attr('text-anchor', 'start')
 
     axisYElement.call(selection => {
-      selection.selectAll('.tick text').attr('transform', `translate(0, -10)`)
+      selection.selectAll('.tick text').each(function(d, i) {
+        console.log(d, i)
+        if (i == 2) {
+          d3.select(this).attr('transform', `translate(0, 10)`)
+        } else {
+          d3.select(this).attr('transform', `translate(0, -10)`)
+        }
+      })
     })
   }
 
+  /* 显示折线 */
+  drawPolyline() {
+    let { candleData, width } = this.options
+    let scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width * PREDICT_PERCENT])
+    let scaleY = this.scaleY
+    let line = d3.line().x((d, i) => scaleX(i)).y(d => scaleY(d.close))
+
+    let group = this.svg.append('g').attr('class', 'poly')
+
+    group.append('path')
+      .datum(candleData)
+      .attr('d', line)
+      .attr('stroke', '#297cda')
+      .attr('stroke-width', 2)
+      .attr('fill', 'none')
+
+    this.lineGroup = group
+  }
+
+  togglePoly(bool) {
+    if (!this.lineGroup) {
+      this.drawPolyline()
+    } else {
+      this.lineGroup.attr('class', bool ? 'poly' : 'none')
+    }
+  }
+
+  toggleCandle(bool) {
+    this.candleGroup.attr('class', bool ? 'candle': 'none')
+  }
+
+  events() {
+    let touch = (o) => {
+      var pos
+      if ('ontouchstart' in window) {
+        
+        pos = d3.touches(o)[0]
+      } else {
+        pos = d3.mouse(o)
+      }
+
+      return pos
+    }
+
+    let t = this
+    let drag = d3.drag()
+      .container(function() {
+        return this
+      })
+      .on('start', function() {
+        let pos = touch(this)
+
+        console.log(pos, d3.event.x, d3.event.y)
+
+        t.handleDragStart(pos[0], pos[1])
+      })
+      .on('drag', function() {
+        let pos = touch(this)
+
+        t.handleDragMove(pos[0], pos[1])
+      })
+      .on('end', function() {
+        t.handleDragEnd()
+      })
+
+    this.svg.call(drag)
+  }
+
+  getHelperLineXY(x) {
+    let { candleData } = this.options
+    let { scaleBandX, scaleY } = this
+    let step = scaleBandX.step()
+    let index = Math.floor( x / step )
+
+    if (index < 0 || index >= candleData.length) {
+      return {x: -1, y: -1}
+    }
+
+    let bandWidth = scaleBandX.bandwidth()
+    x = scaleBandX(index) + bandWidth / 2
+    let y = scaleY(candleData[index].close)
+
+    return {x, y}
+  }
+
+  handleDragStart(x) {
+    var {x, y} = this.getHelperLineXY(x)
+
+    if (x === -1) return
+
+    var hData = [{
+      x: 0,
+      y: y
+    }, {
+      x: this.options.width,
+      y: y
+    }]
+
+    var vData = [
+      {
+        x: x,
+        y: 0
+      },
+      {
+        x: x,
+        y: this.options.volume ? this.totalHeight : this.candleStickAreaHeight
+      }
+    ]
+
+    var line = d3.line().x(d => d.x).y(d => d.y)
+
+    var horizontalLine = this.svg.append('path')
+    var verticalLine = this.svg.append('path')
+
+    horizontalLine.datum(hData).attr('d', line).attr('class', 'help')
+    verticalLine.datum(vData).attr('d', line).attr('class', 'help')
+
+    this.horizontalLine = horizontalLine
+    this.verticalLine = verticalLine
+  }
+
+  handleDragMove(x) {
+    var {x, y} = this.getHelperLineXY(x)
+
+    if (x === -1) return
+
+    var hData = [{
+      x: 0,
+      y: y
+    }, {
+      x: this.options.width,
+      y: y
+    }]
+
+    var vData = [
+      {
+        x: x,
+        y: 0
+      },
+      {
+        x: x,
+        y: this.options.volume ? this.totalHeight : this.candleStickAreaHeight
+      }
+    ]
+
+    var line = d3.line().x(d => d.x).y(d => d.y)
+
+    this.horizontalLine.datum(hData).attr('d', line)
+    this.verticalLine.datum(vData).attr('d', line)
+  }
+
+  handleDragEnd() {
+    if (this.horizontalLine || this.verticalLine) {
+      this.horizontalLine.remove()
+      this.verticalLine.remove()
+    }
+  }
+
   render() {
-    this.predictLines()
     this.candleSticks()
+    // this.drawPolyline()
+    
+    if (this.options.volume) {
+      this.volumes()
+    }
+    
+    this.predictLines()
     this.axis()
+    this.events()
   }
 }
 
 var p = new Predict('body', {
   candleData: candleData,
   predictData: predictData,
-  width: 400,
-  height: 300
+  width: 350,
+  height: 220,
+  volume: false
+})
+
+var show = true
+document.querySelector('#showCandlesBtn').addEventListener('click', e => {
+  p.toggleCandle(true)
+  p.togglePoly(false)
+})
+
+document.querySelector('#showPolylineBtn').addEventListener('click', e => {
+  p.toggleCandle(false)
+  p.togglePoly(true)
 })

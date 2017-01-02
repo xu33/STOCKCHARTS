@@ -39,13 +39,11 @@ module.exports = {
       // instance '[url]' would get replaced with an url to the
       // sourcemap.
       append: false,
-
-
-      module: true, // If false, separate sourcemaps aren't generated.
+      module: false, // If false, separate sourcemaps aren't generated.
       columns: false, // If false, column mappings are ignored.
 
       // Use simpler line to line mappings for the matched modules.
-      lineToLine: true
+      lineToLine: false
     })
   ]
 };
