@@ -70,7 +70,22 @@ class SampleChart {
     }])
       .attr('d', area)
       .attr('class', 'predict')
+      // .attr('stroke', '#79c0ff')
+
+    setTimeout(() => {
+      svg.append('g')
+      .attr('transform', `translate(${offset}, 0)`)
+      .append('path').datum([{
+        x: 0,
+        y: height - 1
+      }, {
+        x: width * (1 - predictPercent),
+        y: height - 1
+      }])
+      .attr('d', area)
+      .attr('fill', 'none')
       .attr('stroke', '#79c0ff')
+    }, 0)
   }
 
   // 蜡烛线
@@ -381,6 +396,7 @@ class SampleChart {
 
   render() {
     let { volume, interactive } = this.options
+    this.predictLines()
     this.axis()
     this.candleSticks()
     
@@ -389,7 +405,7 @@ class SampleChart {
       this.volumes()
     }
 
-    this.predictLines()
+    
 
     if (interactive) {
       this.events()
