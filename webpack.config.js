@@ -5,7 +5,7 @@ module.exports = {
   devtool: 'eval-cheap-source-map',
   entry: {
     index: './src/index.js',
-    predict: './src/Predict.js'
+    d3example: './src/d3example.js'
   },
   output: {
     path: path.join(__dirname, 'dist'),

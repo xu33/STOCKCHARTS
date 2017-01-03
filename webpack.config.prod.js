@@ -5,6 +5,7 @@ module.exports = {
   entry: {
     PredictChart: './src/PredictChart.js',
     ChartWithVolume: './src/ChartWithVolume.js',
+    Predict: './src/Predict.js'
   },
   externals: {
       jquery: 'window.$',
@@ -23,9 +24,9 @@ module.exports = {
         presets: ['es2015']
       },
       include: path.join(__dirname, 'src')
+    }, {
+      test: /\.css$/,
+      loader: 'style!css'
     }]
-  },
-  plugins: [
-    
-  ]
+  }
 };

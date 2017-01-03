@@ -3,12 +3,8 @@
  */
 import { WIN_COLOR, LOSS_COLOR } from './libs/config'
 import './css/d3.css'
+const str2number = require('./libs/str2number')
 const d3 = require('d3')
-var oriData = require('./fake_data/d3data.js')
-
-var candleData = oriData.klineList
-var predictData = oriData.chartDataList
-
 const PREDICT_PERCENT = 0.7
 const MARGIN_BOTTOM = 15
 const MARGIN_RIGHT = 2
@@ -25,7 +21,6 @@ class Predict {
       .attr('height', options.height)
 
     this.totalHeight = this.options.height
-
     this.candleStickAreaHeight = options.height - MARGIN_BOTTOM
     this.options.width = options.width - MARGIN_RIGHT
 
@@ -33,11 +28,14 @@ class Predict {
       this.candleStickAreaHeight -= VOL_HEIGHT
     }
 
+    this.options.candleData = this.options.candleData.map(str2number)
+    this.options.predictData = this.options.predictData.map(str2number)
+
     let { candleData, predictData } = options
     let all = candleData.concat(predictData)
 
-    let min = d3.min(all, d => d.low)
-    let max = d3.max(all, d => d.high)
+    let min = d3.min(all, d => +d.low)
+    let max = d3.max(all, d => +d.high)
     let scaleY = d3.scaleLinear().domain([min, max]).range([this.candleStickAreaHeight, 0])
 
     this.min = min
@@ -229,37 +227,47 @@ class Predict {
       .range([0, offset, width])
 
     let { min, max } = this
+    min = +min
+    max = +max
     let scaleYReal = d3.scaleOrdinal()
-      .domain([min, min + (max - min) / 2, max])
+      .domain([min, (max + min) / 2, max])
       .range([height, height / 2, 0])
 
     // 底部X轴
     var axisX = d3.axisBottom(scaleXReal).tickSize(0).tickPadding(TEXT_MARGIN)
     // 右侧Y轴
-    var axisY = d3.axisLeft(scaleYReal).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(d => d.toFixed(2))
+    var axisY = d3.axisLeft(scaleYReal).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(d => Number(d).toFixed(2))
     // 顶部X轴（辅助线）
     var topAxis = d3.axisBottom(scaleXReal).tickSize(0).tickFormat('')
     // 左侧Y轴
     var leftAxis = d3.axisRight(scaleYReal).tickSize(width).tickFormat('')
 
     svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(topAxis)
-    svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(leftAxis)
+    var leftAxisElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(leftAxis)
 
     var axisXElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, ${height})`).call(axisX)
     var axisYElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(${width}, 0)`).call(axisY)
 
     axisXElement.selectAll('.tick text').attr('text-anchor', 'end')
+
+    // 偏移第一个值
     axisXElement.select('.tick text').attr('text-anchor', 'start')
 
-    axisYElement.call(selection => {
-      selection.selectAll('.tick text').each(function(d, i) {
-        console.log(d, i)
+    axisYElement.selectAll('.tick text')
+      .each(function(d, i) {
         if (i == 2) {
           d3.select(this).attr('transform', `translate(0, 10)`)
         } else {
           d3.select(this).attr('transform', `translate(0, -10)`)
         }
       })
+
+    // 纵向辅助线改为虚线
+    var selection = leftAxisElement.selectAll('.tick line')
+    selection.each(function(d, i) {
+      if (i != 0 || i != selection.length - 1) {
+        d3.select(this).attr("stroke-dasharray", '5, 3')
+      }
     })
   }
 
@@ -422,34 +430,20 @@ class Predict {
   }
 
   render() {
+    let { volume, interactive } = this.options
+
     this.candleSticks()
-    // this.drawPolyline()
-    
-    if (this.options.volume) {
-      this.volumes()
-    }
-    
     this.predictLines()
     this.axis()
-    this.events()
+
+    if (volume) {
+      this.volumes()
+    }
+
+    if (interactive) {
+      this.events()
+    }
   }
 }
 
-var p = new Predict('body', {
-  candleData: candleData,
-  predictData: predictData,
-  width: 350,
-  height: 220,
-  volume: false
-})
-
-var show = true
-document.querySelector('#showCandlesBtn').addEventListener('click', e => {
-  p.toggleCandle(true)
-  p.togglePoly(false)
-})
-
-document.querySelector('#showPolylineBtn').addEventListener('click', e => {
-  p.toggleCandle(false)
-  p.togglePoly(true)
-})
+module.exports = Predict
