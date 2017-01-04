@@ -10,9 +10,11 @@ const MARGIN_BOTTOM = 15
 const MARGIN_RIGHT = 2
 const TEXT_MARGIN = 5
 const VOL_HEIGHT = 66
+const EventEmitter = require('events')
 
-class Predict {
+class Predict extends EventEmitter {
   constructor(selector, options) {
+    super()
     this.options = options
 
     this.svg = d3.select(selector)
@@ -303,37 +305,18 @@ class Predict {
   }
 
   events() {
-    let touch = (o) => {
-      var pos
-      if ('ontouchstart' in window) {
-        
-        pos = d3.touches(o)[0]
-      } else {
-        pos = d3.mouse(o)
-      }
-
-      return pos
-    }
-
-    let t = this
     let drag = d3.drag()
       .container(function() {
         return this
       })
-      .on('start', function() {
-        let pos = touch(this)
-
-        console.log(pos, d3.event.x, d3.event.y)
-
-        t.handleDragStart(pos[0], pos[1])
+      .on('start', () => {
+        this.handleDragStart(d3.event.x, d3.event.y)
       })
-      .on('drag', function() {
-        let pos = touch(this)
-
-        t.handleDragMove(pos[0], pos[1])
+      .on('drag', () => {
+        this.handleDragMove(d3.event.x, d3.event.y)
       })
-      .on('end', function() {
-        t.handleDragEnd()
+      .on('end', () => {
+        this.handleDragEnd()
       })
 
     this.svg.call(drag)
@@ -346,18 +329,18 @@ class Predict {
     let index = Math.floor( x / step )
 
     if (index < 0 || index >= candleData.length) {
-      return {x: -1, y: -1}
+      return {x: -1, y: -1, index}
     }
 
     let bandWidth = scaleBandX.bandwidth()
     x = scaleBandX(index) + bandWidth / 2
     let y = scaleY(candleData[index].close)
 
-    return {x, y}
+    return {x, y, index}
   }
 
   handleDragStart(x) {
-    var {x, y} = this.getHelperLineXY(x)
+    var {x, y, index} = this.getHelperLineXY(x)
 
     if (x === -1) return
 
@@ -390,10 +373,12 @@ class Predict {
 
     this.horizontalLine = horizontalLine
     this.verticalLine = verticalLine
+
+    this.emit('drag-start', this.options.candleData[index])
   }
 
   handleDragMove(x) {
-    var {x, y} = this.getHelperLineXY(x)
+    var {x, y, index} = this.getHelperLineXY(x)
 
     if (x === -1) return
 
@@ -420,6 +405,8 @@ class Predict {
 
     this.horizontalLine.datum(hData).attr('d', line)
     this.verticalLine.datum(vData).attr('d', line)
+
+    this.emit('drag-move', this.options.candleData[index])
   }
 
   handleDragEnd() {
@@ -427,6 +414,8 @@ class Predict {
       this.horizontalLine.remove()
       this.verticalLine.remove()
     }
+
+    this.emit('drag-end')
   }
 
   render() {

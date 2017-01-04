@@ -7,6 +7,9 @@ module.exports = {
     index: './src/index.js',
     d3example: './src/d3example.js'
   },
+  externals: {
+      d3: 'window.d3'
+  },
   output: {
     path: path.join(__dirname, 'dist'),
     sourceMapFilename: '[file].map',

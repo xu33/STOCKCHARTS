@@ -63,10 +63,10 @@ class SampleChart {
 
     g.append('path').datum([{
       x: 0,
-      y: height - 1
+      y: height
     }, {
       x: width * (1 - predictPercent),
-      y: height - 1
+      y: height
     }])
       .attr('d', area)
       .attr('class', 'predict')
@@ -79,7 +79,7 @@ class SampleChart {
         x: 0,
         y: height - 1
       }, {
-        x: width * (1 - predictPercent),
+        x: Math.ceil(width * (1 - predictPercent)),
         y: height - 1
       }])
       .attr('d', area)
@@ -201,7 +201,7 @@ class SampleChart {
     // 底部X轴
     var axisX = d3.axisBottom(scaleXReal).tickSize(0).tickPadding(TEXT_MARGIN)
     // 右侧Y轴
-    var axisY = d3.axisLeft(scaleYReal).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(d => Number(d).toFixed(2))
+    var axisY = d3.axisLeft(scaleYReal).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(d => d.toFixed(2))
     // 顶部X轴（辅助线）
     var topAxis = d3.axisBottom(scaleXReal).tickSize(0).tickFormat('')
     // 左侧Y轴
