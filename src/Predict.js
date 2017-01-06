@@ -59,13 +59,9 @@ class Predict extends EventEmitter {
     var g = svg.append('g').attr('transform', `translate(${offset}, 0)`)
     // 预测部分虚框
     var area = d3.area()
-      .x(function(d) {
-        return d.x
-      })
+      .x(d => d.x)
       .y0(0)
-      .y1(function(d) {
-        return d.y
-      })
+      .y1(d => d.y)
 
     g.append('path').datum([{
       x: 0,
