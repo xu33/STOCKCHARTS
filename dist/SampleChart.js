@@ -92,6 +92,10 @@ var SampleChart =
 	    var max = d3.max(candleData, function (d) {
 	      return +d.high;
 	    });
+
+	    min = min - min / 50;
+	    max = max + max / 50;
+
 	    var scaleY = d3.scaleLinear().domain([min, max]).range([this.candleStickAreaHeight, 0]);
 
 	    this.min = min;
@@ -133,8 +137,8 @@ var SampleChart =
 	        x: width * (1 - predictPercent),
 	        y: height
 	      }]).attr('d', area).attr('class', 'predict');
-	      // .attr('stroke', '#79c0ff')
 
+	      // hack 外框最后画
 	      setTimeout(function () {
 	        svg.append('g').attr('transform', 'translate(' + offset + ', 0)').append('path').datum([{
 	          x: 0,
@@ -216,8 +220,10 @@ var SampleChart =
 	      var max = d3.max(candleData, function (d) {
 	        return d.volume;
 	      });
-	      var VOL_HEIGHT = 66;
+	      // 增加一些
+	      max += max / 10;
 
+	      var VOL_HEIGHT = 66;
 	      var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 0]);
 	      var group = svg.append('g').attr('transform', 'translate(0, ' + (height + MARGIN_BOTTOM - 1) + ')');
 
@@ -347,7 +353,6 @@ var SampleChart =
 	      var touch = function touch(o) {
 	        var pos;
 	        if ('ontouchstart' in window) {
-
 	          pos = d3.touches(o)[0];
 	        } else {
 	          pos = d3.mouse(o);
@@ -513,7 +518,7 @@ var SampleChart =
 		var keys = ['low', 'high', 'open', 'close'];
 
 		keys.forEach(function (key) {
-			stock[key] = Number(stock[key]);
+			stock[key] = +stock[key];
 		});
 
 		return stock;

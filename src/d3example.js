@@ -9,17 +9,17 @@ var p = new Predict(document.querySelector('#container'), {
   predictData: predictData,
   width: 350,
   height: 220,
-  volume: false,
+  volume: true,
   interactive: true
 })
 
-p.on('drag-start', index => {
-	console.log(index)
-})
+// p.on('drag-start', index => {
+// 	console.log(index)
+// })
 
-p.on('drag-move', index => {
-	console.log(index)
-})
+// p.on('drag-move', index => {
+// 	console.log(index)
+// })
 
 var show = true
 document.querySelector('#showCandlesBtn').addEventListener('click', e => {

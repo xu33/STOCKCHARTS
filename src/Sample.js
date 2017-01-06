@@ -33,6 +33,10 @@ class SampleChart {
 
     let min = d3.min(candleData, d => +d.low)
     let max = d3.max(candleData, d => +d.high)
+
+    min = min - min / 50
+    max = max + max / 50
+    
     let scaleY = d3.scaleLinear().domain([min, max]).range([this.candleStickAreaHeight, 0])
 
     this.min = min
@@ -70,8 +74,8 @@ class SampleChart {
     }])
       .attr('d', area)
       .attr('class', 'predict')
-      // .attr('stroke', '#79c0ff')
 
+    // hack 外框最后画
     setTimeout(() => {
       svg.append('g')
       .attr('transform', `translate(${offset}, 0)`)
@@ -149,8 +153,10 @@ class SampleChart {
     var height = this.candleStickAreaHeight
     var min = d3.min(candleData, d => d.volume)
     var max = d3.max(candleData, d => d.volume)
-    var VOL_HEIGHT = 66
+    // 增加一些
+    max += max / 10
 
+    var VOL_HEIGHT = 66
     var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 0])
     var group = svg.append('g').attr('transform', `translate(0, ${height + MARGIN_BOTTOM - 1})`)
 
@@ -271,7 +277,6 @@ class SampleChart {
     let touch = (o) => {
       var pos
       if ('ontouchstart' in window) {
-        
         pos = d3.touches(o)[0]
       } else {
         pos = d3.mouse(o)
@@ -399,13 +404,10 @@ class SampleChart {
     this.predictLines()
     this.axis()
     this.candleSticks()
-    
 
     if (volume) {
       this.volumes()
     }
-
-    
 
     if (interactive) {
       this.events()

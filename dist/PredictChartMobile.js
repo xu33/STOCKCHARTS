@@ -105,6 +105,10 @@ var PredictChartMobile =
 	    var max = d3.max(all, function (d) {
 	      return +d.high;
 	    });
+
+	    min = min - min / 50;
+	    max = max + max / 50;
+
 	    var scaleY = d3.scaleLinear().domain([min, max]).range([_this.candleStickAreaHeight, 0]);
 
 	    _this.min = min;
@@ -155,6 +159,8 @@ var PredictChartMobile =
 
 	      // 预测部分折线
 	      var scaleX = d3.scaleLinear().domain([0, predictData.length - 1]).range([0, width * (1 - PREDICT_PERCENT)]);
+
+	      this.predictScaleX = scaleX;
 
 	      var lineCeil = d3.line().y(function (d) {
 	        return scaleY(d.high);
@@ -266,9 +272,12 @@ var PredictChartMobile =
 	      var max = d3.max(candleData, function (d) {
 	        return d.volume;
 	      });
+
+	      // 增加一些
+	      max += max / 10;
+
 	      var VOL_HEIGHT = 66;
 	      var offset = width * PREDICT_PERCENT;
-
 	      var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 0]);
 	      var group = svg.append('g').attr('transform', 'translate(0, ' + (height + MARGIN_BOTTOM - 1) + ')');
 
@@ -331,8 +340,14 @@ var PredictChartMobile =
 
 	      axisXElement.selectAll('.tick text').attr('text-anchor', 'end');
 
-	      // 偏移第一个值
+	      // 偏移数轴第一个刻度值
 	      axisXElement.select('.tick text').attr('text-anchor', 'start');
+	      // 偏移第二个刻度值 防止贴辅助线太紧
+	      // axisXElement.selectAll('.tick text').select(function(d, i) {
+	      //   if (i == 1) {
+	      //     return this
+	      //   }
+	      // }).attr('transform', `translate(-2, 0)`)
 
 	      axisYElement.selectAll('.tick text').each(function (d, i) {
 	        if (i == 2) {
@@ -408,22 +423,48 @@ var PredictChartMobile =
 	  }, {
 	    key: 'getHelperLineXY',
 	    value: function getHelperLineXY(x) {
-	      var candleData = this.options.candleData;
+	      var _options6 = this.options,
+	          candleData = _options6.candleData,
+	          predictData = _options6.predictData,
+	          width = _options6.width;
 	      var scaleBandX = this.scaleBandX,
-	          scaleY = this.scaleY;
+	          scaleY = this.scaleY,
+	          predictScaleX = this.predictScaleX;
 
-	      var step = scaleBandX.step();
-	      var index = Math.floor(x / step);
 
-	      if (index < 0 || index >= candleData.length) {
-	        return { x: -1, y: -1, index: index };
+	      var offset = this.options.width * PREDICT_PERCENT;
+
+	      if (x > offset) {
+	        var step = width * (1 - PREDICT_PERCENT) / predictData.length;
+	        var relX = x - offset;
+	        var index = Math.ceil(relX / step);
+
+	        if (index < 0 || index >= predictData.length) {
+	          return { x: -1, y: -1, index: index };
+	        }
+
+	        var lineX = offset + predictScaleX(index);
+	        var lineY = scaleY(predictData[index].close);
+
+	        return {
+	          x: lineX,
+	          y: lineY,
+	          point: predictData[index]
+	        };
+	      } else {
+	        var _step = scaleBandX.step();
+	        var _index = Math.floor(x / _step);
+
+	        if (_index < 0 || _index >= candleData.length) {
+	          return { x: -1, y: -1, index: _index };
+	        }
+
+	        var bandWidth = scaleBandX.bandwidth();
+	        var _lineX = scaleBandX(_index) + bandWidth / 2;
+	        var _lineY = scaleY(candleData[_index].close);
+
+	        return { x: _lineX, y: _lineY, point: candleData[_index] };
 	      }
-
-	      var bandWidth = scaleBandX.bandwidth();
-	      x = scaleBandX(index) + bandWidth / 2;
-	      var y = scaleY(candleData[index].close);
-
-	      return { x: x, y: y, index: index };
 	    }
 	  }, {
 	    key: 'handleDragStart',
@@ -431,7 +472,7 @@ var PredictChartMobile =
 	      var _getHelperLineXY = this.getHelperLineXY(x),
 	          x = _getHelperLineXY.x,
 	          y = _getHelperLineXY.y,
-	          index = _getHelperLineXY.index;
+	          point = _getHelperLineXY.point;
 
 	      if (x === -1) return;
 
@@ -466,7 +507,7 @@ var PredictChartMobile =
 	      this.horizontalLine = horizontalLine;
 	      this.verticalLine = verticalLine;
 
-	      this.emit('drag-start', this.options.candleData[index]);
+	      this.emit('drag-start', point);
 	    }
 	  }, {
 	    key: 'handleDragMove',
@@ -474,7 +515,7 @@ var PredictChartMobile =
 	      var _getHelperLineXY2 = this.getHelperLineXY(x),
 	          x = _getHelperLineXY2.x,
 	          y = _getHelperLineXY2.y,
-	          index = _getHelperLineXY2.index;
+	          point = _getHelperLineXY2.point;
 
 	      if (x === -1) return;
 
@@ -503,7 +544,7 @@ var PredictChartMobile =
 	      this.horizontalLine.datum(hData).attr('d', line);
 	      this.verticalLine.datum(vData).attr('d', line);
 
-	      this.emit('drag-move', this.options.candleData[index]);
+	      this.emit('drag-move', point);
 	    }
 	  }, {
 	    key: 'handleDragEnd',
@@ -518,9 +559,9 @@ var PredictChartMobile =
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      var _options6 = this.options,
-	          volume = _options6.volume,
-	          interactive = _options6.interactive;
+	      var _options7 = this.options,
+	          volume = _options7.volume,
+	          interactive = _options7.interactive;
 
 
 	      this.candleSticks();
@@ -552,7 +593,7 @@ var PredictChartMobile =
 		var keys = ['low', 'high', 'open', 'close'];
 
 		keys.forEach(function (key) {
-			stock[key] = Number(stock[key]);
+			stock[key] = +stock[key];
 		});
 
 		return stock;

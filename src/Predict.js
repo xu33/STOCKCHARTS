@@ -38,6 +38,10 @@ class Predict extends EventEmitter {
 
     let min = d3.min(all, d => +d.low)
     let max = d3.max(all, d => +d.high)
+
+    min = min - min / 50
+    max = max + max / 50
+
     let scaleY = d3.scaleLinear().domain([min, max]).range([this.candleStickAreaHeight, 0])
 
     this.min = min
@@ -82,6 +86,8 @@ class Predict extends EventEmitter {
 
     // 预测部分折线
     var scaleX = d3.scaleLinear().domain([0, predictData.length - 1]).range([0, width * (1 - PREDICT_PERCENT)])
+
+    this.predictScaleX = scaleX
 
     var lineCeil = d3.line()
       .y(d => scaleY(d.high))
@@ -189,9 +195,12 @@ class Predict extends EventEmitter {
     var height = this.candleStickAreaHeight
     var min = d3.min(candleData, d => d.volume)
     var max = d3.max(candleData, d => d.volume)
+
+    // 增加一些
+    max += max / 10
+
     var VOL_HEIGHT = 66
     var offset = width * PREDICT_PERCENT
-
     var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 0])
     var group = svg.append('g').attr('transform', `translate(0, ${height + MARGIN_BOTTOM - 1})`)
 
@@ -252,8 +261,14 @@ class Predict extends EventEmitter {
 
     axisXElement.selectAll('.tick text').attr('text-anchor', 'end')
 
-    // 偏移第一个值
+    // 偏移数轴第一个刻度值
     axisXElement.select('.tick text').attr('text-anchor', 'start')
+    // 偏移第二个刻度值 防止贴辅助线太紧
+    // axisXElement.selectAll('.tick text').select(function(d, i) {
+    //   if (i == 1) {
+    //     return this
+    //   }
+    // }).attr('transform', `translate(-2, 0)`)
 
     axisYElement.selectAll('.tick text')
       .each(function(d, i) {
@@ -323,24 +338,46 @@ class Predict extends EventEmitter {
   }
 
   getHelperLineXY(x) {
-    let { candleData } = this.options
-    let { scaleBandX, scaleY } = this
-    let step = scaleBandX.step()
-    let index = Math.floor( x / step )
+    let { candleData, predictData, width } = this.options
+    let { scaleBandX, scaleY, predictScaleX } = this
+    
+    let offset = this.options.width * PREDICT_PERCENT
 
-    if (index < 0 || index >= candleData.length) {
-      return {x: -1, y: -1, index}
-    }
+    if (x > offset) {
+      let step = width * (1 - PREDICT_PERCENT) / predictData.length
+      let relX = x - offset
+      let index = Math.ceil(relX / step)
 
-    let bandWidth = scaleBandX.bandwidth()
-    x = scaleBandX(index) + bandWidth / 2
-    let y = scaleY(candleData[index].close)
+      if (index < 0 || index >= predictData.length) {
+        return {x: -1, y: -1, index}
+      }
 
-    return {x, y, index}
+      let lineX = offset + predictScaleX(index)
+      let lineY = scaleY(predictData[index].close)
+
+      return {
+        x: lineX,
+        y: lineY,
+        point: predictData[index]
+      }
+    } else {
+      let step = scaleBandX.step()
+      let index = Math.floor( x / step )
+
+      if (index < 0 || index >= candleData.length) {
+        return {x: -1, y: -1, index}
+      }
+
+      let bandWidth = scaleBandX.bandwidth()
+      let lineX = scaleBandX(index) + bandWidth / 2
+      let lineY = scaleY(candleData[index].close)
+
+      return { x: lineX, y: lineY, point: candleData[index] }
+    }    
   }
 
   handleDragStart(x) {
-    var {x, y, index} = this.getHelperLineXY(x)
+    var {x, y, point} = this.getHelperLineXY(x)
 
     if (x === -1) return
 
@@ -374,11 +411,11 @@ class Predict extends EventEmitter {
     this.horizontalLine = horizontalLine
     this.verticalLine = verticalLine
 
-    this.emit('drag-start', this.options.candleData[index])
+    this.emit('drag-start', point)
   }
 
   handleDragMove(x) {
-    var {x, y, index} = this.getHelperLineXY(x)
+    var {x, y, point} = this.getHelperLineXY(x)
 
     if (x === -1) return
 
@@ -406,7 +443,7 @@ class Predict extends EventEmitter {
     this.horizontalLine.datum(hData).attr('d', line)
     this.verticalLine.datum(vData).attr('d', line)
 
-    this.emit('drag-move', this.options.candleData[index])
+    this.emit('drag-move', point)
   }
 
   handleDragEnd() {
