@@ -47,6 +47,8 @@ var PredictChartMobile =
 
 	'use strict';
 
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _config = __webpack_require__(5);
@@ -406,19 +408,62 @@ var PredictChartMobile =
 	  }, {
 	    key: 'events',
 	    value: function events() {
-	      var _this2 = this;
+	      // let drag = d3.drag()
+	      //   .container(function() {
+	      //     return this
+	      //   })
+	      //   .on('start', () => {
+	      //     this.handleDragStart(d3.event.x, d3.event.y)
+	      //   })
+	      //   .on('drag', () => {
+	      //     this.handleDragMove(d3.event.x, d3.event.y)
+	      //   })
+	      //   .on('end', () => {
+	      //     this.handleDragEnd()
+	      //   })
 
-	      var drag = d3.drag().container(function () {
-	        return this;
-	      }).on('start', function () {
-	        _this2.handleDragStart(d3.event.x, d3.event.y);
-	      }).on('drag', function () {
-	        _this2.handleDragMove(d3.event.x, d3.event.y);
-	      }).on('end', function () {
-	        _this2.handleDragEnd();
+	      // this.svg.call(drag)
+
+	      var t = this;
+	      var timer;
+	      var interactiveEnabled = false;
+
+	      this.svg.on('touchstart', function () {
+	        var _d3$touches = d3.touches(this),
+	            _d3$touches2 = _slicedToArray(_d3$touches, 1),
+	            _d3$touches2$ = _slicedToArray(_d3$touches2[0], 2),
+	            x = _d3$touches2$[0],
+	            y = _d3$touches2$[1];
+
+	        timer = setTimeout(function () {
+	          t.handleDragStart(x, y);
+	          interactiveEnabled = true;
+	        }, 500);
 	      });
 
-	      this.svg.call(drag);
+	      this.svg.on('touchmove', function () {
+	        if (interactiveEnabled) {
+	          var _d3$touches3 = d3.touches(this),
+	              _d3$touches4 = _slicedToArray(_d3$touches3, 1),
+	              _d3$touches4$ = _slicedToArray(_d3$touches4[0], 2),
+	              x = _d3$touches4$[0],
+	              y = _d3$touches4$[1];
+
+	          t.handleDragMove(x, y);
+	        } else {
+	          clearTimeout(timer);
+	        }
+	      });
+
+	      this.svg.on('touchend', function () {
+	        if (interactiveEnabled) {
+	          t.handleDragEnd();
+	        } else {
+	          clearTimeout(timer);
+	        }
+
+	        interactiveEnabled = false;
+	      });
 	    }
 	  }, {
 	    key: 'getHelperLineXY',
@@ -684,7 +729,7 @@ var PredictChartMobile =
 
 
 	// module
-	exports.push([module.id, "* {\r\n    margin:0;\r\n    padding:0;\r\n}\r\n\r\n/*svg {\r\n    margin-left:10px;\r\n    margin-top:10px;\r\n}*/\r\n\r\nsvg * {\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n/* 数字文字颜色 */\r\n.axis text {\r\n    fill: #999999;\r\n}\r\n\r\n/* 数轴颜色 */\r\n.axis path {\r\n    stroke: #ccc;\r\n}\r\n\r\n.shadow {\r\n    stroke-width: 1px;\r\n    fill: none;\r\n}\r\n\r\n.tick line {\r\n    stroke: #ccc;\r\n}\r\n\r\n.predict {\r\n    fill: #e7f2fc;\r\n    fill-opacity: 0.6;\r\n}\r\n\r\n.ceil, .flor, .profit {\r\n    shape-rendering: auto;\r\n}\r\n\r\n.ceil, .flor {\r\n    stroke: #80b5ff;\r\n    fill: none;\r\n}\r\n\r\n.profit {\r\n    stroke: #e63232;\r\n    fill: none;\r\n}\r\n\r\n.volume {\r\n    stroke: #ccc;\r\n    fill: none;\r\n}\r\n\r\n.none {\r\n    display: none;\r\n}\r\n\r\n.poly path {\r\n    shape-rendering: auto;\r\n}\r\n\r\n/* 参考线 */\r\n.help {\r\n    stroke: #d8d8d8;\r\n}", ""]);
+	exports.push([module.id, "* {\r\n    margin:0;\r\n    padding:0;\r\n}\r\n\r\nbody {\r\n    -webkit-user-select: none;\r\n}\r\n\r\n/*svg {\r\n    margin-left:10px;\r\n    margin-top:10px;\r\n}*/\r\n\r\nsvg * {\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n/* 数字文字颜色 */\r\n.axis text {\r\n    fill: #999999;\r\n}\r\n\r\n/* 数轴颜色 */\r\n.axis path {\r\n    stroke: #ccc;\r\n}\r\n\r\n.shadow {\r\n    stroke-width: 1px;\r\n    fill: none;\r\n}\r\n\r\n.tick line {\r\n    stroke: #ccc;\r\n}\r\n\r\n.predict {\r\n    fill: #e7f2fc;\r\n    fill-opacity: 0.6;\r\n}\r\n\r\n.ceil, .flor, .profit {\r\n    shape-rendering: auto;\r\n}\r\n\r\n.ceil, .flor {\r\n    stroke: #80b5ff;\r\n    fill: none;\r\n}\r\n\r\n.profit {\r\n    stroke: #e63232;\r\n    fill: none;\r\n}\r\n\r\n.volume {\r\n    stroke: #ccc;\r\n    fill: none;\r\n}\r\n\r\n.none {\r\n    display: none;\r\n}\r\n\r\n.poly path {\r\n    shape-rendering: auto;\r\n}\r\n\r\n/* 参考线 */\r\n.help {\r\n    stroke: #d8d8d8;\r\n}", ""]);
 
 	// exports
 

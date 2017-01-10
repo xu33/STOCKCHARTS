@@ -316,21 +316,53 @@ class Predict extends EventEmitter {
   }
 
   events() {
-    let drag = d3.drag()
-      .container(function() {
-        return this
-      })
-      .on('start', () => {
-        this.handleDragStart(d3.event.x, d3.event.y)
-      })
-      .on('drag', () => {
-        this.handleDragMove(d3.event.x, d3.event.y)
-      })
-      .on('end', () => {
-        this.handleDragEnd()
-      })
+    // let drag = d3.drag()
+    //   .container(function() {
+    //     return this
+    //   })
+    //   .on('start', () => {
+    //     this.handleDragStart(d3.event.x, d3.event.y)
+    //   })
+    //   .on('drag', () => {
+    //     this.handleDragMove(d3.event.x, d3.event.y)
+    //   })
+    //   .on('end', () => {
+    //     this.handleDragEnd()
+    //   })
 
-    this.svg.call(drag)
+    // this.svg.call(drag)
+
+    var t = this
+    var timer
+    var interactiveEnabled = false
+
+    this.svg.on('touchstart', function() {
+      let [[x, y]] = d3.touches(this)
+
+      timer = setTimeout(() => {
+        t.handleDragStart(x, y)
+        interactiveEnabled = true
+      }, 500)
+    })
+
+    this.svg.on('touchmove', function() {
+      if (interactiveEnabled) {
+        let [[x, y]] = d3.touches(this)
+        t.handleDragMove(x, y)
+      } else {
+        clearTimeout(timer)
+      }
+    })
+
+    this.svg.on('touchend', () => {
+      if (interactiveEnabled) {
+        t.handleDragEnd()
+      } else {
+        clearTimeout(timer)
+      }
+
+      interactiveEnabled = false
+    })
   }
 
   getHelperLineXY(x) {
@@ -411,7 +443,7 @@ class Predict extends EventEmitter {
   }
 
   handleDragMove(x) {
-    var {x, y, point} = this.getHelperLineXY(x)
+    var { x, y, point } = this.getHelperLineXY(x)
 
     if (x === -1) return
 
