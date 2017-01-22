@@ -2,13 +2,10 @@ var path = require('path');
 var webpack = require('webpack');
 
 module.exports = {
-  devtool: 'eval-cheap-source-map',
   entry: {
     index: './src/index.js',
-    d3example: './src/d3example.js'
-  },
-  externals: {
-      d3: 'window.d3'
+    d3example: './src/d3example.js',
+    st: './src/st.js'
   },
   output: {
     path: path.join(__dirname, 'dist'),
@@ -24,7 +21,8 @@ module.exports = {
       test: /\.js$/,
       loader: 'babel-loader',
       query: {
-        presets: ['es2015']
+        presets: ['es2015', 'stage-3'],
+        babelrc: false
       },
       include: path.join(__dirname, 'src')
     }, {
@@ -33,6 +31,8 @@ module.exports = {
     }]
   },
   plugins: [
+    new webpack.optimize.CommonsChunkPlugin('common.js'),
+    /*
     new webpack.SourceMapDevToolPlugin({
       // 像loaders一样匹配文件
       test: /\.js$/,
@@ -51,5 +51,6 @@ module.exports = {
       // Use simpler line to line mappings for the matched modules.
       lineToLine: false
     })
+    */
   ]
 };

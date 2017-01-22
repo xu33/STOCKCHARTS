@@ -224,6 +224,16 @@ var PredictChartMobile =
 	      this.scaleBandX = scaleX;
 
 	      var group = svg.append('g').attr('class', 'candles');
+	      var calColor = function calColor(d) {
+	        if (d.close > d.open) {
+	          return _config.WIN_COLOR;
+	        } else if (d.close < d.open) {
+	          return _config.LOSS_COLOR;
+	        } else {
+	          return _config.EQUAL_COLOR;
+	        }
+	      };
+
 	      group.selectAll('rect').data(candleData).enter().append('rect').attr('class', 'bar').attr('x', function (d, i) {
 	        return scaleX(i);
 	      }).attr('y', function (d) {
@@ -235,9 +245,7 @@ var PredictChartMobile =
 	        }
 
 	        return h;
-	      }).attr('fill', function (d) {
-	        return d.close > d.open ? _config.WIN_COLOR : _config.LOSS_COLOR;
-	      });
+	      }).attr('fill', calColor);
 
 	      var line = d3.line().x(function (d) {
 	        return d.x;
@@ -250,9 +258,7 @@ var PredictChartMobile =
 	        var y2 = scaleY(d.low);
 
 	        return line([{ x: x, y: y1 }, { x: x, y: y2 }]);
-	      }).attr('stroke', function (d) {
-	        return d.close > d.open ? _config.WIN_COLOR : _config.LOSS_COLOR;
-	      });
+	      }).attr('stroke', calColor);
 
 	      this.candleGroup = group;
 	    }
@@ -293,7 +299,7 @@ var PredictChartMobile =
 	      }).attr('width', scaleX.bandwidth()).attr('height', function (d) {
 	        return VOL_HEIGHT - scaleY(d.volume);
 	      }).attr('fill', function (d) {
-	        return d.open > d.close ? _config.WIN_COLOR : _config.LOSS_COLOR;
+	        return d.open < d.close ? _config.WIN_COLOR : _config.LOSS_COLOR;
 	      });
 
 	      group.selectAll('.bar').data(candleData).enter().append('rect').attr('class', 'bar');

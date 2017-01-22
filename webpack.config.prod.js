@@ -6,12 +6,13 @@ module.exports = {
     PredictChart: './src/PredictChart.js',
     ChartWithVolume: './src/ChartWithVolume.js',
     PredictChartMobile: './src/Predict.js',
-    SampleChart: './src/Sample.js'
+    SampleChart: './src/Sample.js',
+    StockChart: './src/StockChart.js'
   },
   externals: {
-      jquery: 'window.$',
-      raphael: 'window.Raphael',
-      d3: 'window.d3'
+    jquery: 'window.$',
+    raphael: 'window.Raphael',
+    d3: 'window.d3'
   },
   output: {
     path: path.join(__dirname, 'dist'),

@@ -144,7 +144,8 @@ var PredictChart =
 
 			var tempText = this.paper.text(0, 0, widest);
 			var bbox = tempText.getBBox();
-			this.yAxisTextWidth = bbox.width;
+			this.yAxisTextWidth = bbox.width > 50 ? bbox.width : 50;
+
 			tempText.remove();
 
 			var yAxisTextWidth = this.yAxisTextWidth;

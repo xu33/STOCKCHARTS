@@ -19,8 +19,6 @@ predictData = predictData.map(o => {
   o.low = last.close * (1 + o.flor)
   o.high = last.close * (1 + o.ceil)
 
-  console.log(o)
-
   return o
 })
 

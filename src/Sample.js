@@ -1,7 +1,7 @@
 /**
  * Created by shinan on 2016/12/29.
  */
-import { WIN_COLOR, LOSS_COLOR } from './libs/config'
+import { WIN_COLOR, LOSS_COLOR, EQUAL_COLOR } from './libs/config'
 import './css/d3.css'
 const str2number = require('./libs/str2number')
 const d3 = require('d3')
@@ -106,6 +106,15 @@ class SampleChart {
     this.scaleBandX = scaleX    
 
     var group = svg.append('g').attr('class', 'candles')
+    const calColor = d => {
+      if (d.close > d.open) {
+        return WIN_COLOR
+      } else if (d.close < d.open) {
+        return LOSS_COLOR
+      } else {
+        return EQUAL_COLOR
+      }
+    }
     group.selectAll('rect')
       .data(candleData)
       .enter()
@@ -122,9 +131,7 @@ class SampleChart {
 
         return h
       })
-      .attr('fill', d => {
-        return d.close > d.open ? WIN_COLOR : LOSS_COLOR
-      })
+      .attr('fill', calColor)
 
     var line = d3.line().x(d => d.x).y(d => d.y)
     group.selectAll('path.shadow')
@@ -139,9 +146,7 @@ class SampleChart {
 
         return line([{x: x, y: y1}, {x: x, y: y2}])
       })
-      .attr('stroke', d => {
-        return d.close > d.open ? WIN_COLOR : LOSS_COLOR
-      })
+      .attr('stroke', calColor)
 
       this.candleGroup = group
   }
@@ -175,7 +180,7 @@ class SampleChart {
       .attr('y', d => scaleY(d.volume))
       .attr('width', scaleX.bandwidth())
       .attr('height', d => VOL_HEIGHT - scaleY(d.volume))
-      .attr('fill', d => d.open > d.close ? WIN_COLOR : LOSS_COLOR)
+      .attr('fill', d => d.open < d.close ? WIN_COLOR : LOSS_COLOR)
 
       group.selectAll('.bar').data(candleData).enter()
       .append('rect')

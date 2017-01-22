@@ -1,10 +1,10 @@
 /**
- * Created by shinan on 2016/12/29.
+ * Created by shinan on 2017/1/22.
  */
+const d3 = require('d3')
 import { WIN_COLOR, LOSS_COLOR, EQUAL_COLOR } from './libs/config'
 import './css/d3.css'
 const str2number = require('./libs/str2number')
-const d3 = require('d3')
 const PREDICT_PERCENT = 0.7
 const MARGIN_BOTTOM = 15
 const MARGIN_RIGHT = 2
@@ -12,7 +12,7 @@ const TEXT_MARGIN = 5
 const VOL_HEIGHT = 66
 const EventEmitter = require('events')
 
-class Predict extends EventEmitter {
+class StockChart extends EventEmitter {
   constructor(selector, options) {
     super()
     this.options = options
@@ -31,13 +31,11 @@ class Predict extends EventEmitter {
     }
 
     this.options.candleData = this.options.candleData.map(str2number)
-    this.options.predictData = this.options.predictData.map(str2number)
 
-    let { candleData, predictData } = options
-    let all = candleData.concat(predictData)
+    let { candleData } = options
 
-    let min = d3.min(all, d => +d.low)
-    let max = d3.max(all, d => +d.high)
+    let min = d3.min(candleData, d => +d.low)
+    let max = d3.max(candleData, d => +d.high)
 
     min = min - min / 50
     max = max + max / 50
@@ -48,86 +46,22 @@ class Predict extends EventEmitter {
     this.max = max
     this.scaleY = scaleY
     this.render()
+    this.initZooming()
   }
 
-  // 预测线
-  predictLines() {
-    var { svg, scaleY } = this
-    var { width, candleData, predictData } = this.options
-    var height = this.candleStickAreaHeight
-    var offset = width * PREDICT_PERCENT
-    var g = svg.append('g').attr('transform', `translate(${offset}, 0)`)
-    // 预测部分虚框
-    var area = d3.area()
-      .x(d => d.x)
-      .y0(0)
-      .y1(d => d.y)
+  initZooming() {
+    var { svg } = this
+    var zoomBehavior = d3.zoom()
+      .scaleExtent([1, Infinity])
 
-    g.append('path').datum([{
-      x: 0,
-      y: height
-    }, {
-      x: width * (1 - PREDICT_PERCENT),
-      y: height
-    }])
-      .attr('d', area).attr('class', 'predict')
 
-    var last = candleData[candleData.length - 1]
-
-    predictData.unshift({
-      high: last.close,
-      low: last.close,
-      close: last.close
+    zoomBehavior.on('zoom', function() {
+      console.log(d3.event.transform.k)
     })
 
-    // 预测部分折线
-    var scaleX = d3.scaleLinear().domain([0, predictData.length - 1]).range([0, width * (1 - PREDICT_PERCENT)])
+    svg.call(zoomBehavior)
 
-    this.predictScaleX = scaleX
-
-    var lineCeil = d3.line()
-      .y(d => scaleY(d.high))
-      .x((d, i) => scaleX(i))
-
-    g.append('path')
-      .datum(predictData)
-      .attr('class', 'ceil')
-      .attr('d', lineCeil)
-
-    var lineProfit = d3.line()
-      .y(d => scaleY(d.close))
-      .x((d, i) => scaleX(i))
-
-    g.append('path')
-      .datum(predictData)
-      .attr('class', 'profit')
-      .attr('d', lineProfit)
-
-    var lineFlor = d3.line()
-      .y(d => scaleY(d.low))
-      .x((d, i) => scaleX(i))
-
-    g.append('path')
-      .datum(predictData)
-      .attr('class', 'flor')
-      .attr('d', lineFlor)
-
-    // 分割虚线
-    var helpLine = d3.line()
-      .y(d => d.y)
-      .x(d => d.x)
-
-    g.append('path')
-    .datum([{
-      x: 0,
-      y: 0
-    }, {
-      x: 0,
-      y: this.options.volume ? this.totalHeight : height
-    }])
-    .attr('d', helpLine)
-    .attr('stroke', '#ccc')
-    .attr("stroke-dasharray", '5, 3')
+    // console.log(`currentZoom: ${d3.zoomTransform(svg)}`)
   }
 
   // 蜡烛线
@@ -135,13 +69,13 @@ class Predict extends EventEmitter {
     var { svg, scaleY } = this
     var { width, candleData } = this.options
     var height = this.candleStickAreaHeight
-    var offset = width * PREDICT_PERCENT
+
     var scaleX = d3.scaleBand()
       .domain(candleData.map((o, i) => i))
-      .range([0, offset])
+      .range([0, width])
       .padding(0.4)
 
-    this.scaleBandX = scaleX    
+    this.scaleBandX = scaleX
 
     const group = svg.append('g').attr('class', 'candles')
     const calColor = d => {
@@ -154,7 +88,7 @@ class Predict extends EventEmitter {
       }
     }
 
-    group.selectAll('rect')
+    var candleSelection = group.selectAll('rect')
       .data(candleData)
       .enter()
       .append('rect')
@@ -187,7 +121,7 @@ class Predict extends EventEmitter {
       })
       .attr('stroke', calColor)
 
-      this.candleGroup = group
+    this.candleGroup = group
   }
 
   // 量线
@@ -207,11 +141,11 @@ class Predict extends EventEmitter {
     var group = svg.append('g').attr('transform', `translate(0, ${height + MARGIN_BOTTOM - 1})`)
 
     group.append('rect')
-    .attr('x', 0)
-    .attr('y', 0)
-    .attr('width', width)
-    .attr('height', VOL_HEIGHT)
-    .attr('class', 'volume')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', width)
+      .attr('height', VOL_HEIGHT)
+      .attr('class', 'volume')
 
     var scaleX = this.scaleBandX
     group.selectAll('.bar').data(candleData).enter()
@@ -223,7 +157,7 @@ class Predict extends EventEmitter {
       .attr('height', d => VOL_HEIGHT - scaleY(d.volume))
       .attr('fill', d => d.open < d.close ? WIN_COLOR : LOSS_COLOR)
 
-      group.selectAll('.bar').data(candleData).enter()
+    group.selectAll('.bar').data(candleData).enter()
       .append('rect')
       .attr('class', 'bar')
   }
@@ -231,13 +165,13 @@ class Predict extends EventEmitter {
   // 数轴&辅助线
   axis() {
     var { svg, scaleY } = this
-    var { width, candleData, predictData } = this.options
+    var { width, candleData } = this.options
     var height = this.candleStickAreaHeight
     var offset = width * PREDICT_PERCENT
 
     var scaleXReal = d3.scaleOrdinal()
-      .domain([candleData[0].time, candleData[candleData.length - 1].time, predictData[predictData.length - 1].time])
-      .range([0, offset, width])
+      .domain([candleData[0].time, candleData[candleData.length - 1].time])
+      .range([0, width])
 
     let { min, max } = this
     min = +min
@@ -322,22 +256,6 @@ class Predict extends EventEmitter {
   }
 
   events() {
-    // let drag = d3.drag()
-    //   .container(function() {
-    //     return this
-    //   })
-    //   .on('start', () => {
-    //     this.handleDragStart(d3.event.x, d3.event.y)
-    //   })
-    //   .on('drag', () => {
-    //     this.handleDragMove(d3.event.x, d3.event.y)
-    //   })
-    //   .on('end', () => {
-    //     this.handleDragEnd()
-    //   })
-
-    // this.svg.call(drag)
-
     var t = this
     var timer
     var interactiveEnabled = false
@@ -372,42 +290,21 @@ class Predict extends EventEmitter {
   }
 
   getHelperLineXY(x) {
-    let { candleData, predictData, width } = this.options
+    let { candleData, width } = this.options
     let { scaleBandX, scaleY, predictScaleX } = this
-    
-    let offset = this.options.width * PREDICT_PERCENT
 
-    if (x > offset) {
-      let step = width * (1 - PREDICT_PERCENT) / predictData.length
-      let relX = x - offset
-      let index = Math.ceil(relX / step)
+    let step = scaleBandX.step()
+    let index = Math.floor( x / step )
 
-      if (index < 0 || index >= predictData.length) {
-        return {x: -1, y: -1, index}
-      }
+    if (index < 0 || index >= candleData.length) {
+      return { x: -1, y: -1, index }
+    }
 
-      let lineX = offset + predictScaleX(index)
-      let lineY = scaleY(predictData[index].close)
+    let bandWidth = scaleBandX.bandwidth()
+    let lineX = scaleBandX(index) + bandWidth / 2
+    let lineY = scaleY(candleData[index].close)
 
-      return {
-        x: lineX,
-        y: lineY,
-        point: predictData[index]
-      }
-    } else {
-      let step = scaleBandX.step()
-      let index = Math.floor( x / step )
-
-      if (index < 0 || index >= candleData.length) {
-        return {x: -1, y: -1, index}
-      }
-
-      let bandWidth = scaleBandX.bandwidth()
-      let lineX = scaleBandX(index) + bandWidth / 2
-      let lineY = scaleY(candleData[index].close)
-
-      return { x: lineX, y: lineY, point: candleData[index] }
-    }    
+    return { x: lineX, y: lineY, point: candleData[index] }
   }
 
   handleDragStart(x) {
@@ -493,7 +390,6 @@ class Predict extends EventEmitter {
     let { volume, interactive } = this.options
 
     this.candleSticks()
-    this.predictLines()
     this.axis()
 
     if (volume) {
@@ -506,4 +402,4 @@ class Predict extends EventEmitter {
   }
 }
 
-module.exports = Predict
+module.exports = StockChart
