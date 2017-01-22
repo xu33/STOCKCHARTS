@@ -11,6 +11,7 @@ const MARGIN_RIGHT = 2
 const TEXT_MARGIN = 5
 const VOL_HEIGHT = 66
 const EventEmitter = require('events')
+const moment = require('moment')
 
 class StockChart extends EventEmitter {
   constructor(selector, options) {
@@ -169,8 +170,12 @@ class StockChart extends EventEmitter {
     var height = this.candleStickAreaHeight
     var offset = width * PREDICT_PERCENT
 
-    var scaleXReal = d3.scaleOrdinal()
-      .domain([candleData[0].time, candleData[candleData.length - 1].time])
+    // var scaleXReal = d3.scaleOrdinal()
+    //   .domain([candleData[0].time, candleData[candleData.length - 1].time])
+    //   .range([0, width])
+
+    var scaleX = d3.scaleTime()
+      .domain([ new Date(candleData[0].time), new Date(candleData[candleData.length - 1].time)])
       .range([0, width])
 
     let { min, max } = this
@@ -181,15 +186,19 @@ class StockChart extends EventEmitter {
       .range([height, height / 2, 0])
 
     // 底部X轴
-    var axisX = d3.axisBottom(scaleXReal).tickSize(0).tickPadding(TEXT_MARGIN)
+    var axisX = d3.axisBottom(scaleX).tickSize(0).ticks(8).tickPadding(TEXT_MARGIN).tickFormat(d => {
+      console.log(d)
+
+      return moment(d).format('YYYY-MM-DD')
+    })
     // 右侧Y轴
     var axisY = d3.axisLeft(scaleYReal).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(d => Number(d).toFixed(2))
     // 顶部X轴（辅助线）
-    var topAxis = d3.axisBottom(scaleXReal).tickSize(0).tickFormat('')
+    var topAxis = d3.axisBottom(scaleX).tickSize(this.candleStickAreaHeight).ticks(8).tickFormat('')
     // 左侧Y轴
     var leftAxis = d3.axisRight(scaleYReal).tickSize(width).tickFormat('')
 
-    svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(topAxis)
+    var topAxisXElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(topAxis)
     var leftAxisElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(leftAxis)
 
     var axisXElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, ${height})`).call(axisX)
@@ -198,7 +207,7 @@ class StockChart extends EventEmitter {
     axisXElement.selectAll('.tick text').attr('text-anchor', 'end')
 
     // 偏移数轴第一个刻度值
-    axisXElement.select('.tick text').attr('text-anchor', 'start')
+    // axisXElement.select('.tick text').attr('text-anchor', 'start')
     // 偏移第二个刻度值 防止贴辅助线太紧
     // axisXElement.selectAll('.tick text').select(function(d, i) {
     //   if (i == 1) {
@@ -218,6 +227,12 @@ class StockChart extends EventEmitter {
     // 纵向辅助线改为虚线
     var selection = leftAxisElement.selectAll('.tick line')
     selection.each(function(d, i) {
+      if (i != 0 || i != selection.length - 1) {
+        d3.select(this).attr("stroke-dasharray", '5, 3')
+      }
+    })
+
+    topAxisXElement.selectAll('.tick line').each(function(d, i) {
       if (i != 0 || i != selection.length - 1) {
         d3.select(this).attr("stroke-dasharray", '5, 3')
       }

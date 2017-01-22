@@ -11,6 +11,7 @@ module.exports = {
     path: path.join(__dirname, 'dist'),
     sourceMapFilename: '[file].map',
     filename: '[name].js',
+    chunkFileName: '[id].[chunkhash].js',
     // You can use publicPath to point to
     // the location where you want webpack-dev-server
     // to serve its "virtual" files
