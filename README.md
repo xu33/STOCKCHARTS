@@ -1,2 +1,3 @@
-# STOCKCHARTS 
-# STOCKCHARTS 
+# 基于D3.js的K线图
+
+具有缩放和拖动范围显示的功能，十字线显示信息等交互。

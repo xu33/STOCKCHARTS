@@ -91,10 +91,10 @@ class StockChart extends EventEmitter {
       self.updateAxis()
     }
 
-    // brush.extent([
-    //   [10, 10],
-    //   [66, 300]
-    // ])
+    brush.extent([
+      [0, 0],
+      [width, 80]
+    ])
 
     brush.on('brush', brushed)
 
