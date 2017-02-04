@@ -16,6 +16,7 @@ const moment = require('moment')
 class StockChart extends EventEmitter {
   constructor(selector, options) {
     super()
+    this.selector = selector
     this.options = options
 
     this.svg = d3.select(selector)
@@ -47,39 +48,124 @@ class StockChart extends EventEmitter {
     this.max = max
     this.scaleY = scaleY
     this.render()
-    this.initZooming()
+    // this.initZooming()
+    this.initBrush()
+  }
+
+  initBrush() {
+    var { width } = this.options
+    var candleData = [...this.options.candleData]
+    var lastIndex = candleData.length - 1
+    var domain = d3.extent(candleData, d => new Date(d.time))
+    var brushX = d3.scaleTime().domain(domain).range([0, width])
+
+    var formatFunc = d3.timeFormat('%Y-%m-%d')
+
+    // console.log(formatFunc(new Date()))
+
+    var brush = d3.brushX()
+    var self = this
+    var x2 = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width])
+
+    var brushed = function(d, i) {
+      // 两种方法作用相同
+      // console.log(d3.brushSelection(this))
+      // console.log('selection:', d3.event.selection)
+
+      var s = d3.event.selection
+      var newDomain = s.map(value => x2.invert(value))
+      var [startIndex, endIndex] = newDomain
+
+      if (startIndex < 0 || endIndex > lastIndex) {
+        return
+      }
+
+      var currentRange = candleData.slice(Math.round(newDomain[0]), Math.round(newDomain[1]) + 1)
+      // 设置当前需要画的部分
+      self.options.candleData = currentRange
+      // 重绘蜡烛线
+      self.candleSticks()
+      // 重绘量线
+      self.volumes()
+      // 重绘数轴
+      self.updateAxis()
+    }
+
+    // brush.extent([
+    //   [10, 10],
+    //   [66, 300]
+    // ])
+
+    brush.on('brush', brushed)
+
+    // this.brushArea = d3.select(this.selector)
+    //   .append('svg')
+    //   .attr('display', 'block')
+    //   .attr('width', width)
+    //   .attr('height', 100)
+    //     .append('g');
+
+    // // extent方法，限制刷子的滑动范围，传入左上角和右下角的坐标
+    // // brush.extent([[0, 0], [300, 100]])
+
+
+    // this.brushArea.call(brush)
+
+    var svg = d3.select(this.selector).append('svg')
+      .attr('display', 'block')
+      .attr('width', width)
+      .attr('height', 100)
+
+    var brushBar = svg.append('g')
+
+    brushBar.call(brush).call(brush.move, [width - 100, width])
+
+    var axis = d3.axisBottom(brushX).ticks(4).tickFormat(d => formatFunc(d))
+    svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 80)`).call(axis)
   }
 
   initZooming() {
     var { svg } = this
+
+    var zoomed = () => {
+      var { transform } = d3.event
+
+      console.log(`scale(${transform.k})`)
+
+      this.candleGroup.attr('transform', `scale(${transform.k})`)
+    }
+
     var zoomBehavior = d3.zoom()
       .scaleExtent([1, Infinity])
-
-
-    zoomBehavior.on('zoom', function() {
-      console.log(d3.event.transform.k)
-    })
+      .translateExtent([0, 0], [this.options.width, this.candleStickAreaHeight])
+      .extent([0, 0], [this.options.width, this.candleStickAreaHeight])
+      .on('zoom', zoomed)
 
     svg.call(zoomBehavior)
-
-    // console.log(`currentZoom: ${d3.zoomTransform(svg)}`)
   }
 
   // 蜡烛线
   candleSticks() {
-    var { svg, scaleY } = this
-    var { width, candleData } = this.options
-    var height = this.candleStickAreaHeight
+    let { svg, scaleY } = this
+    let { width, candleData } = this.options
+    let height = this.candleStickAreaHeight
 
-    var scaleX = d3.scaleBand()
+    if (this.candleGroup) {
+      this.candleGroup.remove()
+    }
+
+    let scaleX = d3.scaleBand()
       .domain(candleData.map((o, i) => i))
       .range([0, width])
       .padding(0.4)
 
     this.scaleBandX = scaleX
 
-    const group = svg.append('g').attr('class', 'candles')
-    const calColor = d => {
+    this.candleGroup = svg.append('g')
+      .attr('class', 'candles')
+
+    let group = this.candleGroup
+    let calColor = d => {
       if (d.close > d.open) {
         return WIN_COLOR
       } else if (d.close < d.open) {
@@ -89,7 +175,7 @@ class StockChart extends EventEmitter {
       }
     }
 
-    var candleSelection = group.selectAll('rect')
+    let candleSelection = group.selectAll('rect')
       .data(candleData)
       .enter()
       .append('rect')
@@ -98,16 +184,14 @@ class StockChart extends EventEmitter {
       .attr('y', d => scaleY(Math.max(d.open, d.close)))
       .attr('width', scaleX.bandwidth())
       .attr('height', d => {
-        var h = scaleY(Math.min(d.open, d.close)) - scaleY(Math.max(d.open, d.close))
-        if (h < 1) {
-          h = 1
-        }
+        var height = scaleY(Math.min(d.open, d.close)) - scaleY(Math.max(d.open, d.close))
 
-        return h
+        return (height < 1 ? 1 : height)
       })
       .attr('fill', calColor)
 
-    var line = d3.line().x(d => d.x).y(d => d.y)
+    let line = d3.line().x(d => d.x).y(d => d.y)
+
     group.selectAll('path.shadow')
       .data(candleData)
       .enter()
@@ -121,8 +205,6 @@ class StockChart extends EventEmitter {
         return line([{x: x, y: y1}, {x: x, y: y2}])
       })
       .attr('stroke', calColor)
-
-    this.candleGroup = group
   }
 
   // 量线
@@ -132,6 +214,10 @@ class StockChart extends EventEmitter {
     var height = this.candleStickAreaHeight
     var min = d3.min(candleData, d => d.volume)
     var max = d3.max(candleData, d => d.volume)
+
+    if (this.volGroup) {
+      this.volGroup.remove()
+    }
 
     // 增加一些
     max += max / 10
@@ -161,6 +247,8 @@ class StockChart extends EventEmitter {
     group.selectAll('.bar').data(candleData).enter()
       .append('rect')
       .attr('class', 'bar')
+
+    this.volGroup = group
   }
 
   // 数轴&辅助线
@@ -168,14 +256,18 @@ class StockChart extends EventEmitter {
     var { svg, scaleY } = this
     var { width, candleData } = this.options
     var height = this.candleStickAreaHeight
-    var offset = width * PREDICT_PERCENT
+
+    // svg.selectAll('.axis').remove()
 
     // var scaleXReal = d3.scaleOrdinal()
     //   .domain([candleData[0].time, candleData[candleData.length - 1].time])
     //   .range([0, width])
 
     var scaleX = d3.scaleTime()
-      .domain([ new Date(candleData[0].time), new Date(candleData[candleData.length - 1].time)])
+      .domain([
+        new Date(candleData[0].time),
+        new Date(candleData[candleData.length - 1].time)
+      ])
       .range([0, width])
 
     let { min, max } = this
@@ -186,36 +278,53 @@ class StockChart extends EventEmitter {
       .range([height, height / 2, 0])
 
     // 底部X轴
-    var axisX = d3.axisBottom(scaleX).tickSize(0).ticks(8).tickPadding(TEXT_MARGIN).tickFormat(d => {
-      console.log(d)
+    var bottomAxis = d3.axisBottom(scaleX)
+      .tickSize(0)
+      .ticks(8)
+      .tickPadding(TEXT_MARGIN)
+      .tickFormat(d => moment(d).format('YYYY-MM-DD'))
 
-      return moment(d).format('YYYY-MM-DD')
-    })
     // 右侧Y轴
-    var axisY = d3.axisLeft(scaleYReal).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(d => Number(d).toFixed(2))
+    var rightAxis = d3.axisLeft(scaleYReal)
+      .tickSize(0)
+      .tickPadding(TEXT_MARGIN)
+      .tickFormat(d => Number(d).toFixed(2))
+
     // 顶部X轴（辅助线）
-    var topAxis = d3.axisBottom(scaleX).tickSize(this.candleStickAreaHeight).ticks(8).tickFormat('')
+    var topAxis = d3.axisBottom(scaleX)
+      .tickSize(this.candleStickAreaHeight)
+      .ticks(8)
+      .tickFormat('')
+
     // 左侧Y轴
-    var leftAxis = d3.axisRight(scaleYReal).tickSize(width).tickFormat('')
+    var leftAxis = d3.axisRight(scaleYReal)
+      .tickSize(width)
+      .tickFormat('')
 
-    var topAxisXElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(topAxis)
-    var leftAxisElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 0)`).call(leftAxis)
+    this.topAxisXElement = svg.append('g')
+      .attr('class', 'axis')
+      .attr('transform', `translate(0, 0)`)
+      .call(topAxis)
 
-    var axisXElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, ${height})`).call(axisX)
-    var axisYElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(${width}, 0)`).call(axisY)
+    this.leftAxisElement = svg.append('g')
+      .attr('class', 'axis')
+      .attr('transform', `translate(0, 0)`)
+      .call(leftAxis)
 
-    axisXElement.selectAll('.tick text').attr('text-anchor', 'end')
+    this.bottomAxisXElement = svg.append('g')
+      .attr('class', 'axis bottom-axis')
+      .attr('transform', `translate(0, ${height})`)
+      .call(bottomAxis)
 
-    // 偏移数轴第一个刻度值
-    // axisXElement.select('.tick text').attr('text-anchor', 'start')
-    // 偏移第二个刻度值 防止贴辅助线太紧
-    // axisXElement.selectAll('.tick text').select(function(d, i) {
-    //   if (i == 1) {
-    //     return this
-    //   }
-    // }).attr('transform', `translate(-2, 0)`)
+    this.rightAxisYElement = svg.append('g')
+      .attr('class', 'axis')
+      .attr('transform', `translate(${width}, 0)`)
+      .call(rightAxis)
 
-    axisYElement.selectAll('.tick text')
+    this.bottomAxisXElement.selectAll('.tick text')
+      .attr('text-anchor', 'end')
+
+    this.rightAxisYElement.selectAll('.tick text')
       .each(function(d, i) {
         if (i == 2) {
           d3.select(this).attr('transform', `translate(0, 10)`)
@@ -223,20 +332,74 @@ class StockChart extends EventEmitter {
           d3.select(this).attr('transform', `translate(0, -10)`)
         }
       })
+  }
 
-    // 纵向辅助线改为虚线
-    var selection = leftAxisElement.selectAll('.tick line')
-    selection.each(function(d, i) {
-      if (i != 0 || i != selection.length - 1) {
-        d3.select(this).attr("stroke-dasharray", '5, 3')
-      }
-    })
+  updateAxis() {
+    var { svg, scaleY } = this
+    var { width, candleData } = this.options
+    var height = this.candleStickAreaHeight
 
-    topAxisXElement.selectAll('.tick line').each(function(d, i) {
-      if (i != 0 || i != selection.length - 1) {
-        d3.select(this).attr("stroke-dasharray", '5, 3')
-      }
-    })
+    var scaleX = d3.scaleTime()
+      .domain([
+        new Date(candleData[0].time),
+        new Date(candleData[candleData.length - 1].time)
+      ])
+      .range([0, width])
+
+    // let { min, max } = this
+    // min = +min
+    // max = +max
+
+    let min = d3.min(candleData, d => d.low)
+    let max = d3.max(candleData, d => d.high)
+
+    let scaleYReal = d3.scaleOrdinal()
+      .domain([min, (max + min) / 2, max])
+      .range([height, height / 2, 0])
+
+     // 底部X轴
+    var bottomAxis = d3.axisBottom(scaleX)
+      .tickSize(0)
+      .ticks(4)
+      .tickPadding(TEXT_MARGIN)
+      .tickFormat(d => moment(d).format('YYYY-MM-DD'))
+
+    // 右侧Y轴
+    var rightAxis = d3.axisLeft(scaleYReal)
+      .tickSize(0)
+      .tickPadding(TEXT_MARGIN)
+      .tickFormat(d => Number(d).toFixed(2))
+
+    // 顶部X轴（辅助线）
+    var topAxis = d3.axisBottom(scaleX)
+      .tickSize(this.candleStickAreaHeight)
+      .ticks(4)
+      .tickFormat('')
+
+    // 左侧Y轴
+    var leftAxis = d3.axisRight(scaleYReal)
+      .tickSize(width)
+      .tickFormat('')
+
+    this.topAxisXElement.call(topAxis)
+
+    this.leftAxisElement.call(leftAxis)
+
+    this.bottomAxisXElement.call(bottomAxis)
+
+    this.rightAxisYElement.call(rightAxis)
+
+    this.bottomAxisXElement.selectAll('.tick text')
+      .attr('text-anchor', 'end')
+
+    this.rightAxisYElement.selectAll('.tick text')
+      .each(function(d, i) {
+        if (i == 2) {
+          d3.select(this).attr('transform', `translate(0, 10)`)
+        } else {
+          d3.select(this).attr('transform', `translate(0, -10)`)
+        }
+      })
   }
 
   /* 显示折线 */
@@ -312,7 +475,11 @@ class StockChart extends EventEmitter {
     let index = Math.floor( x / step )
 
     if (index < 0 || index >= candleData.length) {
-      return { x: -1, y: -1, index }
+      return {
+        x: -1,
+        y: -1,
+        index
+      }
     }
 
     let bandWidth = scaleBandX.bandwidth()
@@ -404,8 +571,8 @@ class StockChart extends EventEmitter {
   render() {
     let { volume, interactive } = this.options
 
-    this.candleSticks()
     this.axis()
+    this.candleSticks()
 
     if (volume) {
       this.volumes()

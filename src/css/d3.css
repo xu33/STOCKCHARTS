@@ -71,3 +71,9 @@ svg * {
 .help {
     stroke: #d8d8d8;
 }
+
+/* brush area */
+.brush-bar {
+    fill: none;
+    stroke: #ccc;
+}

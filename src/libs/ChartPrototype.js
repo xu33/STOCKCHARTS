@@ -173,19 +173,22 @@ const ChartPrototype = {
 
     // 量柱
 		candleData.forEach((item, index, arr) => {
-			let x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace))
-			let h = volScale(item.volume)
-			let y = this.height + FONT_SIZE + TEXT_MARGIN * 2 + volHeight - h
-			let { open, close } = item
-			let color
+			var x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace))
+      var h = volScale(item.volume)
+      var y = this.height + FONT_SIZE + TEXT_MARGIN * 2 + volHeight - h
+      var color
 
-			if (open > close) {
-				color = LOSS_COLOR
-			} else if (open < close) {
-				color = WIN_COLOR
-			} else {
-				color = EQUAL_COLOR
-			}
+			var yesterday = arr[index - 1]
+
+      if (!yesterday) {
+			  color = EQUAL_COLOR
+      } else {
+			  if (item.close > yesterday.close) {
+			    color = WIN_COLOR
+        } else {
+			    color = LOSS_COLOR
+        }
+      }
 
 			this.paper.rect(x, y, candleWidth, h).attr({
 				fill: color,

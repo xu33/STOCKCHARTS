@@ -10,7 +10,7 @@ require(['./StockChart'], (StockChart) => {
   new StockChart(document.querySelector('#container'), {
     candleData: candleData,
     width: 600,
-    height: 300,
+    height: 420,
     volume: true,
     interactive: true
   })

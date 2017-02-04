@@ -29,6 +29,10 @@ app.get('/st', (req, res) => {
   res.sendFile(path.join(__dirname, 'example/st.html'))
 })
 
+app.get('/brushexample', (req, res) => {
+	res.sendFile(path.join(__dirname, 'zoombrush.html'))
+})
+
 app.listen(3003, function(err) {
   if (err) {
     return console.error(err);

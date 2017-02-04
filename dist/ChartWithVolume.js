@@ -722,17 +722,18 @@ var ChartWithVolume =
 				var x = OUTTER_MARGIN + round(index * (candleWidth + candleSpace));
 				var h = volScale(item.volume);
 				var y = _this2.height + FONT_SIZE + TEXT_MARGIN * 2 + volHeight - h;
-				var open = item.open,
-				    close = item.close;
+				var color;
 
-				var color = void 0;
+				var yesterday = arr[index - 1];
 
-				if (open > close) {
-					color = LOSS_COLOR;
-				} else if (open < close) {
-					color = WIN_COLOR;
-				} else {
+				if (!yesterday) {
 					color = EQUAL_COLOR;
+				} else {
+					if (item.close > yesterday.close) {
+						color = WIN_COLOR;
+					} else {
+						color = LOSS_COLOR;
+					}
 				}
 
 				_this2.paper.rect(x, y, candleWidth, h).attr({
