@@ -13,7 +13,7 @@ body {
 }*/
 
 svg * {
-    shape-rendering:crispEdges;
+    /*shape-rendering:crispEdges;*/
 }
 
 /* 数字文字颜色 */

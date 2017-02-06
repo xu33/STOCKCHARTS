@@ -8,7 +8,7 @@ require(['./StockChart'], (StockChart) => {
   }))
 
   new StockChart(document.querySelector('#container'), {
-    candleData: candleData,
+    candleData: [ ...candleData],
     width: 600,
     height: 420,
     volume: true,

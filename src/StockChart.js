@@ -111,17 +111,47 @@ class StockChart extends EventEmitter {
 
     // this.brushArea.call(brush)
 
+
     var svg = d3.select(this.selector).append('svg')
       .attr('display', 'block')
       .attr('width', width)
       .attr('height', 100)
 
     var brushBar = svg.append('g')
+    // 绘制区域图形
+    this.drawArea(brushBar, candleData)
 
     brushBar.call(brush).call(brush.move, [width - 100, width])
 
-    var axis = d3.axisBottom(brushX).ticks(4).tickFormat(d => formatFunc(d))
-    svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 80)`).call(axis)
+    var axis = d3.axisTop(brushX).ticks(4).tickSize(0).tickFormat(d => formatFunc(d))
+    svg.append('g')
+      .attr('class', 'axis')
+      .attr('transform', `translate(0, 80)`)
+      .call(axis)
+  }
+  /*
+    * y0 和 y1 可以分別看成是上方 y 座標與下方 y 坐標，
+    * x0 和 x1 可以看成左方的 x 座標與右方的 x 座標，
+    * 基本上一定要有 x 一組數據搭配 y0、y1 或 y 一組數據搭配 x0、x1，
+    * 因此最重要的其實就是必須要有一組座標來產生 area
+    *
+  */
+  drawArea(container, candleData) {
+    var min = d3.min(candleData, d => d.close)
+    var max = d3.max(candleData, d => d.close)
+    var scaleY = d3.scaleLinear().domain([min, max]).range([80, 0])
+    var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, this.options.width])
+    var line = d3.line()
+      .x((d, i) => scaleX(i))
+      .y((d, i) => scaleY(d.close))
+
+    var area = d3.area()
+      .x((d, i) => scaleX(i))
+      .y0(d => scaleY(d.close))
+      .y1(80)
+
+    container.append('path').datum(candleData).attr('d', line).attr('stroke', 'rgb(0, 102, 204)')
+    container.append('path').datum(candleData).attr('d', area).attr('fill', 'rgba(0, 150, 255, 0.0980392)')
   }
 
   initZooming() {
@@ -257,8 +287,6 @@ class StockChart extends EventEmitter {
     var { width, candleData } = this.options
     var height = this.candleStickAreaHeight
 
-    // svg.selectAll('.axis').remove()
-
     // var scaleXReal = d3.scaleOrdinal()
     //   .domain([candleData[0].time, candleData[candleData.length - 1].time])
     //   .range([0, width])
@@ -326,11 +354,16 @@ class StockChart extends EventEmitter {
 
     this.rightAxisYElement.selectAll('.tick text')
       .each(function(d, i) {
+        var element = d3.select(this)
+        var translateStr
+
         if (i == 2) {
-          d3.select(this).attr('transform', `translate(0, 10)`)
+          translateStr = `translate(0, 10)`
         } else {
-          d3.select(this).attr('transform', `translate(0, -10)`)
+          translateStr = `translate(0, -10)`
         }
+
+        element.attr('transform', translateStr)
       })
   }
 
@@ -346,13 +379,8 @@ class StockChart extends EventEmitter {
       ])
       .range([0, width])
 
-    // let { min, max } = this
-    // min = +min
-    // max = +max
-
     let min = d3.min(candleData, d => d.low)
     let max = d3.max(candleData, d => d.high)
-
     let scaleYReal = d3.scaleOrdinal()
       .domain([min, (max + min) / 2, max])
       .range([height, height / 2, 0])
@@ -371,35 +399,42 @@ class StockChart extends EventEmitter {
       .tickFormat(d => Number(d).toFixed(2))
 
     // 顶部X轴（辅助线）
-    var topAxis = d3.axisBottom(scaleX)
-      .tickSize(this.candleStickAreaHeight)
-      .ticks(4)
-      .tickFormat('')
+    // var topAxis = d3.axisBottom(scaleX)
+    //   .tickSize(this.candleStickAreaHeight)
+    //   .ticks(4)
+    //   .tickFormat('')
 
     // 左侧Y轴
-    var leftAxis = d3.axisRight(scaleYReal)
-      .tickSize(width)
-      .tickFormat('')
+    // var leftAxis = d3.axisRight(scaleYReal)
+    //   .tickSize(width)
+    //   .tickFormat('')
 
-    this.topAxisXElement.call(topAxis)
-
-    this.leftAxisElement.call(leftAxis)
+    // this.topAxisXElement.call(topAxis)
+    //
+    // this.leftAxisElement.call(leftAxis)
 
     this.bottomAxisXElement.call(bottomAxis)
 
     this.rightAxisYElement.call(rightAxis)
 
-    this.bottomAxisXElement.selectAll('.tick text')
+    this.bottomAxisXElement
+      .selectAll('.tick text')
       .attr('text-anchor', 'end')
 
-    this.rightAxisYElement.selectAll('.tick text')
-      .each(function(d, i) {
-        if (i == 2) {
-          d3.select(this).attr('transform', `translate(0, 10)`)
-        } else {
-          d3.select(this).attr('transform', `translate(0, -10)`)
-        }
-      })
+    this.rightAxisYElement
+      .selectAll('.tick text')
+        .each(function(d, i) {
+          var element = d3.select(this)
+          var translateStr
+
+          if (i == 2) {
+            translateStr = `translate(0, 10)`
+          } else {
+            translateStr = `translate(0, -10)`
+          }
+
+          element.attr('transform', translateStr)
+        })
   }
 
   /* 显示折线 */
