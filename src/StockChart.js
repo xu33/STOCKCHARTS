@@ -160,7 +160,7 @@ class StockChart extends EventEmitter {
       [width, 80]
     ])
 
-    brush.on('brush', brushed)
+    brush.on('end', brushed)
 
     // this.brushArea = d3.select(this.selector)
     //   .append('svg')
