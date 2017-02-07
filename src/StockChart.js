@@ -2,7 +2,7 @@
  * Created by shinan on 2017/1/22.
  */
 const d3 = require('d3')
-import { WIN_COLOR, LOSS_COLOR, EQUAL_COLOR } from './libs/config'
+import {WIN_COLOR, LOSS_COLOR, EQUAL_COLOR} from './libs/config'
 import './css/d3.css'
 const str2number = require('./libs/str2number')
 const PREDICT_PERCENT = 0.7
@@ -34,7 +34,7 @@ class StockChart extends EventEmitter {
 
     this.options.candleData = this.options.candleData.map(str2number)
 
-    let { candleData } = options
+    let {candleData} = options
 
     let min = d3.min(candleData, d => +d.low)
     let max = d3.max(candleData, d => +d.high)
@@ -49,25 +49,80 @@ class StockChart extends EventEmitter {
     this.scaleY = scaleY
     this.render()
     // this.initZooming()
+    // this.initBrush()
+
+    this.renderOverviewArea()
     this.initBrush()
   }
 
+  renderOverviewArea() {
+    var width = this.options.width
+    var svg = d3.select(this.selector).append('svg').attr('width', 600)
+      .attr('height', 100)
+    var container = svg.append('g')
+    var candleData = this.options.candleData
+    var min = d3.min(candleData, d => d.close)
+    var max = d3.max(candleData, d => d.close)
+    var scaleY = d3.scaleLinear().domain([min, max]).range([80, 10])
+    var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, this.options.width])
+
+    /*
+     * y0 和 y1 可以分別看成是上方 y 座標與下方 y 坐標，
+     * x0 和 x1 可以看成左方的 x 座標與右方的 x 座標，
+     * 基本上一定要有 x 一組數據搭配 y0、y1 或 y 一組數據搭配 x0、x1，
+     * 因此最重要的其實就是必須要有一組座標來產生 area
+     *
+     */
+
+    var line = d3.line()
+      .x((d, i) => scaleX(i))
+      .y(d => scaleY(d.close))
+
+    var area = d3.area()
+      .x((d, i) => scaleX(i))
+      .y0(d => scaleY(d.close))
+      .y1(80)
+    // 绘制区域图形
+    container.append('path').datum(candleData).attr('d', line).attr('fill', 'none').attr('stroke', '#ccc')
+    container.append('path').datum(candleData).attr('d', area).attr('fill', '#ccc').attr('opacity', '0.3')
+
+    // 数轴使用的比例尺
+    var domain = [candleData[0].time]
+    var len = candleData.length
+    for (var i = 1; i < 5; i++) {
+      var index = Math.floor(len * 0.2 * i) - 1
+      domain.push(candleData[index].time)
+    }
+
+    var range = this.getArrayBetween(0, width, 4)
+    var scaleForAxis = d3.scaleOrdinal().domain(domain).range(range)
+    var axisBottom = d3.axisTop(scaleForAxis).tickSize(0)
+    var axisTop = d3.axisBottom(scaleForAxis).tickSize(80).tickFormat('')
+    var axisBottomElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 80)`).call(axisBottom)
+
+    axisBottomElement.selectAll('.tick text').attr('text-anchor', 'start').each(function(d, i) {
+      var element = d3.select(this)
+      element.attr('transform', 'translate(2, 0)')
+    })
+
+    svg.append('g').attr('class', 'axis').call(axisTop)
+
+    this.overviewArea = svg
+  }
+
   initBrush() {
-    var { width } = this.options
-    var candleData = [...this.options.candleData]
+    var {width} = this.options
+    var candleData = [ ...this.options.candleData ]
     var lastIndex = candleData.length - 1
     var domain = d3.extent(candleData, d => new Date(d.time))
     var brushX = d3.scaleTime().domain(domain).range([0, width])
-
     var formatFunc = d3.timeFormat('%Y-%m-%d')
-
-    // console.log(formatFunc(new Date()))
 
     var brush = d3.brushX()
     var self = this
     var x2 = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width])
 
-    var brushed = function(d, i) {
+    var brushed = function (d, i) {
       // 两种方法作用相同
       // console.log(d3.brushSelection(this))
       // console.log('selection:', d3.event.selection)
@@ -112,55 +167,20 @@ class StockChart extends EventEmitter {
     // this.brushArea.call(brush)
 
 
-    var svg = d3.select(this.selector).append('svg')
-      .attr('display', 'block')
-      .attr('width', width)
-      .attr('height', 100)
+    var svg = this.overviewArea
 
     var brushBar = svg.append('g')
-    // 绘制区域图形
-    this.drawArea(brushBar, candleData)
 
     brushBar.call(brush).call(brush.move, [width - 100, width])
-
-    var axis = d3.axisTop(brushX).ticks(4).tickSize(0).tickFormat(d => formatFunc(d))
-    svg.append('g')
-      .attr('class', 'axis')
-      .attr('transform', `translate(0, 80)`)
-      .call(axis)
-  }
-  /*
-    * y0 和 y1 可以分別看成是上方 y 座標與下方 y 坐標，
-    * x0 和 x1 可以看成左方的 x 座標與右方的 x 座標，
-    * 基本上一定要有 x 一組數據搭配 y0、y1 或 y 一組數據搭配 x0、x1，
-    * 因此最重要的其實就是必須要有一組座標來產生 area
-    *
-  */
-  drawArea(container, candleData) {
-    var min = d3.min(candleData, d => d.close)
-    var max = d3.max(candleData, d => d.close)
-    var scaleY = d3.scaleLinear().domain([min, max]).range([80, 0])
-    var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, this.options.width])
-    var line = d3.line()
-      .x((d, i) => scaleX(i))
-      .y((d, i) => scaleY(d.close))
-
-    var area = d3.area()
-      .x((d, i) => scaleX(i))
-      .y0(d => scaleY(d.close))
-      .y1(80)
-
-    container.append('path').datum(candleData).attr('d', line).attr('stroke', 'rgb(0, 102, 204)')
-    container.append('path').datum(candleData).attr('d', area).attr('fill', 'rgba(0, 150, 255, 0.0980392)')
   }
 
   initZooming() {
     var { svg } = this
 
     var zoomed = () => {
-      var { transform } = d3.event
+      var {transform} = d3.event
 
-      console.log(`scale(${transform.k})`)
+      // console.log(`scale(${transform.k})`)
 
       this.candleGroup.attr('transform', `scale(${transform.k})`)
     }
@@ -176,8 +196,8 @@ class StockChart extends EventEmitter {
 
   // 蜡烛线
   candleSticks() {
-    let { svg, scaleY } = this
-    let { width, candleData } = this.options
+    let {svg, scaleY} = this
+    let {width, candleData} = this.options
     let height = this.candleStickAreaHeight
 
     if (this.candleGroup) {
@@ -239,14 +259,14 @@ class StockChart extends EventEmitter {
 
   // 量线
   volumes() {
-    var { svg } = this
-    var { width, candleData } = this.options
+    var {svg} = this
+    var {width, candleData} = this.options
     var height = this.candleStickAreaHeight
     var min = d3.min(candleData, d => d.volume)
     var max = d3.max(candleData, d => d.volume)
 
     if (this.volGroup) {
-      this.volGroup.remove()
+      this.volGroup.selectAll('.bar').remove()
     }
 
     // 增加一些
@@ -274,172 +294,143 @@ class StockChart extends EventEmitter {
       .attr('height', d => VOL_HEIGHT - scaleY(d.volume))
       .attr('fill', d => d.open < d.close ? WIN_COLOR : LOSS_COLOR)
 
-    group.selectAll('.bar').data(candleData).enter()
-      .append('rect')
-      .attr('class', 'bar')
-
     this.volGroup = group
   }
 
-  // 数轴&辅助线
-  axis() {
-    var { svg, scaleY } = this
-    var { width, candleData } = this.options
+  // (1, 3, 2) => [1, 2, 3]
+  getArrayBetween(startValue, endValue, length) {
+    var interpolater = d3.interpolateNumber(startValue, endValue)
+    var result = []
+    for (var i = 0; i <= length; i++) {
+      result.push(interpolater(i / length))
+    }
+
+    return result
+  }
+
+  createHorizontalAxis() {
+    var svg = this.svg
+    var { width, candleData }  = this.options
     var height = this.candleStickAreaHeight
 
-    // var scaleXReal = d3.scaleOrdinal()
-    //   .domain([candleData[0].time, candleData[candleData.length - 1].time])
-    //   .range([0, width])
+    var domain = [candleData[0].time]
+    for (var i = 1; i < 4; i++) {
+      var index = Math.floor(candleData.length * (0.25 * i)) - 1
 
-    var scaleX = d3.scaleTime()
-      .domain([
-        new Date(candleData[0].time),
-        new Date(candleData[candleData.length - 1].time)
-      ])
-      .range([0, width])
+      domain.push(candleData[index].time)
+    }
+    domain.push(candleData[candleData.length - 1].time)
 
-    let { min, max } = this
-    min = +min
-    max = +max
-    let scaleYReal = d3.scaleOrdinal()
-      .domain([min, (max + min) / 2, max])
-      .range([height, height / 2, 0])
+    var range = this.getArrayBetween(0, width, 4)
+    var scaleX = d3.scaleOrdinal().domain(domain).range(range)
+    // 创建底部的X轴
+    var bottomAxis = d3.axisBottom(scaleX).tickSize(0).tickPadding(TEXT_MARGIN);
+    this.bottomAxisXElement = svg.append('g').attr('class', 'axis bottom-axis').attr('transform', `translate(0, ${height})`);
+    this.bottomAxisXElement.call(bottomAxis);
 
-    // 底部X轴
-    var bottomAxis = d3.axisBottom(scaleX)
+    // 创建辅助线
+    var topAxis = d3.axisBottom(scaleX).tickSize(height).tickFormat('')
+    svg.append('g').attr('class', 'axis').attr('transform', 'translate(0, 0)').call(topAxis)
+  }
+
+  // 创建垂直方向的数轴和辅助线
+  createVerticalAxis() {
+    let { width, candleData } = this.options
+    let height = this.candleStickAreaHeight
+    let min = d3.min(candleData, d => Number(d.low))
+    let max = d3.max(candleData, d => Number(d.high))
+
+    let svg = this.svg
+    let domain = this.getArrayBetween(min, max, 4)
+    let range = this.getArrayBetween(height, 0, 4)
+    let scale = d3.scaleOrdinal().domain(domain).range(range)
+
+    let rightAxis = d3.axisLeft(scale)
       .tickSize(0)
-      .ticks(8)
       .tickPadding(TEXT_MARGIN)
-      .tickFormat(d => moment(d).format('YYYY-MM-DD'))
+      .tickFormat(d => Number(d).toFixed(2));
+    // 数轴
+    this.rightAxisYElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(${width}, 0)`).call(rightAxis);
+    // 辅助线
+    var leftAxis = d3.axisRight(scale).tickSize(width).tickFormat('');
+    svg.append('g').attr('class', 'axis').attr('transform', 'translate(0, 0)').call(leftAxis);
 
-    // 右侧Y轴
-    var rightAxis = d3.axisLeft(scaleYReal)
-      .tickSize(0)
-      .tickPadding(TEXT_MARGIN)
-      .tickFormat(d => Number(d).toFixed(2))
+    // 对刻度显示做调整
+    this.repositionTicksBottom()
+    this.repositionTicksRight()
+  }
 
-    // 顶部X轴（辅助线）
-    var topAxis = d3.axisBottom(scaleX)
-      .tickSize(this.candleStickAreaHeight)
-      .ticks(8)
-      .tickFormat('')
-
-    // 左侧Y轴
-    var leftAxis = d3.axisRight(scaleYReal)
-      .tickSize(width)
-      .tickFormat('')
-
-    this.topAxisXElement = svg.append('g')
-      .attr('class', 'axis')
-      .attr('transform', `translate(0, 0)`)
-      .call(topAxis)
-
-    this.leftAxisElement = svg.append('g')
-      .attr('class', 'axis')
-      .attr('transform', `translate(0, 0)`)
-      .call(leftAxis)
-
-    this.bottomAxisXElement = svg.append('g')
-      .attr('class', 'axis bottom-axis')
-      .attr('transform', `translate(0, ${height})`)
-      .call(bottomAxis)
-
-    this.rightAxisYElement = svg.append('g')
-      .attr('class', 'axis')
-      .attr('transform', `translate(${width}, 0)`)
-      .call(rightAxis)
-
-    this.bottomAxisXElement.selectAll('.tick text')
-      .attr('text-anchor', 'end')
-
+  repositionTicksRight() {
     this.rightAxisYElement.selectAll('.tick text')
       .each(function(d, i) {
         var element = d3.select(this)
-        var translateStr
+        var translateString = `translate(0, ${ i == 0 ? -10 : 10 })`
 
-        if (i == 2) {
-          translateStr = `translate(0, 10)`
-        } else {
-          translateStr = `translate(0, -10)`
-        }
-
-        element.attr('transform', translateStr)
+        element.attr('transform', translateString)
       })
   }
 
+  repositionTicksBottom() {
+    this.bottomAxisXElement.selectAll('.tick text').attr('text-anchor', 'start').each(function(d, i) {
+      var element = d3.select(this)
+      element.attr('transform', 'translate(2, 0)')
+    })
+  }
+
   updateAxis() {
-    var { svg, scaleY } = this
-    var { width, candleData } = this.options
-    var height = this.candleStickAreaHeight
+    // 更新右侧数轴
+    this.updateRightAxis()
 
-    var scaleX = d3.scaleTime()
-      .domain([
-        new Date(candleData[0].time),
-        new Date(candleData[candleData.length - 1].time)
-      ])
-      .range([0, width])
+    // 更新底部数轴
+    this.updateBottomAxis()
+  }
 
-    let min = d3.min(candleData, d => d.low)
-    let max = d3.max(candleData, d => d.high)
-    let scaleYReal = d3.scaleOrdinal()
-      .domain([min, (max + min) / 2, max])
-      .range([height, height / 2, 0])
+  updateRightAxis() {
+    let { candleData } = this.options
+    let height = this.candleStickAreaHeight
+    let min = d3.min(candleData, d => Number(d.low))
+    let max = d3.max(candleData, d => Number(d.high))
+    let domain = this.getArrayBetween(min, max, 4)
+    let range = this.getArrayBetween(height, 0, 4)
+    let scale = d3.scaleOrdinal().domain(domain).range(range)
 
-     // 底部X轴
-    var bottomAxis = d3.axisBottom(scaleX)
-      .tickSize(0)
-      .ticks(4)
-      .tickPadding(TEXT_MARGIN)
-      .tickFormat(d => moment(d).format('YYYY-MM-DD'))
-
-    // 右侧Y轴
-    var rightAxis = d3.axisLeft(scaleYReal)
+    let rightAxis = d3.axisLeft(scale)
       .tickSize(0)
       .tickPadding(TEXT_MARGIN)
-      .tickFormat(d => Number(d).toFixed(2))
-
-    // 顶部X轴（辅助线）
-    // var topAxis = d3.axisBottom(scaleX)
-    //   .tickSize(this.candleStickAreaHeight)
-    //   .ticks(4)
-    //   .tickFormat('')
-
-    // 左侧Y轴
-    // var leftAxis = d3.axisRight(scaleYReal)
-    //   .tickSize(width)
-    //   .tickFormat('')
-
-    // this.topAxisXElement.call(topAxis)
-    //
-    // this.leftAxisElement.call(leftAxis)
-
-    this.bottomAxisXElement.call(bottomAxis)
+      .tickFormat(d => Number(d).toFixed(2));
 
     this.rightAxisYElement.call(rightAxis)
+    this.repositionTicksRight()
+  }
 
-    this.bottomAxisXElement
-      .selectAll('.tick text')
-      .attr('text-anchor', 'end')
+  updateBottomAxis() {
+    var { width, candleData }  = this.options
 
-    this.rightAxisYElement
-      .selectAll('.tick text')
-        .each(function(d, i) {
-          var element = d3.select(this)
-          var translateStr
+    var domain = [candleData[0].time]
+    for (let i = 1; i < 4; i++) {
+      let index = Math.floor(candleData.length * (0.25 * i)) - 1
 
-          if (i == 2) {
-            translateStr = `translate(0, 10)`
-          } else {
-            translateStr = `translate(0, -10)`
-          }
+      domain.push(candleData[index].time)
+    }
+    domain.push(candleData[candleData.length - 1].time)
 
-          element.attr('transform', translateStr)
-        })
+    var range = this.getArrayBetween(0, width, 4);
+    var scaleX = d3.scaleOrdinal().domain(domain).range(range);
+    var bottomAxis = d3.axisBottom(scaleX).tickSize(0).tickPadding(TEXT_MARGIN);
+
+    this.bottomAxisXElement.call(bottomAxis)
+    this.repositionTicksBottom()
+  }
+
+  // 绘制数轴
+  axis() {
+    this.createHorizontalAxis()
+    this.createVerticalAxis()
   }
 
   /* 显示折线 */
   drawPolyline() {
-    let { candleData, width } = this.options
+    let {candleData, width} = this.options
     let scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width * PREDICT_PERCENT])
     let scaleY = this.scaleY
     let line = d3.line().x((d, i) => scaleX(i)).y(d => scaleY(d.close))
@@ -465,7 +456,7 @@ class StockChart extends EventEmitter {
   }
 
   toggleCandle(bool) {
-    this.candleGroup.attr('class', bool ? 'candle': 'none')
+    this.candleGroup.attr('class', bool ? 'candle' : 'none')
   }
 
   events() {
@@ -473,7 +464,7 @@ class StockChart extends EventEmitter {
     var timer
     var interactiveEnabled = false
 
-    this.svg.on('touchstart', function() {
+    this.svg.on('touchstart', function () {
       let [[x, y]] = d3.touches(this)
 
       timer = setTimeout(() => {
@@ -482,7 +473,7 @@ class StockChart extends EventEmitter {
       }, 500)
     })
 
-    this.svg.on('touchmove', function() {
+    this.svg.on('touchmove', function () {
       if (interactiveEnabled) {
         let [[x, y]] = d3.touches(this)
         t.handleDragMove(x, y)
@@ -503,11 +494,11 @@ class StockChart extends EventEmitter {
   }
 
   getHelperLineXY(x) {
-    let { candleData, width } = this.options
-    let { scaleBandX, scaleY, predictScaleX } = this
+    let {candleData, width} = this.options
+    let {scaleBandX, scaleY, predictScaleX} = this
 
     let step = scaleBandX.step()
-    let index = Math.floor( x / step )
+    let index = Math.floor(x / step)
 
     if (index < 0 || index >= candleData.length) {
       return {
@@ -521,7 +512,7 @@ class StockChart extends EventEmitter {
     let lineX = scaleBandX(index) + bandWidth / 2
     let lineY = scaleY(candleData[index].close)
 
-    return { x: lineX, y: lineY, point: candleData[index] }
+    return {x: lineX, y: lineY, point: candleData[index]}
   }
 
   handleDragStart(x) {
@@ -563,7 +554,7 @@ class StockChart extends EventEmitter {
   }
 
   handleDragMove(x) {
-    var { x, y, point } = this.getHelperLineXY(x)
+    var {x, y, point} = this.getHelperLineXY(x)
 
     if (x === -1) return
 
@@ -604,7 +595,7 @@ class StockChart extends EventEmitter {
   }
 
   render() {
-    let { volume, interactive } = this.options
+    let {volume, interactive} = this.options
 
     this.axis()
     this.candleSticks()

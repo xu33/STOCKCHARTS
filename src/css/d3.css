@@ -13,7 +13,7 @@ body {
 }*/
 
 svg * {
-    /*shape-rendering:crispEdges;*/
+    shape-rendering:crispEdges;
 }
 
 /* 数字文字颜色 */
@@ -76,4 +76,10 @@ svg * {
 .brush-bar {
     fill: none;
     stroke: #ccc;
+}
+
+.selection {
+    fill: #2f84cc;
+    opacity: 0.2;
+    stroke: #000000;
 }
