@@ -7,7 +7,7 @@ import './css/d3.css'
 const str2number = require('./libs/str2number')
 const PREDICT_PERCENT = 0.7
 const MARGIN_BOTTOM = 15
-const MARGIN_RIGHT = 2
+const MARGIN_RIGHT = 1
 const TEXT_MARGIN = 5
 const VOL_HEIGHT = 66
 const EventEmitter = require('events')
@@ -15,7 +15,7 @@ const moment = require('moment')
 
 class StockChart extends EventEmitter {
   constructor(selector, options) {
-    super()
+    super(selector, options)
     this.selector = selector
     this.options = options
 
@@ -56,10 +56,9 @@ class StockChart extends EventEmitter {
   }
 
   renderOverviewArea() {
-    var width = this.options.width
-    var svg = d3.select(this.selector).append('svg').attr('width', 600)
-      .attr('height', 100)
-    var container = svg.append('g')
+    var { width, height } = this.options
+    var svg = this.svg
+    var container = svg.append('g').attr('transform', `translate(0, ${height + 10})`)
     var candleData = this.options.candleData
     var min = d3.min(candleData, d => d.close)
     var max = d3.max(candleData, d => d.close)
@@ -71,8 +70,7 @@ class StockChart extends EventEmitter {
      * x0 和 x1 可以看成左方的 x 座標與右方的 x 座標，
      * 基本上一定要有 x 一組數據搭配 y0、y1 或 y 一組數據搭配 x0、x1，
      * 因此最重要的其實就是必須要有一組座標來產生 area
-     *
-     */
+    */
 
     var line = d3.line()
       .x((d, i) => scaleX(i))
@@ -98,16 +96,20 @@ class StockChart extends EventEmitter {
     var scaleForAxis = d3.scaleOrdinal().domain(domain).range(range)
     var axisBottom = d3.axisTop(scaleForAxis).tickSize(0)
     var axisTop = d3.axisBottom(scaleForAxis).tickSize(80).tickFormat('')
-    var axisBottomElement = svg.append('g').attr('class', 'axis').attr('transform', `translate(0, 80)`).call(axisBottom)
+    var axisBottomElement = container.append('g').attr('class', 'axis').attr('transform', `translate(0, 80)`).call(axisBottom)
 
+    // 文字位置微调
     axisBottomElement.selectAll('.tick text').attr('text-anchor', 'start').each(function(d, i) {
-      var element = d3.select(this)
-      element.attr('transform', 'translate(2, 0)')
+      d3.select(this).attr('transform', 'translate(2, 0)')
     })
 
-    svg.append('g').attr('class', 'axis').call(axisTop)
+    var lastTick = axisBottomElement.select('.tick:last-child')
+    lastTick.remove()
 
-    this.overviewArea = svg
+    // 顶部做辅助线
+    container.append('g').attr('class', 'axis').call(axisTop)
+
+    this.overviewArea = container
   }
 
   initBrush() {
@@ -123,11 +125,18 @@ class StockChart extends EventEmitter {
     var x2 = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width])
 
     var brushed = function (d, i) {
-      // 两种方法作用相同
+      // 下面两种写法作用相同
       // console.log(d3.brushSelection(this))
       // console.log('selection:', d3.event.selection)
 
       var s = d3.event.selection
+
+      console.log(s[1] - s[0])
+
+      if (s[1] - s[0] < 50) {
+        return
+      }
+
       var newDomain = s.map(value => x2.invert(value))
       var [startIndex, endIndex] = newDomain
 
@@ -167,9 +176,8 @@ class StockChart extends EventEmitter {
     // this.brushArea.call(brush)
 
 
-    var svg = this.overviewArea
-
-    var brushBar = svg.append('g')
+    var overview = this.overviewArea
+    var brushBar = overview.append('g')
 
     brushBar.call(brush).call(brush.move, [width - 100, width])
   }
@@ -371,10 +379,14 @@ class StockChart extends EventEmitter {
   }
 
   repositionTicksBottom() {
-    this.bottomAxisXElement.selectAll('.tick text').attr('text-anchor', 'start').each(function(d, i) {
-      var element = d3.select(this)
-      element.attr('transform', 'translate(2, 0)')
-    })
+    this.bottomAxisXElement.selectAll('.tick text')
+      .attr('text-anchor', 'start').each(function(d, i) {
+        var element = d3.select(this)
+        element.attr('transform', 'translate(2, 0)')
+      })
+
+    var lastTick = this.bottomAxisXElement.select('.tick:last-child')
+    lastTick.remove()
   }
 
   updateAxis() {
@@ -610,4 +622,4 @@ class StockChart extends EventEmitter {
   }
 }
 
-module.exports = StockChart
+module.exports = StockChart;
