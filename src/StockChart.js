@@ -368,8 +368,7 @@ class StockChart extends EventEmitter {
   createVerticalAxis() {
     let { width, candleData } = this.options
     let height = this.candleStickAreaHeight
-    let min = d3.min(candleData, d => Number(d.low))
-    let max = d3.max(candleData, d => Number(d.high))
+    let {min, max} = this.calculateMinAndMax()
 
     let svg = this.svg
     let domain = this.getArrayBetween(min, max, 4)
