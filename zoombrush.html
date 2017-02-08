@@ -18,7 +18,7 @@
 <script src="/d3.v4.min.js"></script>
 <script>
 var brushed = function() {
-  console.log('brushed fire')
+//  console.log('brushed fire')
   if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
   // console.log(d3.event.selection, x2.range())
 
@@ -46,6 +46,7 @@ var brushed = function() {
 };
 
 var zoomed = function() {
+  console.log('zoomed fire')
   if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
   var t = d3.event.transform;
   x.domain(t.rescaleX(x2).domain());
@@ -149,8 +150,8 @@ d3.csv("http://localhost:3003/sp500.csv", type, function(error, data) {
   var g = context.append("g")
       .attr("class", "brush")
       .call(brush)
-      // .call(brush.move, x.range())
-      .call(brush.move, [width - 100, width])
+      .call(brush.move, x.range())
+//      .call(brush.move, [width - 100, width])
 
   svg.append("rect")
       .attr("class", "zoom")

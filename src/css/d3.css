@@ -82,3 +82,24 @@ svg rect, svg line {
     opacity: 0.4;
     stroke: #000000;
 }
+
+/* #cd4343, #8c3037, #ffca53, #0055a2*/
+/* 均线 */
+.ma5, .ma10, .ma20, .ma30 {
+    fill:none;
+}
+.ma5 {
+    stroke: #cd4343;
+}
+
+.ma10 {
+    stroke: #8c3037;
+}
+
+.ma20 {
+    stroke: #ffca53;
+}
+
+.ma30 {
+    stroke: #0055a2;
+}

@@ -1,4 +1,4 @@
-var data = require('./fake_data/pre')
+var data = require('./fake_data/normalizeData')
 var moment = require('moment')
 
 require(['./StockChart'], (StockChart) => {
@@ -8,7 +8,7 @@ require(['./StockChart'], (StockChart) => {
   }))
 
   new StockChart(document.querySelector('#container'), {
-    candleData: [ ...candleData],
+    candleData: [...candleData],
     width: 600,
     height: 300,
     volume: true,

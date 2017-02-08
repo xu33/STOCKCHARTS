@@ -12,6 +12,15 @@ const TEXT_MARGIN = 5
 const VOL_HEIGHT = 66
 const EventEmitter = require('events')
 const moment = require('moment')
+const calColor = d => {
+  if (d.close > d.open) {
+    return WIN_COLOR
+  } else if (d.close < d.open) {
+    return LOSS_COLOR
+  } else {
+    return EQUAL_COLOR
+  }
+}
 
 class StockChart extends EventEmitter {
   constructor(selector, options) {
@@ -36,20 +45,8 @@ class StockChart extends EventEmitter {
 
     let {candleData} = options
 
-    let min = d3.min(candleData, d => +d.low)
-    let max = d3.max(candleData, d => +d.high)
-
-    min = min - min / 50
-    max = max + max / 50
-
-    let scaleY = d3.scaleLinear().domain([min, max]).range([this.candleStickAreaHeight, 0])
-
-    this.min = min
-    this.max = max
-    this.scaleY = scaleY
     this.render()
     // this.initZooming()
-    // this.initBrush()
 
     this.renderOverviewArea()
     this.initBrush()
@@ -70,7 +67,7 @@ class StockChart extends EventEmitter {
      * x0 和 x1 可以看成左方的 x 座標與右方的 x 座標，
      * 基本上一定要有 x 一組數據搭配 y0、y1 或 y 一組數據搭配 x0、x1，
      * 因此最重要的其實就是必須要有一組座標來產生 area
-    */
+      */
 
     var line = d3.line()
       .x((d, i) => scaleX(i))
@@ -131,7 +128,7 @@ class StockChart extends EventEmitter {
 
       var s = d3.event.selection
 
-      console.log(s[1] - s[0])
+      // console.log(s[1] - s[0])
 
       if (s[1] - s[0] < 50) {
         return
@@ -160,7 +157,7 @@ class StockChart extends EventEmitter {
       [width, 80]
     ])
 
-    brush.on('end', brushed)
+    brush.on('brush end', brushed)
 
     // this.brushArea = d3.select(this.selector)
     //   .append('svg')
@@ -202,9 +199,22 @@ class StockChart extends EventEmitter {
     svg.call(zoomBehavior)
   }
 
+  calculateMinAndMax() {
+    var { candleData } = this.options
+    var min = d3.min(candleData, function(d) {
+      return Math.min(d.low, d.ma5, d.ma10, d.ma20, d.ma30)
+    })
+
+    var max = d3.max(candleData, function(d) {
+      return Math.max(d.high, d.ma5, d.ma10, d.ma20, d.ma30)
+    })
+
+    return { min, max }
+  }
+
   // 蜡烛线
   candleSticks() {
-    let {svg, scaleY} = this
+    let { svg } = this
     let {width, candleData} = this.options
     let height = this.candleStickAreaHeight
 
@@ -212,10 +222,15 @@ class StockChart extends EventEmitter {
       this.candleGroup.remove()
     }
 
+    let { min, max } = this.calculateMinAndMax()
+
     let scaleX = d3.scaleBand()
       .domain(candleData.map((o, i) => i))
       .range([0, width])
       .padding(0.4)
+
+    const margin = 8
+    let scaleY = d3.scaleLinear().domain([min, max]).range([this.candleStickAreaHeight - margin, 0 + margin])
 
     this.scaleBandX = scaleX
 
@@ -223,16 +238,6 @@ class StockChart extends EventEmitter {
       .attr('class', 'candles')
 
     let group = this.candleGroup
-    let calColor = d => {
-      if (d.close > d.open) {
-        return WIN_COLOR
-      } else if (d.close < d.open) {
-        return LOSS_COLOR
-      } else {
-        return EQUAL_COLOR
-      }
-    }
-
     let candleSelection = group.selectAll('rect')
       .data(candleData)
       .enter()
@@ -248,6 +253,12 @@ class StockChart extends EventEmitter {
       })
       .attr('fill', calColor)
 
+    this.paintShadowLines(group, scaleX, scaleY)
+    this.paintAverageLines(group, scaleY)
+  }
+
+  paintShadowLines(group, scaleX, scaleY) {
+    let { candleData } = this.options
     let line = d3.line().x(d => d.x).y(d => d.y)
 
     group.selectAll('path.shadow')
@@ -265,6 +276,20 @@ class StockChart extends EventEmitter {
       .attr('stroke', calColor)
   }
 
+  paintAverageLines(group, scaleY) {
+    let { candleData, width } = this.options
+    let scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width])
+    let line = (key) => d3.line().x((d, i) => scaleX(i)).y(d => scaleY(d[key]))
+    let mas = ['ma5', 'ma10', 'ma20', 'ma30']
+
+    mas.forEach(function(prop) {
+      group.append('path')
+        .datum(candleData)
+        .attr('class', prop)
+        .attr('d', line(prop))
+    })
+  }
+
   // 量线
   volumes() {
     var {svg} = this
@@ -276,9 +301,6 @@ class StockChart extends EventEmitter {
     if (this.volGroup) {
       this.volGroup.selectAll('.bar').remove()
     }
-
-    // 增加一些
-    max += max / 10
 
     var VOL_HEIGHT = 66
     var offset = width * PREDICT_PERCENT
@@ -322,11 +344,12 @@ class StockChart extends EventEmitter {
     var height = this.candleStickAreaHeight
 
     var domain = [candleData[0].time]
+
     for (var i = 1; i < 4; i++) {
       var index = Math.floor(candleData.length * (0.25 * i)) - 1
-
       domain.push(candleData[index].time)
     }
+
     domain.push(candleData[candleData.length - 1].time)
 
     var range = this.getArrayBetween(0, width, 4)
@@ -397,6 +420,7 @@ class StockChart extends EventEmitter {
     this.updateBottomAxis()
   }
 
+  // 更新数轴Y
   updateRightAxis() {
     let { candleData } = this.options
     let height = this.candleStickAreaHeight
@@ -415,6 +439,7 @@ class StockChart extends EventEmitter {
     this.repositionTicksRight()
   }
 
+  // 更新数轴X
   updateBottomAxis() {
     var { width, candleData }  = this.options
 
@@ -441,35 +466,35 @@ class StockChart extends EventEmitter {
   }
 
   /* 显示折线 */
-  drawPolyline() {
-    let {candleData, width} = this.options
-    let scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width * PREDICT_PERCENT])
-    let scaleY = this.scaleY
-    let line = d3.line().x((d, i) => scaleX(i)).y(d => scaleY(d.close))
-
-    let group = this.svg.append('g').attr('class', 'poly')
-
-    group.append('path')
-      .datum(candleData)
-      .attr('d', line)
-      .attr('stroke', '#297cda')
-      .attr('stroke-width', 2)
-      .attr('fill', 'none')
-
-    this.lineGroup = group
-  }
-
-  togglePoly(bool) {
-    if (!this.lineGroup) {
-      this.drawPolyline()
-    } else {
-      this.lineGroup.attr('class', bool ? 'poly' : 'none')
-    }
-  }
-
-  toggleCandle(bool) {
-    this.candleGroup.attr('class', bool ? 'candle' : 'none')
-  }
+  // drawPolyline() {
+  //   let {candleData, width} = this.options
+  //   let scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width * PREDICT_PERCENT])
+  //   let scaleY = this.scaleY
+  //   let line = d3.line().x((d, i) => scaleX(i)).y(d => scaleY(d.close))
+  //
+  //   let group = this.svg.append('g').attr('class', 'poly')
+  //
+  //   group.append('path')
+  //     .datum(candleData)
+  //     .attr('d', line)
+  //     .attr('stroke', '#297cda')
+  //     .attr('stroke-width', 2)
+  //     .attr('fill', 'none')
+  //
+  //   this.lineGroup = group
+  // }
+  //
+  // togglePoly(bool) {
+  //   if (!this.lineGroup) {
+  //     this.drawPolyline()
+  //   } else {
+  //     this.lineGroup.attr('class', bool ? 'poly' : 'none')
+  //   }
+  // }
+  //
+  // toggleCandle(bool) {
+  //   this.candleGroup.attr('class', bool ? 'candle' : 'none')
+  // }
 
   events() {
     var t = this
@@ -507,7 +532,7 @@ class StockChart extends EventEmitter {
 
   getHelperLineXY(x) {
     let {candleData, width} = this.options
-    let {scaleBandX, scaleY, predictScaleX} = this
+    let { scaleBandX, scaleY } = this
 
     let step = scaleBandX.step()
     let index = Math.floor(x / step)
@@ -593,7 +618,6 @@ class StockChart extends EventEmitter {
 
     this.horizontalLine.datum(hData).attr('d', line)
     this.verticalLine.datum(vData).attr('d', line)
-
     this.emit('drag-move', point)
   }
 
@@ -607,7 +631,7 @@ class StockChart extends EventEmitter {
   }
 
   render() {
-    let {volume, interactive} = this.options
+    let { volume, interactive } = this.options
 
     this.axis()
     this.candleSticks()
