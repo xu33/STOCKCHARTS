@@ -88,6 +88,7 @@ svg rect, svg line {
 .ma5, .ma10, .ma20, .ma30 {
     fill:none;
 }
+
 .ma5 {
     stroke: #cd4343;
 }
@@ -102,4 +103,17 @@ svg rect, svg line {
 
 .ma30 {
     stroke: #0055a2;
+}
+
+/* macd */
+.macd {
+    shape-rendering:crispEdges;
+}
+.dea {
+    stroke: rgb(1, 67, 117);
+    fill: none;
+}
+.dif {
+    stroke: rgb(221, 34, 0);
+    fill: none;
 }

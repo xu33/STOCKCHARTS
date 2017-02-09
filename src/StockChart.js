@@ -12,6 +12,8 @@ const TEXT_MARGIN = 5
 const VOL_HEIGHT = 66
 const EventEmitter = require('events')
 const moment = require('moment')
+const AREA_MARGIN = 5
+
 const calColor = d => {
   if (d.close > d.open) {
     return WIN_COLOR
@@ -45,21 +47,23 @@ class StockChart extends EventEmitter {
 
     let {candleData} = options
 
+    this.overviewAreaHeight = 80
+    this.macdAreaHeight = 66
+
     this.render()
     // this.initZooming()
 
-    this.renderOverviewArea()
-    this.initBrush()
+
   }
 
   renderOverviewArea() {
     var { width, height } = this.options
     var svg = this.svg
-    var container = svg.append('g').attr('transform', `translate(0, ${height + 10})`)
+    var container = svg.append('g').attr('transform', `translate(0, ${height + this.macdAreaHeight + AREA_MARGIN * 2})`)
     var candleData = this.options.candleData
     var min = d3.min(candleData, d => d.close)
     var max = d3.max(candleData, d => d.close)
-    var scaleY = d3.scaleLinear().domain([min, max]).range([80, 10])
+    var scaleY = d3.scaleLinear().domain([min, max]).range([this.overviewAreaHeight, 10])
     var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, this.options.width])
 
     /*
@@ -76,7 +80,7 @@ class StockChart extends EventEmitter {
     var area = d3.area()
       .x((d, i) => scaleX(i))
       .y0(d => scaleY(d.close))
-      .y1(80)
+      .y1(this.overviewAreaHeight)
     // 绘制区域图形
     container.append('path').datum(candleData).attr('d', line).attr('fill', 'none').attr('stroke', '#ccc')
     container.append('path').datum(candleData).attr('d', area).attr('fill', '#ccc').attr('opacity', '0.3')
@@ -92,8 +96,8 @@ class StockChart extends EventEmitter {
     var range = this.getArrayBetween(0, width, 4)
     var scaleForAxis = d3.scaleOrdinal().domain(domain).range(range)
     var axisBottom = d3.axisTop(scaleForAxis).tickSize(0)
-    var axisTop = d3.axisBottom(scaleForAxis).tickSize(80).tickFormat('')
-    var axisBottomElement = container.append('g').attr('class', 'axis').attr('transform', `translate(0, 80)`).call(axisBottom)
+    var axisTop = d3.axisBottom(scaleForAxis).tickSize(this.overviewAreaHeight).tickFormat('')
+    var axisBottomElement = container.append('g').attr('class', 'axis').attr('transform', `translate(0, ${this.overviewAreaHeight})`).call(axisBottom)
 
     // 文字位置微调
     axisBottomElement.selectAll('.tick text').attr('text-anchor', 'start').each(function(d, i) {
@@ -147,14 +151,16 @@ class StockChart extends EventEmitter {
       // 重绘蜡烛线
       self.candleSticks()
       // 重绘量线
-      self.volumes()
+      self.updateVolumes()
       // 重绘数轴
       self.updateAxis()
+      // 重绘MACD
+      self.updateMacdArea()
     }
 
     brush.extent([
       [0, 0],
-      [width, 80]
+      [width, this.overviewAreaHeight]
     ])
 
     brush.on('brush end', brushed)
@@ -290,6 +296,108 @@ class StockChart extends EventEmitter {
     })
   }
 
+  // MACD DEA DIF
+  paintMacdArea() {
+    var { svg } = this
+    var { width, height, candleData } = this.options
+
+    // const height = 100
+
+    var group = svg.append('g').attr('transform', `translate(0, ${ height + AREA_MARGIN })`).attr('class', 'macd-container')
+
+    var min = d3.min(candleData, d => Math.min(d.macd, d.dif, d.dea))
+    var max = d3.max(candleData, d => Math.max(d.macd, d.dif, d.dea))
+
+    var domainY = [min, 0, max]
+    var rangeY = [this.macdAreaHeight, this.macdAreaHeight / 2, 0]
+    var scaleY = d3.scaleLinear().domain(domainY).range(rangeY)
+    var scaleX = d3.scalePoint().range([0, width]).padding(0.4)
+
+    var line = d3.line().x(d => d.x).y(d => d.y)
+
+    group.append('rect').attr('width', width).attr('height', this.macdAreaHeight).attr('stroke', '#ccc').attr('fill', 'none')
+
+    group.append('path').attr('d', () => {
+      var x1 = 0
+      var x2 = width
+      var y1 = this.macdAreaHeight / 2
+      var y2 = y1
+
+      return line([{x: x1, y: y1}, {x: x2, y: y2}])
+    }).attr('stroke', '#ccc')
+
+    // 绘制macd
+    scaleX.domain(candleData.map((item, index) => index))
+    group.selectAll('.macd')
+      .data(candleData)
+      .enter()
+      .append('path')
+      .attr('class', 'macd')
+      .attr('d', (d, i) => {
+        var x1 = scaleX(i)
+        var x2 = x1
+        var y1 = scaleY(d.macd)
+        var y2 = scaleY(0)
+
+        return line([{x: x1, y: y1}, {x: x2, y: y2}])
+      })
+      .attr('stroke', d => {
+        return d.macd > 0 ? WIN_COLOR : LOSS_COLOR
+      })
+
+    // 绘制dif，dea曲线
+    var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width])
+    var line = prop => d3.line().x((d, i) => scaleX(i)).y(d => scaleY(d[prop]))
+
+    group.append('path').datum(candleData).attr('d', line('dif')).attr('class', 'dif')
+    group.append('path').datum(candleData).attr('d', line('dea')).attr('class', 'dea')
+
+
+    this.macdGroup = group
+  }
+
+  // update MACD DEA DIF
+  updateMacdArea() {
+    var { svg } = this
+    var { width, height, candleData } = this.options
+
+    this.macdGroup.selectAll('.macd, .dif, .dea').remove()
+    var min = d3.min(candleData, d => Math.min(d.macd, d.dif, d.dea))
+    var max = d3.max(candleData, d => Math.max(d.macd, d.dif, d.dea))
+
+    var domainY = [min, 0, max]
+    var rangeY = [this.macdAreaHeight, this.macdAreaHeight / 2, 0]
+    var scaleY = d3.scaleLinear().domain(domainY).range(rangeY)
+    var scaleX = d3.scalePoint().domain(candleData.map((item, index) => index)).range([0, width]).padding(0.4)
+
+    var line = d3.line().x(d => d.x).y(d => d.y)
+    var group = this.macdGroup
+
+    group.selectAll('.macd')
+      .data(candleData)
+      .enter()
+      .append('path')
+      .attr('class', 'macd')
+      .attr('d', (d, i) => {
+        var x1 = scaleX(i)
+        var x2 = x1
+        var y1 = scaleY(d.macd)
+        var y2 = scaleY(0)
+
+        return line([{x: x1, y: y1}, {x: x2, y: y2}])
+      })
+      .attr('stroke', d => {
+        return d.macd > 0 ? WIN_COLOR : LOSS_COLOR
+      })
+
+    // 绘制dif，dea曲线
+    var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width])
+    var line = prop => d3.line().x((d, i) => scaleX(i)).y(d => scaleY(d[prop]))
+
+    group.append('path').datum(candleData).attr('d', line('dif')).attr('class', 'dif')
+    group.append('path').datum(candleData).attr('d', line('dea')).attr('class', 'dea')
+  }
+
   // 量线
   volumes() {
     var {svg} = this
@@ -298,9 +406,6 @@ class StockChart extends EventEmitter {
     var min = d3.min(candleData, d => d.volume)
     var max = d3.max(candleData, d => d.volume)
 
-    if (this.volGroup) {
-      this.volGroup.selectAll('.bar').remove()
-    }
 
     var VOL_HEIGHT = 66
     var offset = width * PREDICT_PERCENT
@@ -325,6 +430,32 @@ class StockChart extends EventEmitter {
       .attr('fill', d => d.open < d.close ? WIN_COLOR : LOSS_COLOR)
 
     this.volGroup = group
+  }
+
+  updateVolumes() {
+    var {svg} = this
+    var {width, candleData} = this.options
+    var height = this.candleStickAreaHeight
+    var min = d3.min(candleData, d => d.volume)
+    var max = d3.max(candleData, d => d.volume)
+
+
+    var VOL_HEIGHT = 66
+    var offset = width * PREDICT_PERCENT
+    var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 0])
+
+    var group = this.volGroup
+    group.selectAll('.bar').remove()
+
+    var scaleX = this.scaleBandX
+    group.selectAll('.bar').data(candleData).enter()
+      .append('rect')
+      .attr('class', 'bar')
+      .attr('x', (d, i) => scaleX(i))
+      .attr('y', d => scaleY(d.volume))
+      .attr('width', scaleX.bandwidth())
+      .attr('height', d => VOL_HEIGHT - scaleY(d.volume))
+      .attr('fill', d => d.open < d.close ? WIN_COLOR : LOSS_COLOR)
   }
 
   // (1, 3, 2) => [1, 2, 3]
@@ -642,6 +773,9 @@ class StockChart extends EventEmitter {
     if (interactive) {
       this.events()
     }
+    this.paintMacdArea()
+    this.renderOverviewArea()
+    this.initBrush()
   }
 }
 
