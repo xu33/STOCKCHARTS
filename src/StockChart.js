@@ -3,7 +3,7 @@
  */
 const d3 = require('d3')
 import {WIN_COLOR, LOSS_COLOR, EQUAL_COLOR} from './libs/config'
-import './css/d3.css'
+import './css/stock-chart.css'
 const str2number = require('./libs/str2number')
 const PREDICT_PERCENT = 0.7
 const MARGIN_BOTTOM = 15
@@ -29,8 +29,9 @@ class StockChart extends EventEmitter {
     super(selector, options)
     this.selector = selector
     this.options = options
+    this.element = d3.select(selector)
 
-    this.svg = d3.select(selector)
+    this.svg = this.element
       .append('svg')
       .attr('width', options.width)
       .attr('height', options.height)
@@ -52,14 +53,11 @@ class StockChart extends EventEmitter {
 
     this.render()
     // this.initZooming()
-
-
   }
 
   renderOverviewArea() {
     var { width, height } = this.options
-    var svg = this.svg
-    var container = svg.append('g').attr('transform', `translate(0, ${height + this.macdAreaHeight + AREA_MARGIN * 2})`)
+    var container = this.element.append('svg').attr('transform', `translate(0, ${height + this.macdAreaHeight + AREA_MARGIN * 2})`)
     var candleData = this.options.candleData
     var min = d3.min(candleData, d => d.close)
     var max = d3.max(candleData, d => d.close)
@@ -189,7 +187,7 @@ class StockChart extends EventEmitter {
     var { svg } = this
 
     var zoomed = () => {
-      var {transform} = d3.event
+      var { transform } = d3.event
 
       // console.log(`scale(${transform.k})`)
 
@@ -233,15 +231,13 @@ class StockChart extends EventEmitter {
     let scaleX = d3.scaleBand()
       .domain(candleData.map((o, i) => i))
       .range([0, width])
-      .padding(0.4)
+      .padding(0.3)
 
     const margin = 8
     let scaleY = d3.scaleLinear().domain([min, max]).range([this.candleStickAreaHeight - margin, 0 + margin])
 
     this.scaleBandX = scaleX
-
-    this.candleGroup = svg.append('g')
-      .attr('class', 'candles')
+    this.candleGroup = svg.append('g').attr('class', 'candles')
 
     let group = this.candleGroup
     let candleSelection = group.selectAll('rect')
@@ -311,7 +307,7 @@ class StockChart extends EventEmitter {
     var domainY = [min, 0, max]
     var rangeY = [this.macdAreaHeight, this.macdAreaHeight / 2, 0]
     var scaleY = d3.scaleLinear().domain(domainY).range(rangeY)
-    var scaleX = d3.scalePoint().range([0, width]).padding(0.4)
+    var scaleX = d3.scalePoint().range([0, width]).padding(0.2)
 
     var line = d3.line().x(d => d.x).y(d => d.y)
 
@@ -368,7 +364,7 @@ class StockChart extends EventEmitter {
     var domainY = [min, 0, max]
     var rangeY = [this.macdAreaHeight, this.macdAreaHeight / 2, 0]
     var scaleY = d3.scaleLinear().domain(domainY).range(rangeY)
-    var scaleX = d3.scalePoint().domain(candleData.map((item, index) => index)).range([0, width]).padding(0.4)
+    var scaleX = d3.scalePoint().domain(candleData.map((item, index) => index)).range([0, width]).padding(0.2)
 
     var line = d3.line().x(d => d.x).y(d => d.y)
     var group = this.macdGroup
@@ -400,17 +396,19 @@ class StockChart extends EventEmitter {
 
   // 量线
   volumes() {
-    var {svg} = this
+    var { svg } = this
     var {width, candleData} = this.options
     var height = this.candleStickAreaHeight
     var min = d3.min(candleData, d => d.volume)
     var max = d3.max(candleData, d => d.volume)
 
-
-    var VOL_HEIGHT = 66
     var offset = width * PREDICT_PERCENT
-    var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 0])
+    var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 10])
     var group = svg.append('g').attr('transform', `translate(0, ${height + MARGIN_BOTTOM - 1})`)
+    var line = d3.line().x(d => d.x + 0.5).y(d => d.y + 0.5)
+
+    group.append('path').datum([{x: 0, y: VOL_HEIGHT / 2}, {x: width, y: VOL_HEIGHT / 2}])
+      .attr('d', line).attr('stroke', '#ccc')
 
     group.append('rect')
       .attr('x', 0)
@@ -439,10 +437,9 @@ class StockChart extends EventEmitter {
     var min = d3.min(candleData, d => d.volume)
     var max = d3.max(candleData, d => d.volume)
 
-
     var VOL_HEIGHT = 66
     var offset = width * PREDICT_PERCENT
-    var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 0])
+    var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 10])
 
     var group = this.volGroup
     group.selectAll('.bar').remove()
@@ -627,6 +624,26 @@ class StockChart extends EventEmitter {
   // }
 
   events() {
+    var { candleData } = this.options;
+    var self = this;
+
+    this.element
+      .on('mouseenter', function() {
+        let [ x, y ] = d3.mouse(this);
+        let { min, max } = self.calculateMinAndMax();
+        self.currentScaleY = d3.scaleLinear().domain([min, max]).range([self.candleStickAreaHeight, 0]);
+        self.handleDragStart(x, y);
+      })
+      .on('mousemove', function() {
+        let [x, y] = d3.mouse(this);
+        self.handleDragMove(x, y);
+      })
+      .on('mouseleave', function() {
+        self.handleDragEnd();
+      })
+  }
+
+  eventsMobile() {
     var t = this
     var timer
     var interactiveEnabled = false
@@ -661,39 +678,44 @@ class StockChart extends EventEmitter {
   }
 
   getHelperLineXY(x) {
-    let {candleData, width} = this.options
-    let { scaleBandX, scaleY } = this
-
+    let { candleData, width } = this.options
+    let len = candleData.length
+    let { scaleBandX, currentScaleY } = this
     let step = scaleBandX.step()
     let index = Math.floor(x / step)
 
-    if (index < 0 || index >= candleData.length) {
-      return {
-        x: -1,
-        y: -1,
-        index
-      }
+    if (index < 0) {
+      index = 0
+    }
+
+    if (index > len - 1) {
+      index = len - 1
     }
 
     let bandWidth = scaleBandX.bandwidth()
     let lineX = scaleBandX(index) + bandWidth / 2
-    let lineY = scaleY(candleData[index].close)
+    let lineY = currentScaleY(candleData[index].close)
+
+    lineX = Math.round(lineX) + 0.5
+    lineY = Math.round(lineY) + 0.5
+
+    this.lastIndex = index
 
     return {x: lineX, y: lineY, point: candleData[index]}
   }
 
   handleDragStart(x) {
-    var {x, y, point} = this.getHelperLineXY(x)
+    var {x, y, point} = this.getHelperLineXY(x);
 
-    if (x === -1) return
-
-    var hData = [{
-      x: 0,
-      y: y
-    }, {
-      x: this.options.width,
-      y: y
-    }]
+    var hData = [
+      {
+        x: 0,
+        y: y
+      }, {
+        x: this.options.width,
+        y: y
+      }
+    ];
 
     var vData = [
       {
@@ -704,20 +726,19 @@ class StockChart extends EventEmitter {
         x: x,
         y: this.options.volume ? this.totalHeight : this.candleStickAreaHeight
       }
-    ]
+    ];
 
-    var line = d3.line().x(d => d.x).y(d => d.y)
+    var line = d3.line().x(d => d.x).y(d => d.y);
+    var horizontalLine = this.svg.append('path');
+    var verticalLine = this.svg.append('path');
 
-    var horizontalLine = this.svg.append('path')
-    var verticalLine = this.svg.append('path')
+    horizontalLine.datum(hData).attr('d', line).attr('class', 'help');
+    verticalLine.datum(vData).attr('d', line).attr('class', 'help');
 
-    horizontalLine.datum(hData).attr('d', line).attr('class', 'help')
-    verticalLine.datum(vData).attr('d', line).attr('class', 'help')
+    this.horizontalLine = horizontalLine;
+    this.verticalLine = verticalLine;
 
-    this.horizontalLine = horizontalLine
-    this.verticalLine = verticalLine
-
-    this.emit('drag-start', point)
+    this.emit('drag-start', point);
   }
 
   handleDragMove(x) {
