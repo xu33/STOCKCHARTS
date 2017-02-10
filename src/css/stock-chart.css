@@ -8,7 +8,8 @@ body {
 }
 
 svg {
-    overflow: visible;
+    display: block;
+    margin-bottom: 5px;
 }
 
 svg rect, svg line {

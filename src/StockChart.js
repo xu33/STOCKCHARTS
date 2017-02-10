@@ -36,6 +36,10 @@ class StockChart extends EventEmitter {
       .attr('width', options.width)
       .attr('height', options.height)
 
+    this.volAreaHeight = 66
+    this.overviewAreaHeight = 66
+    this.macdAreaHeight = 66
+
     this.totalHeight = this.options.height
     this.candleStickAreaHeight = options.height - MARGIN_BOTTOM
     this.options.width = options.width - MARGIN_RIGHT
@@ -43,21 +47,13 @@ class StockChart extends EventEmitter {
     if (this.options.volume) {
       this.candleStickAreaHeight -= VOL_HEIGHT
     }
-
     this.options.candleData = this.options.candleData.map(str2number)
-
-    let {candleData} = options
-
-    this.overviewAreaHeight = 80
-    this.macdAreaHeight = 66
-
     this.render()
-    // this.initZooming()
   }
 
   renderOverviewArea() {
     var { width, height } = this.options
-    var container = this.element.append('svg').attr('transform', `translate(0, ${height + this.macdAreaHeight + AREA_MARGIN * 2})`)
+    var container = this.element.append('svg').attr('height', this.overviewAreaHeight + 1).attr('width', width + MARGIN_RIGHT)
     var candleData = this.options.candleData
     var min = d3.min(candleData, d => d.close)
     var max = d3.max(candleData, d => d.close)
@@ -294,12 +290,8 @@ class StockChart extends EventEmitter {
 
   // MACD DEA DIF
   paintMacdArea() {
-    var { svg } = this
     var { width, height, candleData } = this.options
-
-    // const height = 100
-
-    var group = svg.append('g').attr('transform', `translate(0, ${ height + AREA_MARGIN })`).attr('class', 'macd-container')
+    var group = this.element.append('svg').attr('width', width + 1).attr('height', this.macdAreaHeight + 1).attr('class', 'macd-container')
 
     var min = d3.min(candleData, d => Math.min(d.macd, d.dif, d.dea))
     var max = d3.max(candleData, d => Math.max(d.macd, d.dif, d.dea))
@@ -627,7 +619,7 @@ class StockChart extends EventEmitter {
     var { candleData } = this.options;
     var self = this;
 
-    this.element
+    this.svg
       .on('mouseenter', function() {
         let [ x, y ] = d3.mouse(this);
         let { min, max } = self.calculateMinAndMax();
