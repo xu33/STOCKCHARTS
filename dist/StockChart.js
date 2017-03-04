@@ -53,7 +53,9 @@ var StockChart =
 
 	var _config = __webpack_require__(5);
 
-	__webpack_require__(11);
+	__webpack_require__(17);
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -69,11 +71,22 @@ var StockChart =
 	var str2number = __webpack_require__(1);
 	var PREDICT_PERCENT = 0.7;
 	var MARGIN_BOTTOM = 15;
-	var MARGIN_RIGHT = 2;
+	var MARGIN_RIGHT = 1;
 	var TEXT_MARGIN = 5;
 	var VOL_HEIGHT = 66;
 	var EventEmitter = __webpack_require__(16);
-	var moment = __webpack_require__(17);
+	var moment = __webpack_require__(19);
+	var AREA_MARGIN = 5;
+
+	var calColor = function calColor(d) {
+	  if (d.close > d.open) {
+	    return _config.WIN_COLOR;
+	  } else if (d.close < d.open) {
+	    return _config.LOSS_COLOR;
+	  } else {
+	    return _config.EQUAL_COLOR;
+	  }
+	};
 
 	var StockChart = function (_EventEmitter) {
 	  _inherits(StockChart, _EventEmitter);
@@ -81,11 +94,17 @@ var StockChart =
 	  function StockChart(selector, options) {
 	    _classCallCheck(this, StockChart);
 
-	    var _this = _possibleConstructorReturn(this, (StockChart.__proto__ || Object.getPrototypeOf(StockChart)).call(this));
+	    var _this = _possibleConstructorReturn(this, (StockChart.__proto__ || Object.getPrototypeOf(StockChart)).call(this, selector, options));
 
+	    _this.selector = selector;
 	    _this.options = options;
+	    _this.element = d3.select(selector);
 
-	    _this.svg = d3.select(selector).append('svg').attr('width', options.width).attr('height', options.height);
+	    _this.svg = _this.element.append('svg').attr('width', options.width).attr('height', options.height);
+
+	    _this.volAreaHeight = 66;
+	    _this.overviewAreaHeight = 66;
+	    _this.macdAreaHeight = 66;
 
 	    _this.totalHeight = _this.options.height;
 	    _this.candleStickAreaHeight = options.height - MARGIN_BOTTOM;
@@ -94,33 +113,157 @@ var StockChart =
 	    if (_this.options.volume) {
 	      _this.candleStickAreaHeight -= VOL_HEIGHT;
 	    }
-
 	    _this.options.candleData = _this.options.candleData.map(str2number);
-
-	    var candleData = options.candleData;
-
-
-	    var min = d3.min(candleData, function (d) {
-	      return +d.low;
-	    });
-	    var max = d3.max(candleData, function (d) {
-	      return +d.high;
-	    });
-
-	    min = min - min / 50;
-	    max = max + max / 50;
-
-	    var scaleY = d3.scaleLinear().domain([min, max]).range([_this.candleStickAreaHeight, 0]);
-
-	    _this.min = min;
-	    _this.max = max;
-	    _this.scaleY = scaleY;
 	    _this.render();
-	    _this.initZooming();
 	    return _this;
 	  }
 
 	  _createClass(StockChart, [{
+	    key: 'renderOverviewArea',
+	    value: function renderOverviewArea() {
+	      var _options = this.options,
+	          width = _options.width,
+	          height = _options.height;
+
+	      var container = this.element.append('svg').attr('height', this.overviewAreaHeight + 1).attr('width', width + MARGIN_RIGHT);
+	      var candleData = this.options.candleData;
+	      var min = d3.min(candleData, function (d) {
+	        return d.close;
+	      });
+	      var max = d3.max(candleData, function (d) {
+	        return d.close;
+	      });
+	      var scaleY = d3.scaleLinear().domain([min, max]).range([this.overviewAreaHeight, 10]);
+	      var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, this.options.width]);
+
+	      /*
+	       * y0 和 y1 可以分別看成是上方 y 座標與下方 y 坐標，
+	       * x0 和 x1 可以看成左方的 x 座標與右方的 x 座標，
+	       * 基本上一定要有 x 一組數據搭配 y0、y1 或 y 一組數據搭配 x0、x1，
+	       * 因此最重要的其實就是必須要有一組座標來產生 area
+	        */
+
+	      var line = d3.line().x(function (d, i) {
+	        return scaleX(i);
+	      }).y(function (d) {
+	        return scaleY(d.close);
+	      });
+
+	      var area = d3.area().x(function (d, i) {
+	        return scaleX(i);
+	      }).y0(function (d) {
+	        return scaleY(d.close);
+	      }).y1(this.overviewAreaHeight);
+	      // 绘制区域图形
+	      container.append('path').datum(candleData).attr('d', line).attr('fill', 'none').attr('stroke', '#ccc');
+	      container.append('path').datum(candleData).attr('d', area).attr('fill', '#ccc').attr('opacity', '0.3');
+
+	      // 数轴使用的比例尺
+	      var domain = [candleData[0].time];
+	      var len = candleData.length;
+	      for (var i = 1; i < 5; i++) {
+	        var index = Math.floor(len * 0.2 * i) - 1;
+	        domain.push(candleData[index].time);
+	      }
+
+	      var range = this.getArrayBetween(0, width, 4);
+	      var scaleForAxis = d3.scaleOrdinal().domain(domain).range(range);
+	      var axisBottom = d3.axisTop(scaleForAxis).tickSize(0);
+	      var axisTop = d3.axisBottom(scaleForAxis).tickSize(this.overviewAreaHeight).tickFormat('');
+	      var axisBottomElement = container.append('g').attr('class', 'axis').attr('transform', 'translate(0, ' + this.overviewAreaHeight + ')').call(axisBottom);
+
+	      // 文字位置微调
+	      axisBottomElement.selectAll('.tick text').attr('text-anchor', 'start').each(function (d, i) {
+	        d3.select(this).attr('transform', 'translate(2, 0)');
+	      });
+
+	      var lastTick = axisBottomElement.select('.tick:last-child');
+	      lastTick.remove();
+
+	      // 顶部做辅助线
+	      container.append('g').attr('class', 'axis').call(axisTop);
+
+	      this.overviewArea = container;
+	    }
+	  }, {
+	    key: 'initBrush',
+	    value: function initBrush() {
+	      var width = this.options.width;
+
+	      var candleData = [].concat(_toConsumableArray(this.options.candleData));
+	      var lastIndex = candleData.length - 1;
+	      var domain = d3.extent(candleData, function (d) {
+	        return new Date(d.time);
+	      });
+	      var brushX = d3.scaleTime().domain(domain).range([0, width]);
+	      var formatFunc = d3.timeFormat('%Y-%m-%d');
+
+	      var brush = d3.brushX();
+	      var self = this;
+	      var x2 = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width]);
+
+	      var brushed = function brushed(d, i) {
+	        // 下面两种写法作用相同
+	        // console.log(d3.brushSelection(this))
+	        // console.log('selection:', d3.event.selection)
+
+	        var s = d3.event.selection;
+
+	        // console.log(s[1] - s[0])
+
+	        if (s[1] - s[0] < 50) {
+	          return;
+	        }
+
+	        var newDomain = s.map(function (value) {
+	          return x2.invert(value);
+	        });
+
+	        var _newDomain = _slicedToArray(newDomain, 2),
+	            startIndex = _newDomain[0],
+	            endIndex = _newDomain[1];
+
+	        if (startIndex < 0 || endIndex > lastIndex) {
+	          return;
+	        }
+
+	        var currentRange = candleData.slice(Math.round(newDomain[0]), Math.round(newDomain[1]) + 1);
+	        // 设置当前需要画的部分
+	        self.options.candleData = currentRange;
+	        // 重绘蜡烛线
+	        self.candleSticks();
+	        // 重绘量线
+	        self.updateVolumes();
+	        // 重绘数轴
+	        self.updateAxis();
+	        // 重绘MACD
+	        self.updateMacdArea();
+	      };
+
+	      brush.extent([[0, 0], [width, this.overviewAreaHeight]]);
+
+	      brush.on('brush end', brushed);
+
+	      // this.brushArea = d3.select(this.selector)
+	      //   .append('svg')
+	      //   .attr('display', 'block')
+	      //   .attr('width', width)
+	      //   .attr('height', 100)
+	      //     .append('g');
+
+	      // // extent方法，限制刷子的滑动范围，传入左上角和右下角的坐标
+	      // // brush.extent([[0, 0], [300, 100]])
+
+
+	      // this.brushArea.call(brush)
+
+
+	      var overview = this.overviewArea;
+	      var brushBar = overview.append('g');
+
+	      brushBar.call(brush).call(brush.move, [width - 100, width]);
+	    }
+	  }, {
 	    key: 'initZooming',
 	    value: function initZooming() {
 	      var _this2 = this;
@@ -131,8 +274,7 @@ var StockChart =
 	      var zoomed = function zoomed() {
 	        var transform = d3.event.transform;
 
-
-	        console.log('scale(' + transform.k + ')');
+	        // console.log(`scale(${transform.k})`)
 
 	        _this2.candleGroup.attr('transform', 'scale(' + transform.k + ')');
 	      };
@@ -141,51 +283,70 @@ var StockChart =
 
 	      svg.call(zoomBehavior);
 	    }
+	  }, {
+	    key: 'calculateMinAndMax',
+	    value: function calculateMinAndMax() {
+	      var candleData = this.options.candleData;
+
+	      var min = d3.min(candleData, function (d) {
+	        return Math.min(d.low, d.ma5, d.ma10, d.ma20, d.ma30);
+	      });
+
+	      var max = d3.max(candleData, function (d) {
+	        return Math.max(d.high, d.ma5, d.ma10, d.ma20, d.ma30);
+	      });
+
+	      return { min: min, max: max };
+	    }
 
 	    // 蜡烛线
 
 	  }, {
 	    key: 'candleSticks',
 	    value: function candleSticks() {
-	      var svg = this.svg,
-	          scaleY = this.scaleY;
-	      var _options = this.options,
-	          width = _options.width,
-	          candleData = _options.candleData;
+	      var svg = this.svg;
+	      var _options2 = this.options,
+	          width = _options2.width,
+	          candleData = _options2.candleData;
 
 	      var height = this.candleStickAreaHeight;
 
+	      if (this.candleGroup) {
+	        this.candleGroup.remove();
+	      }
+
+	      var _calculateMinAndMax = this.calculateMinAndMax(),
+	          min = _calculateMinAndMax.min,
+	          max = _calculateMinAndMax.max;
+
 	      var scaleX = d3.scaleBand().domain(candleData.map(function (o, i) {
 	        return i;
-	      })).range([0, width]).padding(0.4);
+	      })).range([0, width]).padding(0.3);
+
+	      var margin = 8;
+	      var scaleY = d3.scaleLinear().domain([min, max]).range([this.candleStickAreaHeight - margin, 0 + margin]);
 
 	      this.scaleBandX = scaleX;
-
 	      this.candleGroup = svg.append('g').attr('class', 'candles');
 
 	      var group = this.candleGroup;
-	      var calColor = function calColor(d) {
-	        if (d.close > d.open) {
-	          return _config.WIN_COLOR;
-	        } else if (d.close < d.open) {
-	          return _config.LOSS_COLOR;
-	        } else {
-	          return _config.EQUAL_COLOR;
-	        }
-	      };
-
 	      var candleSelection = group.selectAll('rect').data(candleData).enter().append('rect').attr('class', 'bar').attr('x', function (d, i) {
 	        return scaleX(i);
 	      }).attr('y', function (d) {
 	        return scaleY(Math.max(d.open, d.close));
 	      }).attr('width', scaleX.bandwidth()).attr('height', function (d) {
-	        var h = scaleY(Math.min(d.open, d.close)) - scaleY(Math.max(d.open, d.close));
-	        if (h < 1) {
-	          h = 1;
-	        }
+	        var height = scaleY(Math.min(d.open, d.close)) - scaleY(Math.max(d.open, d.close));
 
-	        return h;
+	        return height < 1 ? 1 : height;
 	      }).attr('fill', calColor);
+
+	      this.paintShadowLines(group, scaleX, scaleY);
+	      this.paintAverageLines(group, scaleY);
+	    }
+	  }, {
+	    key: 'paintShadowLines',
+	    value: function paintShadowLines(group, scaleX, scaleY) {
+	      var candleData = this.options.candleData;
 
 	      var line = d3.line().x(function (d) {
 	        return d.x;
@@ -201,6 +362,160 @@ var StockChart =
 	        return line([{ x: x, y: y1 }, { x: x, y: y2 }]);
 	      }).attr('stroke', calColor);
 	    }
+	  }, {
+	    key: 'paintAverageLines',
+	    value: function paintAverageLines(group, scaleY) {
+	      var _options3 = this.options,
+	          candleData = _options3.candleData,
+	          width = _options3.width;
+
+	      var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width]);
+	      var line = function line(key) {
+	        return d3.line().x(function (d, i) {
+	          return scaleX(i);
+	        }).y(function (d) {
+	          return scaleY(d[key]);
+	        });
+	      };
+	      var mas = ['ma5', 'ma10', 'ma20', 'ma30'];
+
+	      mas.forEach(function (prop) {
+	        group.append('path').datum(candleData).attr('class', prop).attr('d', line(prop));
+	      });
+	    }
+
+	    // MACD DEA DIF
+
+	  }, {
+	    key: 'paintMacdArea',
+	    value: function paintMacdArea() {
+	      var _this3 = this;
+
+	      var _options4 = this.options,
+	          width = _options4.width,
+	          height = _options4.height,
+	          candleData = _options4.candleData;
+
+	      var group = this.element.append('svg').attr('width', width + 1).attr('height', this.macdAreaHeight + 1).attr('class', 'macd-container');
+
+	      var min = d3.min(candleData, function (d) {
+	        return Math.min(d.macd, d.dif, d.dea);
+	      });
+	      var max = d3.max(candleData, function (d) {
+	        return Math.max(d.macd, d.dif, d.dea);
+	      });
+
+	      var domainY = [min, 0, max];
+	      var rangeY = [this.macdAreaHeight, this.macdAreaHeight / 2, 0];
+	      var scaleY = d3.scaleLinear().domain(domainY).range(rangeY);
+	      var scaleX = d3.scalePoint().range([0, width]).padding(0.2);
+
+	      var line = d3.line().x(function (d) {
+	        return d.x;
+	      }).y(function (d) {
+	        return d.y;
+	      });
+
+	      group.append('rect').attr('width', width).attr('height', this.macdAreaHeight).attr('stroke', '#ccc').attr('fill', 'none');
+
+	      group.append('path').attr('d', function () {
+	        var x1 = 0;
+	        var x2 = width;
+	        var y1 = _this3.macdAreaHeight / 2;
+	        var y2 = y1;
+
+	        return line([{ x: x1, y: y1 }, { x: x2, y: y2 }]);
+	      }).attr('stroke', '#ccc');
+
+	      // 绘制macd
+	      scaleX.domain(candleData.map(function (item, index) {
+	        return index;
+	      }));
+	      group.selectAll('.macd').data(candleData).enter().append('path').attr('class', 'macd').attr('d', function (d, i) {
+	        var x1 = scaleX(i);
+	        var x2 = x1;
+	        var y1 = scaleY(d.macd);
+	        var y2 = scaleY(0);
+
+	        return line([{ x: x1, y: y1 }, { x: x2, y: y2 }]);
+	      }).attr('stroke', function (d) {
+	        return d.macd > 0 ? _config.WIN_COLOR : _config.LOSS_COLOR;
+	      });
+
+	      // 绘制dif，dea曲线
+	      var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width]);
+	      var line = function line(prop) {
+	        return d3.line().x(function (d, i) {
+	          return scaleX(i);
+	        }).y(function (d) {
+	          return scaleY(d[prop]);
+	        });
+	      };
+
+	      group.append('path').datum(candleData).attr('d', line('dif')).attr('class', 'dif');
+	      group.append('path').datum(candleData).attr('d', line('dea')).attr('class', 'dea');
+
+	      this.macdGroup = group;
+	    }
+
+	    // update MACD DEA DIF
+
+	  }, {
+	    key: 'updateMacdArea',
+	    value: function updateMacdArea() {
+	      var svg = this.svg;
+	      var _options5 = this.options,
+	          width = _options5.width,
+	          height = _options5.height,
+	          candleData = _options5.candleData;
+
+
+	      this.macdGroup.selectAll('.macd, .dif, .dea').remove();
+	      var min = d3.min(candleData, function (d) {
+	        return Math.min(d.macd, d.dif, d.dea);
+	      });
+	      var max = d3.max(candleData, function (d) {
+	        return Math.max(d.macd, d.dif, d.dea);
+	      });
+
+	      var domainY = [min, 0, max];
+	      var rangeY = [this.macdAreaHeight, this.macdAreaHeight / 2, 0];
+	      var scaleY = d3.scaleLinear().domain(domainY).range(rangeY);
+	      var scaleX = d3.scalePoint().domain(candleData.map(function (item, index) {
+	        return index;
+	      })).range([0, width]).padding(0.2);
+
+	      var line = d3.line().x(function (d) {
+	        return d.x;
+	      }).y(function (d) {
+	        return d.y;
+	      });
+	      var group = this.macdGroup;
+
+	      group.selectAll('.macd').data(candleData).enter().append('path').attr('class', 'macd').attr('d', function (d, i) {
+	        var x1 = scaleX(i);
+	        var x2 = x1;
+	        var y1 = scaleY(d.macd);
+	        var y2 = scaleY(0);
+
+	        return line([{ x: x1, y: y1 }, { x: x2, y: y2 }]);
+	      }).attr('stroke', function (d) {
+	        return d.macd > 0 ? _config.WIN_COLOR : _config.LOSS_COLOR;
+	      });
+
+	      // 绘制dif，dea曲线
+	      var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width]);
+	      var line = function line(prop) {
+	        return d3.line().x(function (d, i) {
+	          return scaleX(i);
+	        }).y(function (d) {
+	          return scaleY(d[prop]);
+	        });
+	      };
+
+	      group.append('path').datum(candleData).attr('d', line('dif')).attr('class', 'dif');
+	      group.append('path').datum(candleData).attr('d', line('dea')).attr('class', 'dea');
+	    }
 
 	    // 量线
 
@@ -208,9 +523,9 @@ var StockChart =
 	    key: 'volumes',
 	    value: function volumes() {
 	      var svg = this.svg;
-	      var _options2 = this.options,
-	          width = _options2.width,
-	          candleData = _options2.candleData;
+	      var _options6 = this.options,
+	          width = _options6.width,
+	          candleData = _options6.candleData;
 
 	      var height = this.candleStickAreaHeight;
 	      var min = d3.min(candleData, function (d) {
@@ -220,13 +535,16 @@ var StockChart =
 	        return d.volume;
 	      });
 
-	      // 增加一些
-	      max += max / 10;
-
-	      var VOL_HEIGHT = 66;
 	      var offset = width * PREDICT_PERCENT;
-	      var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 0]);
+	      var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 10]);
 	      var group = svg.append('g').attr('transform', 'translate(0, ' + (height + MARGIN_BOTTOM - 1) + ')');
+	      var line = d3.line().x(function (d) {
+	        return d.x + 0.5;
+	      }).y(function (d) {
+	        return d.y + 0.5;
+	      });
+
+	      group.append('path').datum([{ x: 0, y: VOL_HEIGHT / 2 }, { x: width, y: VOL_HEIGHT / 2 }]).attr('d', line).attr('stroke', '#ccc');
 
 	      group.append('rect').attr('x', 0).attr('y', 0).attr('width', width).attr('height', VOL_HEIGHT).attr('class', 'volume');
 
@@ -241,111 +559,276 @@ var StockChart =
 	        return d.open < d.close ? _config.WIN_COLOR : _config.LOSS_COLOR;
 	      });
 
-	      group.selectAll('.bar').data(candleData).enter().append('rect').attr('class', 'bar');
+	      this.volGroup = group;
+	    }
+	  }, {
+	    key: 'updateVolumes',
+	    value: function updateVolumes() {
+	      var svg = this.svg;
+	      var _options7 = this.options,
+	          width = _options7.width,
+	          candleData = _options7.candleData;
+
+	      var height = this.candleStickAreaHeight;
+	      var min = d3.min(candleData, function (d) {
+	        return d.volume;
+	      });
+	      var max = d3.max(candleData, function (d) {
+	        return d.volume;
+	      });
+
+	      var VOL_HEIGHT = 66;
+	      var offset = width * PREDICT_PERCENT;
+	      var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 10]);
+
+	      var group = this.volGroup;
+	      group.selectAll('.bar').remove();
+
+	      var scaleX = this.scaleBandX;
+	      group.selectAll('.bar').data(candleData).enter().append('rect').attr('class', 'bar').attr('x', function (d, i) {
+	        return scaleX(i);
+	      }).attr('y', function (d) {
+	        return scaleY(d.volume);
+	      }).attr('width', scaleX.bandwidth()).attr('height', function (d) {
+	        return VOL_HEIGHT - scaleY(d.volume);
+	      }).attr('fill', function (d) {
+	        return d.open < d.close ? _config.WIN_COLOR : _config.LOSS_COLOR;
+	      });
 	    }
 
-	    // 数轴&辅助线
+	    // (1, 3, 2) => [1, 2, 3]
+
+	  }, {
+	    key: 'getArrayBetween',
+	    value: function getArrayBetween(startValue, endValue, length) {
+	      var interpolater = d3.interpolateNumber(startValue, endValue);
+	      var result = [];
+	      for (var i = 0; i <= length; i++) {
+	        result.push(interpolater(i / length));
+	      }
+
+	      return result;
+	    }
+	  }, {
+	    key: 'createHorizontalAxis',
+	    value: function createHorizontalAxis() {
+	      var svg = this.svg;
+	      var _options8 = this.options,
+	          width = _options8.width,
+	          candleData = _options8.candleData;
+
+	      var height = this.candleStickAreaHeight;
+
+	      var domain = [candleData[0].time];
+
+	      for (var i = 1; i < 4; i++) {
+	        var index = Math.floor(candleData.length * (0.25 * i)) - 1;
+	        domain.push(candleData[index].time);
+	      }
+
+	      domain.push(candleData[candleData.length - 1].time);
+
+	      var range = this.getArrayBetween(0, width, 4);
+	      var scaleX = d3.scaleOrdinal().domain(domain).range(range);
+	      // 创建底部的X轴
+	      var bottomAxis = d3.axisBottom(scaleX).tickSize(0).tickPadding(TEXT_MARGIN);
+	      this.bottomAxisXElement = svg.append('g').attr('class', 'axis bottom-axis').attr('transform', 'translate(0, ' + height + ')');
+	      this.bottomAxisXElement.call(bottomAxis);
+
+	      // 创建辅助线
+	      var topAxis = d3.axisBottom(scaleX).tickSize(height).tickFormat('');
+	      svg.append('g').attr('class', 'axis').attr('transform', 'translate(0, 0)').call(topAxis);
+	    }
+
+	    // 创建垂直方向的数轴和辅助线
+
+	  }, {
+	    key: 'createVerticalAxis',
+	    value: function createVerticalAxis() {
+	      var _options9 = this.options,
+	          width = _options9.width,
+	          candleData = _options9.candleData;
+
+	      var height = this.candleStickAreaHeight;
+
+	      var _calculateMinAndMax2 = this.calculateMinAndMax(),
+	          min = _calculateMinAndMax2.min,
+	          max = _calculateMinAndMax2.max;
+
+	      var svg = this.svg;
+	      var domain = this.getArrayBetween(min, max, 4);
+	      var range = this.getArrayBetween(height, 0, 4);
+	      var scale = d3.scaleOrdinal().domain(domain).range(range);
+
+	      var rightAxis = d3.axisLeft(scale).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(function (d) {
+	        return Number(d).toFixed(2);
+	      });
+	      // 数轴
+	      this.rightAxisYElement = svg.append('g').attr('class', 'axis').attr('transform', 'translate(' + width + ', 0)').call(rightAxis);
+	      // 辅助线
+	      var leftAxis = d3.axisRight(scale).tickSize(width).tickFormat('');
+	      svg.append('g').attr('class', 'axis').attr('transform', 'translate(0, 0)').call(leftAxis);
+
+	      // 对刻度显示做调整
+	      this.repositionTicksBottom();
+	      this.repositionTicksRight();
+	    }
+	  }, {
+	    key: 'repositionTicksRight',
+	    value: function repositionTicksRight() {
+	      this.rightAxisYElement.selectAll('.tick text').each(function (d, i) {
+	        var element = d3.select(this);
+	        var translateString = 'translate(0, ' + (i == 0 ? -10 : 10) + ')';
+
+	        element.attr('transform', translateString);
+	      });
+	    }
+	  }, {
+	    key: 'repositionTicksBottom',
+	    value: function repositionTicksBottom() {
+	      this.bottomAxisXElement.selectAll('.tick text').attr('text-anchor', 'start').each(function (d, i) {
+	        var element = d3.select(this);
+	        element.attr('transform', 'translate(2, 0)');
+	      });
+
+	      var lastTick = this.bottomAxisXElement.select('.tick:last-child');
+	      lastTick.remove();
+	    }
+	  }, {
+	    key: 'updateAxis',
+	    value: function updateAxis() {
+	      // 更新右侧数轴
+	      this.updateRightAxis();
+
+	      // 更新底部数轴
+	      this.updateBottomAxis();
+	    }
+
+	    // 更新数轴Y
+
+	  }, {
+	    key: 'updateRightAxis',
+	    value: function updateRightAxis() {
+	      var candleData = this.options.candleData;
+
+	      var height = this.candleStickAreaHeight;
+	      var min = d3.min(candleData, function (d) {
+	        return Number(d.low);
+	      });
+	      var max = d3.max(candleData, function (d) {
+	        return Number(d.high);
+	      });
+	      var domain = this.getArrayBetween(min, max, 4);
+	      var range = this.getArrayBetween(height, 0, 4);
+	      var scale = d3.scaleOrdinal().domain(domain).range(range);
+
+	      var rightAxis = d3.axisLeft(scale).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(function (d) {
+	        return Number(d).toFixed(2);
+	      });
+
+	      this.rightAxisYElement.call(rightAxis);
+	      this.repositionTicksRight();
+	    }
+
+	    // 更新数轴X
+
+	  }, {
+	    key: 'updateBottomAxis',
+	    value: function updateBottomAxis() {
+	      var _options10 = this.options,
+	          width = _options10.width,
+	          candleData = _options10.candleData;
+
+
+	      var domain = [candleData[0].time];
+	      for (var i = 1; i < 4; i++) {
+	        var index = Math.floor(candleData.length * (0.25 * i)) - 1;
+
+	        domain.push(candleData[index].time);
+	      }
+	      domain.push(candleData[candleData.length - 1].time);
+
+	      var range = this.getArrayBetween(0, width, 4);
+	      var scaleX = d3.scaleOrdinal().domain(domain).range(range);
+	      var bottomAxis = d3.axisBottom(scaleX).tickSize(0).tickPadding(TEXT_MARGIN);
+
+	      this.bottomAxisXElement.call(bottomAxis);
+	      this.repositionTicksBottom();
+	    }
+
+	    // 绘制数轴
 
 	  }, {
 	    key: 'axis',
 	    value: function axis() {
-	      var svg = this.svg,
-	          scaleY = this.scaleY;
-	      var _options3 = this.options,
-	          width = _options3.width,
-	          candleData = _options3.candleData;
-
-	      var height = this.candleStickAreaHeight;
-	      var offset = width * PREDICT_PERCENT;
-
-	      // var scaleXReal = d3.scaleOrdinal()
-	      //   .domain([candleData[0].time, candleData[candleData.length - 1].time])
-	      //   .range([0, width])
-
-	      var scaleX = d3.scaleTime().domain([new Date(candleData[0].time), new Date(candleData[candleData.length - 1].time)]).range([0, width]);
-
-	      var min = this.min,
-	          max = this.max;
-
-	      min = +min;
-	      max = +max;
-	      var scaleYReal = d3.scaleOrdinal().domain([min, (max + min) / 2, max]).range([height, height / 2, 0]);
-
-	      // 底部X轴
-	      var bottomAxis = d3.axisBottom(scaleX).tickSize(0).ticks(8).tickPadding(TEXT_MARGIN).tickFormat(function (d) {
-	        return moment(d).format('YYYY-MM-DD');
-	      });
-
-	      // 右侧Y轴
-	      var rightAxis = d3.axisLeft(scaleYReal).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(function (d) {
-	        return Number(d).toFixed(2);
-	      });
-
-	      // 顶部X轴（辅助线）
-	      var topAxis = d3.axisBottom(scaleX).tickSize(this.candleStickAreaHeight).ticks(8).tickFormat('');
-
-	      // 左侧Y轴
-	      var leftAxis = d3.axisRight(scaleYReal).tickSize(width).tickFormat('');
-
-	      var topAxisXElement = svg.append('g').attr('class', 'axis').attr('transform', 'translate(0, 0)').call(topAxis);
-
-	      var leftAxisElement = svg.append('g').attr('class', 'axis').attr('transform', 'translate(0, 0)').call(leftAxis);
-
-	      var axisXElement = svg.append('g').attr('class', 'axis bottom-axis').attr('transform', 'translate(0, ' + height + ')').call(bottomAxis);
-
-	      var axisYElement = svg.append('g').attr('class', 'axis').attr('transform', 'translate(' + width + ', 0)').call(rightAxis);
-
-	      axisXElement.selectAll('.tick text').attr('text-anchor', 'end');
-
-	      axisYElement.selectAll('.tick text').each(function (d, i) {
-	        if (i == 2) {
-	          d3.select(this).attr('transform', 'translate(0, 10)');
-	        } else {
-	          d3.select(this).attr('transform', 'translate(0, -10)');
-	        }
-	      });
+	      this.createHorizontalAxis();
+	      this.createVerticalAxis();
 	    }
 
 	    /* 显示折线 */
+	    // drawPolyline() {
+	    //   let {candleData, width} = this.options
+	    //   let scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width * PREDICT_PERCENT])
+	    //   let scaleY = this.scaleY
+	    //   let line = d3.line().x((d, i) => scaleX(i)).y(d => scaleY(d.close))
+	    //
+	    //   let group = this.svg.append('g').attr('class', 'poly')
+	    //
+	    //   group.append('path')
+	    //     .datum(candleData)
+	    //     .attr('d', line)
+	    //     .attr('stroke', '#297cda')
+	    //     .attr('stroke-width', 2)
+	    //     .attr('fill', 'none')
+	    //
+	    //   this.lineGroup = group
+	    // }
+	    //
+	    // togglePoly(bool) {
+	    //   if (!this.lineGroup) {
+	    //     this.drawPolyline()
+	    //   } else {
+	    //     this.lineGroup.attr('class', bool ? 'poly' : 'none')
+	    //   }
+	    // }
+	    //
+	    // toggleCandle(bool) {
+	    //   this.candleGroup.attr('class', bool ? 'candle' : 'none')
+	    // }
 
-	  }, {
-	    key: 'drawPolyline',
-	    value: function drawPolyline() {
-	      var _options4 = this.options,
-	          candleData = _options4.candleData,
-	          width = _options4.width;
-
-	      var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width * PREDICT_PERCENT]);
-	      var scaleY = this.scaleY;
-	      var line = d3.line().x(function (d, i) {
-	        return scaleX(i);
-	      }).y(function (d) {
-	        return scaleY(d.close);
-	      });
-
-	      var group = this.svg.append('g').attr('class', 'poly');
-
-	      group.append('path').datum(candleData).attr('d', line).attr('stroke', '#297cda').attr('stroke-width', 2).attr('fill', 'none');
-
-	      this.lineGroup = group;
-	    }
-	  }, {
-	    key: 'togglePoly',
-	    value: function togglePoly(bool) {
-	      if (!this.lineGroup) {
-	        this.drawPolyline();
-	      } else {
-	        this.lineGroup.attr('class', bool ? 'poly' : 'none');
-	      }
-	    }
-	  }, {
-	    key: 'toggleCandle',
-	    value: function toggleCandle(bool) {
-	      this.candleGroup.attr('class', bool ? 'candle' : 'none');
-	    }
 	  }, {
 	    key: 'events',
 	    value: function events() {
+	      var candleData = this.options.candleData;
+
+	      var self = this;
+
+	      this.svg.on('mouseenter', function () {
+	        var _d3$mouse = d3.mouse(this),
+	            _d3$mouse2 = _slicedToArray(_d3$mouse, 2),
+	            x = _d3$mouse2[0],
+	            y = _d3$mouse2[1];
+
+	        var _self$calculateMinAnd = self.calculateMinAndMax(),
+	            min = _self$calculateMinAnd.min,
+	            max = _self$calculateMinAnd.max;
+
+	        self.currentScaleY = d3.scaleLinear().domain([min, max]).range([self.candleStickAreaHeight, 0]);
+	        self.handleDragStart(x, y);
+	      }).on('mousemove', function () {
+	        var _d3$mouse3 = d3.mouse(this),
+	            _d3$mouse4 = _slicedToArray(_d3$mouse3, 2),
+	            x = _d3$mouse4[0],
+	            y = _d3$mouse4[1];
+
+	        self.handleDragMove(x, y);
+	      }).on('mouseleave', function () {
+	        self.handleDragEnd();
+	      });
+	    }
+	  }, {
+	    key: 'eventsMobile',
+	    value: function eventsMobile() {
 	      var t = this;
 	      var timer;
 	      var interactiveEnabled = false;
@@ -390,28 +873,33 @@ var StockChart =
 	  }, {
 	    key: 'getHelperLineXY',
 	    value: function getHelperLineXY(x) {
-	      var _options5 = this.options,
-	          candleData = _options5.candleData,
-	          width = _options5.width;
-	      var scaleBandX = this.scaleBandX,
-	          scaleY = this.scaleY,
-	          predictScaleX = this.predictScaleX;
+	      var _options11 = this.options,
+	          candleData = _options11.candleData,
+	          width = _options11.width;
 
+	      var len = candleData.length;
+	      var scaleBandX = this.scaleBandX,
+	          currentScaleY = this.currentScaleY;
 
 	      var step = scaleBandX.step();
 	      var index = Math.floor(x / step);
 
-	      if (index < 0 || index >= candleData.length) {
-	        return {
-	          x: -1,
-	          y: -1,
-	          index: index
-	        };
+	      if (index < 0) {
+	        index = 0;
+	      }
+
+	      if (index > len - 1) {
+	        index = len - 1;
 	      }
 
 	      var bandWidth = scaleBandX.bandwidth();
 	      var lineX = scaleBandX(index) + bandWidth / 2;
-	      var lineY = scaleY(candleData[index].close);
+	      var lineY = currentScaleY(candleData[index].close);
+
+	      lineX = Math.round(lineX) + 0.5;
+	      lineY = Math.round(lineY) + 0.5;
+
+	      this.lastIndex = index;
 
 	      return { x: lineX, y: lineY, point: candleData[index] };
 	    }
@@ -422,8 +910,6 @@ var StockChart =
 	          x = _getHelperLineXY.x,
 	          y = _getHelperLineXY.y,
 	          point = _getHelperLineXY.point;
-
-	      if (x === -1) return;
 
 	      var hData = [{
 	        x: 0,
@@ -446,7 +932,6 @@ var StockChart =
 	      }).y(function (d) {
 	        return d.y;
 	      });
-
 	      var horizontalLine = this.svg.append('path');
 	      var verticalLine = this.svg.append('path');
 
@@ -492,7 +977,6 @@ var StockChart =
 
 	      this.horizontalLine.datum(hData).attr('d', line);
 	      this.verticalLine.datum(vData).attr('d', line);
-
 	      this.emit('drag-move', point);
 	    }
 	  }, {
@@ -508,9 +992,9 @@ var StockChart =
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      var _options6 = this.options,
-	          volume = _options6.volume,
-	          interactive = _options6.interactive;
+	      var _options12 = this.options,
+	          volume = _options12.volume,
+	          interactive = _options12.interactive;
 
 
 	      this.axis();
@@ -523,6 +1007,9 @@ var StockChart =
 	      if (interactive) {
 	        this.events();
 	      }
+	      this.paintMacdArea();
+	      this.renderOverviewArea();
+	      this.initBrush();
 	    }
 	  }]);
 
@@ -567,8 +1054,8 @@ var StockChart =
 	var OUTTER_MARGIN = 2;
 	var VOL_HEIGHT = 66;
 	var FONT_SIZE = 12;
-	var WIN_COLOR = '#e63232';
-	var LOSS_COLOR = '#55a500';
+	var WIN_COLOR = '#de4c39';
+	var LOSS_COLOR = '#55a32d';
 	var EQUAL_COLOR = '#999999';
 	var STROKE_COLOR = '#d8d8d8';
 	var DASH_COLOR = '#999999';
@@ -598,46 +1085,8 @@ var StockChart =
 /* 8 */,
 /* 9 */,
 /* 10 */,
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// style-loader: Adds some css to the DOM by adding a <style> tag
-
-	// load the styles
-	var content = __webpack_require__(12);
-	if(typeof content === 'string') content = [[module.id, content, '']];
-	// add the styles to the DOM
-	var update = __webpack_require__(14)(content, {});
-	if(content.locals) module.exports = content.locals;
-	// Hot Module Replacement
-	if(false) {
-		// When the styles change, update the <style> tags
-		if(!content.locals) {
-			module.hot.accept("!!./../../node_modules/css-loader/index.js!./d3.css", function() {
-				var newContent = require("!!./../../node_modules/css-loader/index.js!./d3.css");
-				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-				update(newContent);
-			});
-		}
-		// When the module is disposed, remove the <style> tags
-		module.hot.dispose(function() { update(); });
-	}
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	exports = module.exports = __webpack_require__(13)();
-	// imports
-
-
-	// module
-	exports.push([module.id, "* {\r\n    margin:0;\r\n    padding:0;\r\n}\r\n\r\nbody {\r\n    -webkit-user-select: none;\r\n}\r\n\r\n/*svg {\r\n    margin-left:10px;\r\n    margin-top:10px;\r\n}*/\r\n\r\nsvg * {\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n/* 数字文字颜色 */\r\n.axis text {\r\n    fill: #999999;\r\n}\r\n\r\n/* 数轴颜色 */\r\n.axis path {\r\n    stroke: #ccc;\r\n}\r\n\r\n.shadow {\r\n    stroke-width: 1px;\r\n    fill: none;\r\n}\r\n\r\n.tick line {\r\n    stroke: #ccc;\r\n}\r\n\r\n.predict {\r\n    fill: #e7f2fc;\r\n    fill-opacity: 0.6;\r\n}\r\n\r\n.ceil, .flor, .profit {\r\n    shape-rendering: auto;\r\n}\r\n\r\n.ceil, .flor {\r\n    stroke: #80b5ff;\r\n    fill: none;\r\n}\r\n\r\n.profit {\r\n    stroke: #e63232;\r\n    fill: none;\r\n}\r\n\r\n.volume {\r\n    stroke: #ccc;\r\n    fill: none;\r\n}\r\n\r\n.none {\r\n    display: none;\r\n}\r\n\r\n.poly path {\r\n    shape-rendering: auto;\r\n}\r\n\r\n/* 参考线 */\r\n.help {\r\n    stroke: #d8d8d8;\r\n}", ""]);
-
-	// exports
-
-
-/***/ },
+/* 11 */,
+/* 12 */,
 /* 13 */
 /***/ function(module, exports) {
 
@@ -1261,6 +1710,46 @@ var StockChart =
 
 /***/ },
 /* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+
+	// load the styles
+	var content = __webpack_require__(18);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(14)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!./../../node_modules/css-loader/index.js!./stock-chart.css", function() {
+				var newContent = require("!!./../../node_modules/css-loader/index.js!./stock-chart.css");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(13)();
+	// imports
+
+
+	// module
+	exports.push([module.id, "* {\r\n    margin:0;\r\n    padding:0;\r\n}\r\n\r\nbody {\r\n    -webkit-user-select: none;\r\n}\r\n\r\nsvg {\r\n    display: block;\r\n    margin-bottom: 5px;\r\n}\r\n\r\nsvg rect, svg line {\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n/* 数字文字颜色 */\r\n.axis text {\r\n    fill: #999999;\r\n}\r\n\r\n/* 数轴颜色 */\r\n.axis path {\r\n    stroke: #ccc;\r\n}\r\n\r\n.shadow {\r\n    stroke-width: 1px;\r\n    fill: none;\r\n}\r\n\r\n.tick line {\r\n    stroke: #ccc;\r\n}\r\n\r\n.predict {\r\n    fill: #e7f2fc;\r\n    fill-opacity: 0.6;\r\n}\r\n\r\n.ceil, .flor, .profit {\r\n    shape-rendering: auto;\r\n}\r\n\r\n.ceil, .flor {\r\n    stroke: #80b5ff;\r\n    fill: none;\r\n}\r\n\r\n.profit {\r\n    stroke: #e63232;\r\n    fill: none;\r\n}\r\n\r\n.volume {\r\n    stroke: #ccc;\r\n    fill: none;\r\n}\r\n\r\n.none {\r\n    display: none;\r\n}\r\n\r\n.poly path {\r\n    shape-rendering: auto;\r\n}\r\n\r\n/* 参考线 */\r\n.help {\r\n    stroke: #999;\r\n}\r\n\r\n/* brush area */\r\n.brush-bar {\r\n    fill: none;\r\n    stroke: #ccc;\r\n}\r\n\r\n.selection {\r\n    fill: #2f84cc;\r\n    opacity: 0.4;\r\n    stroke: #000000;\r\n}\r\n\r\n/* #cd4343, #8c3037, #ffca53, #0055a2*/\r\n/* 均线 */\r\n.ma5, .ma10, .ma20, .ma30 {\r\n    fill:none;\r\n}\r\n\r\n.ma5 {\r\n    stroke: #cd4343;\r\n}\r\n\r\n.ma10 {\r\n    stroke: #8c3037;\r\n}\r\n\r\n.ma20 {\r\n    stroke: #ffca53;\r\n}\r\n\r\n.ma30 {\r\n    stroke: #0055a2;\r\n}\r\n\r\n/* macd */\r\n.macd {\r\n    shape-rendering:crispEdges;\r\n}\r\n.dea {\r\n    stroke: rgb(1, 67, 117);\r\n    fill: none;\r\n}\r\n.dif {\r\n    stroke: rgb(221, 34, 0);\r\n    fill: none;\r\n}", ""]);
+
+	// exports
+
+
+/***/ },
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(module) {//! moment.js
@@ -3077,7 +3566,7 @@ var StockChart =
 	            module && module.exports) {
 	        try {
 	            oldLocale = globalLocale._abbr;
-	            __webpack_require__(19)("./" + name);
+	            __webpack_require__(21)("./" + name);
 	            // because defineLocale currently also sets the global locale, we
 	            // want to undo that for lazy loaded locales
 	            getSetGlobalLocale(oldLocale);
@@ -5565,10 +6054,10 @@ var StockChart =
 
 	})));
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(18)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(20)(module)))
 
 /***/ },
-/* 18 */
+/* 20 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -5584,228 +6073,228 @@ var StockChart =
 
 
 /***/ },
-/* 19 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./af": 20,
-		"./af.js": 20,
-		"./ar": 21,
-		"./ar-dz": 22,
-		"./ar-dz.js": 22,
-		"./ar-ly": 23,
-		"./ar-ly.js": 23,
-		"./ar-ma": 24,
-		"./ar-ma.js": 24,
-		"./ar-sa": 25,
-		"./ar-sa.js": 25,
-		"./ar-tn": 26,
-		"./ar-tn.js": 26,
-		"./ar.js": 21,
-		"./az": 27,
-		"./az.js": 27,
-		"./be": 28,
-		"./be.js": 28,
-		"./bg": 29,
-		"./bg-x": 30,
-		"./bg-x.js": 30,
-		"./bg.js": 29,
-		"./bn": 31,
-		"./bn.js": 31,
-		"./bo": 32,
-		"./bo.js": 32,
-		"./br": 33,
-		"./br.js": 33,
-		"./bs": 34,
-		"./bs.js": 34,
-		"./ca": 35,
-		"./ca.js": 35,
-		"./cs": 36,
-		"./cs.js": 36,
-		"./cv": 37,
-		"./cv.js": 37,
-		"./cy": 38,
-		"./cy.js": 38,
-		"./da": 39,
-		"./da.js": 39,
-		"./de": 40,
-		"./de-at": 41,
-		"./de-at.js": 41,
-		"./de.js": 40,
-		"./dv": 42,
-		"./dv.js": 42,
-		"./el": 43,
-		"./el.js": 43,
-		"./en-au": 44,
-		"./en-au.js": 44,
-		"./en-ca": 45,
-		"./en-ca.js": 45,
-		"./en-gb": 46,
-		"./en-gb.js": 46,
-		"./en-ie": 47,
-		"./en-ie.js": 47,
-		"./en-nz": 48,
-		"./en-nz.js": 48,
-		"./eo": 49,
-		"./eo.js": 49,
-		"./es": 50,
-		"./es-do": 51,
-		"./es-do.js": 51,
-		"./es.js": 50,
-		"./et": 52,
-		"./et.js": 52,
-		"./eu": 53,
-		"./eu.js": 53,
-		"./fa": 54,
-		"./fa.js": 54,
-		"./fi": 55,
-		"./fi.js": 55,
-		"./fo": 56,
-		"./fo.js": 56,
-		"./fr": 57,
-		"./fr-ca": 58,
-		"./fr-ca.js": 58,
-		"./fr-ch": 59,
-		"./fr-ch.js": 59,
-		"./fr.js": 57,
-		"./fy": 60,
-		"./fy.js": 60,
-		"./gd": 61,
-		"./gd.js": 61,
-		"./gl": 62,
-		"./gl.js": 62,
-		"./he": 63,
-		"./he.js": 63,
-		"./hi": 64,
-		"./hi.js": 64,
-		"./hr": 65,
-		"./hr.js": 65,
-		"./hu": 66,
-		"./hu.js": 66,
-		"./hy-am": 67,
-		"./hy-am.js": 67,
-		"./id": 68,
-		"./id.js": 68,
-		"./is": 69,
-		"./is.js": 69,
-		"./it": 70,
-		"./it.js": 70,
-		"./ja": 71,
-		"./ja.js": 71,
-		"./jv": 72,
-		"./jv.js": 72,
-		"./ka": 73,
-		"./ka.js": 73,
-		"./kk": 74,
-		"./kk.js": 74,
-		"./km": 75,
-		"./km.js": 75,
-		"./ko": 76,
-		"./ko.js": 76,
-		"./ky": 77,
-		"./ky.js": 77,
-		"./lb": 78,
-		"./lb.js": 78,
-		"./lo": 79,
-		"./lo.js": 79,
-		"./lt": 80,
-		"./lt.js": 80,
-		"./lv": 81,
-		"./lv.js": 81,
-		"./me": 82,
-		"./me.js": 82,
-		"./mi": 83,
-		"./mi.js": 83,
-		"./mk": 84,
-		"./mk.js": 84,
-		"./ml": 85,
-		"./ml.js": 85,
-		"./mr": 86,
-		"./mr.js": 86,
-		"./ms": 87,
-		"./ms-my": 88,
-		"./ms-my.js": 88,
-		"./ms.js": 87,
-		"./my": 89,
-		"./my.js": 89,
-		"./nb": 90,
-		"./nb.js": 90,
-		"./ne": 91,
-		"./ne.js": 91,
-		"./nl": 92,
-		"./nl-be": 93,
-		"./nl-be.js": 93,
-		"./nl.js": 92,
-		"./nn": 94,
-		"./nn.js": 94,
-		"./pa-in": 95,
-		"./pa-in.js": 95,
-		"./pl": 96,
-		"./pl.js": 96,
-		"./pt": 97,
-		"./pt-br": 98,
-		"./pt-br.js": 98,
-		"./pt.js": 97,
-		"./ro": 99,
-		"./ro.js": 99,
-		"./ru": 100,
-		"./ru.js": 100,
-		"./se": 101,
-		"./se.js": 101,
-		"./si": 102,
-		"./si.js": 102,
-		"./sk": 103,
-		"./sk.js": 103,
-		"./sl": 104,
-		"./sl.js": 104,
-		"./sq": 105,
-		"./sq.js": 105,
-		"./sr": 106,
-		"./sr-cyrl": 107,
-		"./sr-cyrl.js": 107,
-		"./sr.js": 106,
-		"./ss": 108,
-		"./ss.js": 108,
-		"./sv": 109,
-		"./sv.js": 109,
-		"./sw": 110,
-		"./sw.js": 110,
-		"./ta": 111,
-		"./ta.js": 111,
-		"./te": 112,
-		"./te.js": 112,
-		"./tet": 113,
-		"./tet.js": 113,
-		"./th": 114,
-		"./th.js": 114,
-		"./tl-ph": 115,
-		"./tl-ph.js": 115,
-		"./tlh": 116,
-		"./tlh.js": 116,
-		"./tr": 117,
-		"./tr.js": 117,
-		"./tzl": 118,
-		"./tzl.js": 118,
-		"./tzm": 119,
-		"./tzm-latn": 120,
-		"./tzm-latn.js": 120,
-		"./tzm.js": 119,
-		"./uk": 121,
-		"./uk.js": 121,
-		"./uz": 122,
-		"./uz.js": 122,
-		"./vi": 123,
-		"./vi.js": 123,
-		"./x-pseudo": 124,
-		"./x-pseudo.js": 124,
-		"./yo": 125,
-		"./yo.js": 125,
-		"./zh-cn": 126,
-		"./zh-cn.js": 126,
-		"./zh-hk": 127,
-		"./zh-hk.js": 127,
-		"./zh-tw": 128,
-		"./zh-tw.js": 128
+		"./af": 22,
+		"./af.js": 22,
+		"./ar": 23,
+		"./ar-dz": 24,
+		"./ar-dz.js": 24,
+		"./ar-ly": 25,
+		"./ar-ly.js": 25,
+		"./ar-ma": 26,
+		"./ar-ma.js": 26,
+		"./ar-sa": 27,
+		"./ar-sa.js": 27,
+		"./ar-tn": 28,
+		"./ar-tn.js": 28,
+		"./ar.js": 23,
+		"./az": 29,
+		"./az.js": 29,
+		"./be": 30,
+		"./be.js": 30,
+		"./bg": 31,
+		"./bg-x": 32,
+		"./bg-x.js": 32,
+		"./bg.js": 31,
+		"./bn": 33,
+		"./bn.js": 33,
+		"./bo": 34,
+		"./bo.js": 34,
+		"./br": 35,
+		"./br.js": 35,
+		"./bs": 36,
+		"./bs.js": 36,
+		"./ca": 37,
+		"./ca.js": 37,
+		"./cs": 38,
+		"./cs.js": 38,
+		"./cv": 39,
+		"./cv.js": 39,
+		"./cy": 40,
+		"./cy.js": 40,
+		"./da": 41,
+		"./da.js": 41,
+		"./de": 42,
+		"./de-at": 43,
+		"./de-at.js": 43,
+		"./de.js": 42,
+		"./dv": 44,
+		"./dv.js": 44,
+		"./el": 45,
+		"./el.js": 45,
+		"./en-au": 46,
+		"./en-au.js": 46,
+		"./en-ca": 47,
+		"./en-ca.js": 47,
+		"./en-gb": 48,
+		"./en-gb.js": 48,
+		"./en-ie": 49,
+		"./en-ie.js": 49,
+		"./en-nz": 50,
+		"./en-nz.js": 50,
+		"./eo": 51,
+		"./eo.js": 51,
+		"./es": 52,
+		"./es-do": 53,
+		"./es-do.js": 53,
+		"./es.js": 52,
+		"./et": 54,
+		"./et.js": 54,
+		"./eu": 55,
+		"./eu.js": 55,
+		"./fa": 56,
+		"./fa.js": 56,
+		"./fi": 57,
+		"./fi.js": 57,
+		"./fo": 58,
+		"./fo.js": 58,
+		"./fr": 59,
+		"./fr-ca": 60,
+		"./fr-ca.js": 60,
+		"./fr-ch": 61,
+		"./fr-ch.js": 61,
+		"./fr.js": 59,
+		"./fy": 62,
+		"./fy.js": 62,
+		"./gd": 63,
+		"./gd.js": 63,
+		"./gl": 64,
+		"./gl.js": 64,
+		"./he": 65,
+		"./he.js": 65,
+		"./hi": 66,
+		"./hi.js": 66,
+		"./hr": 67,
+		"./hr.js": 67,
+		"./hu": 68,
+		"./hu.js": 68,
+		"./hy-am": 69,
+		"./hy-am.js": 69,
+		"./id": 70,
+		"./id.js": 70,
+		"./is": 71,
+		"./is.js": 71,
+		"./it": 72,
+		"./it.js": 72,
+		"./ja": 73,
+		"./ja.js": 73,
+		"./jv": 74,
+		"./jv.js": 74,
+		"./ka": 75,
+		"./ka.js": 75,
+		"./kk": 76,
+		"./kk.js": 76,
+		"./km": 77,
+		"./km.js": 77,
+		"./ko": 78,
+		"./ko.js": 78,
+		"./ky": 79,
+		"./ky.js": 79,
+		"./lb": 80,
+		"./lb.js": 80,
+		"./lo": 81,
+		"./lo.js": 81,
+		"./lt": 82,
+		"./lt.js": 82,
+		"./lv": 83,
+		"./lv.js": 83,
+		"./me": 84,
+		"./me.js": 84,
+		"./mi": 85,
+		"./mi.js": 85,
+		"./mk": 86,
+		"./mk.js": 86,
+		"./ml": 87,
+		"./ml.js": 87,
+		"./mr": 88,
+		"./mr.js": 88,
+		"./ms": 89,
+		"./ms-my": 90,
+		"./ms-my.js": 90,
+		"./ms.js": 89,
+		"./my": 91,
+		"./my.js": 91,
+		"./nb": 92,
+		"./nb.js": 92,
+		"./ne": 93,
+		"./ne.js": 93,
+		"./nl": 94,
+		"./nl-be": 95,
+		"./nl-be.js": 95,
+		"./nl.js": 94,
+		"./nn": 96,
+		"./nn.js": 96,
+		"./pa-in": 97,
+		"./pa-in.js": 97,
+		"./pl": 98,
+		"./pl.js": 98,
+		"./pt": 99,
+		"./pt-br": 100,
+		"./pt-br.js": 100,
+		"./pt.js": 99,
+		"./ro": 101,
+		"./ro.js": 101,
+		"./ru": 102,
+		"./ru.js": 102,
+		"./se": 103,
+		"./se.js": 103,
+		"./si": 104,
+		"./si.js": 104,
+		"./sk": 105,
+		"./sk.js": 105,
+		"./sl": 106,
+		"./sl.js": 106,
+		"./sq": 107,
+		"./sq.js": 107,
+		"./sr": 108,
+		"./sr-cyrl": 109,
+		"./sr-cyrl.js": 109,
+		"./sr.js": 108,
+		"./ss": 110,
+		"./ss.js": 110,
+		"./sv": 111,
+		"./sv.js": 111,
+		"./sw": 112,
+		"./sw.js": 112,
+		"./ta": 113,
+		"./ta.js": 113,
+		"./te": 114,
+		"./te.js": 114,
+		"./tet": 115,
+		"./tet.js": 115,
+		"./th": 116,
+		"./th.js": 116,
+		"./tl-ph": 117,
+		"./tl-ph.js": 117,
+		"./tlh": 118,
+		"./tlh.js": 118,
+		"./tr": 119,
+		"./tr.js": 119,
+		"./tzl": 120,
+		"./tzl.js": 120,
+		"./tzm": 121,
+		"./tzm-latn": 122,
+		"./tzm-latn.js": 122,
+		"./tzm.js": 121,
+		"./uk": 123,
+		"./uk.js": 123,
+		"./uz": 124,
+		"./uz.js": 124,
+		"./vi": 125,
+		"./vi.js": 125,
+		"./x-pseudo": 126,
+		"./x-pseudo.js": 126,
+		"./yo": 127,
+		"./yo.js": 127,
+		"./zh-cn": 128,
+		"./zh-cn.js": 128,
+		"./zh-hk": 129,
+		"./zh-hk.js": 129,
+		"./zh-tw": 130,
+		"./zh-tw.js": 130
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -5818,11 +6307,11 @@ var StockChart =
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 19;
+	webpackContext.id = 21;
 
 
 /***/ },
-/* 20 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -5830,7 +6319,7 @@ var StockChart =
 	//! author : Werner Mollentze : https://github.com/wernerm
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -5900,7 +6389,7 @@ var StockChart =
 
 
 /***/ },
-/* 21 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -5910,7 +6399,7 @@ var StockChart =
 	//! author : forabi https://github.com/forabi
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6047,7 +6536,7 @@ var StockChart =
 
 
 /***/ },
-/* 22 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -6055,7 +6544,7 @@ var StockChart =
 	//! author : Noureddine LOUAHEDJ : https://github.com/noureddineme
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6111,7 +6600,7 @@ var StockChart =
 
 
 /***/ },
-/* 23 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -6119,7 +6608,7 @@ var StockChart =
 	//! author : Ali Hmer: https://github.com/kikoanis
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6242,7 +6731,7 @@ var StockChart =
 
 
 /***/ },
-/* 24 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -6251,7 +6740,7 @@ var StockChart =
 	//! author : Abdel Said : https://github.com/abdelsaid
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6307,7 +6796,7 @@ var StockChart =
 
 
 /***/ },
-/* 25 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -6315,7 +6804,7 @@ var StockChart =
 	//! author : Suhail Alkowaileet : https://github.com/xsoh
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6417,7 +6906,7 @@ var StockChart =
 
 
 /***/ },
-/* 26 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -6425,7 +6914,7 @@ var StockChart =
 	//! author : Nader Toukabri : https://github.com/naderio
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6481,7 +6970,7 @@ var StockChart =
 
 
 /***/ },
-/* 27 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -6489,7 +6978,7 @@ var StockChart =
 	//! author : topchiyev : https://github.com/topchiyev
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6591,7 +7080,7 @@ var StockChart =
 
 
 /***/ },
-/* 28 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -6601,7 +7090,7 @@ var StockChart =
 	//! Author : Menelion Elensúle : https://github.com/Oire
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6730,7 +7219,7 @@ var StockChart =
 
 
 /***/ },
-/* 29 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -6738,7 +7227,7 @@ var StockChart =
 	//! author : Krasen Borisov : https://github.com/kraz
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6825,12 +7314,12 @@ var StockChart =
 
 
 /***/ },
-/* 30 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6845,7 +7334,7 @@ var StockChart =
 
 
 /***/ },
-/* 31 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -6853,7 +7342,7 @@ var StockChart =
 	//! author : Kaushik Gandhi : https://github.com/kaushikgandhi
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -6969,7 +7458,7 @@ var StockChart =
 
 
 /***/ },
-/* 32 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -6977,7 +7466,7 @@ var StockChart =
 	//! author : Thupten N. Chakrishar : https://github.com/vajradog
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -7093,7 +7582,7 @@ var StockChart =
 
 
 /***/ },
-/* 33 */
+/* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -7101,7 +7590,7 @@ var StockChart =
 	//! author : Jean-Baptiste Le Duigou : https://github.com/jbleduigou
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -7206,7 +7695,7 @@ var StockChart =
 
 
 /***/ },
-/* 34 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -7215,7 +7704,7 @@ var StockChart =
 	//! based on (hr) translation by Bojan Marković
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -7354,7 +7843,7 @@ var StockChart =
 
 
 /***/ },
-/* 35 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -7362,7 +7851,7 @@ var StockChart =
 	//! author : Juan G. Hurtado : https://github.com/juanghurtado
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -7440,7 +7929,7 @@ var StockChart =
 
 
 /***/ },
-/* 36 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -7448,7 +7937,7 @@ var StockChart =
 	//! author : petrbela : https://github.com/petrbela
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -7617,7 +8106,7 @@ var StockChart =
 
 
 /***/ },
-/* 37 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -7625,7 +8114,7 @@ var StockChart =
 	//! author : Anatoly Mironov : https://github.com/mirontoli
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -7685,7 +8174,7 @@ var StockChart =
 
 
 /***/ },
-/* 38 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -7694,7 +8183,7 @@ var StockChart =
 	//! author : https://github.com/ryangreaves
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -7771,7 +8260,7 @@ var StockChart =
 
 
 /***/ },
-/* 39 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -7779,7 +8268,7 @@ var StockChart =
 	//! author : Ulrik Nielsen : https://github.com/mrbase
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -7836,7 +8325,7 @@ var StockChart =
 
 
 /***/ },
-/* 40 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -7846,7 +8335,7 @@ var StockChart =
 	//! author : Mikolaj Dadela : https://github.com/mik01aj
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -7919,7 +8408,7 @@ var StockChart =
 
 
 /***/ },
-/* 41 */
+/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -7930,7 +8419,7 @@ var StockChart =
 	//! author : Mikolaj Dadela : https://github.com/mik01aj
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8003,7 +8492,7 @@ var StockChart =
 
 
 /***/ },
-/* 42 */
+/* 44 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8011,7 +8500,7 @@ var StockChart =
 	//! author : Jawish Hameed : https://github.com/jawish
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8108,7 +8597,7 @@ var StockChart =
 
 
 /***/ },
-/* 43 */
+/* 45 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8116,7 +8605,7 @@ var StockChart =
 	//! author : Aggelos Karalias : https://github.com/mehiel
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8211,7 +8700,7 @@ var StockChart =
 
 
 /***/ },
-/* 44 */
+/* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8219,7 +8708,7 @@ var StockChart =
 	//! author : Jared Morse : https://github.com/jarcoal
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8283,7 +8772,7 @@ var StockChart =
 
 
 /***/ },
-/* 45 */
+/* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8291,7 +8780,7 @@ var StockChart =
 	//! author : Jonathan Abourbih : https://github.com/jonbca
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8351,7 +8840,7 @@ var StockChart =
 
 
 /***/ },
-/* 46 */
+/* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8359,7 +8848,7 @@ var StockChart =
 	//! author : Chris Gedrim : https://github.com/chrisgedrim
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8423,7 +8912,7 @@ var StockChart =
 
 
 /***/ },
-/* 47 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8431,7 +8920,7 @@ var StockChart =
 	//! author : Chris Cartlidge : https://github.com/chriscartlidge
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8495,7 +8984,7 @@ var StockChart =
 
 
 /***/ },
-/* 48 */
+/* 50 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8503,7 +8992,7 @@ var StockChart =
 	//! author : Luke McGregor : https://github.com/lukemcgregor
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8567,7 +9056,7 @@ var StockChart =
 
 
 /***/ },
-/* 49 */
+/* 51 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8577,7 +9066,7 @@ var StockChart =
 	//!          Se ne, bonvolu korekti kaj avizi min por ke mi povas lerni!
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8645,7 +9134,7 @@ var StockChart =
 
 
 /***/ },
-/* 50 */
+/* 52 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8653,7 +9142,7 @@ var StockChart =
 	//! author : Julio Napurí : https://github.com/julionc
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8731,14 +9220,14 @@ var StockChart =
 
 
 /***/ },
-/* 51 */
+/* 53 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Spanish (Dominican Republic) [es-do]
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8816,7 +9305,7 @@ var StockChart =
 
 
 /***/ },
-/* 52 */
+/* 54 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8825,7 +9314,7 @@ var StockChart =
 	//! improvements : Illimar Tambek : https://github.com/ragulka
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8901,7 +9390,7 @@ var StockChart =
 
 
 /***/ },
-/* 53 */
+/* 55 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8909,7 +9398,7 @@ var StockChart =
 	//! author : Eneko Illarramendi : https://github.com/eillarra
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -8972,7 +9461,7 @@ var StockChart =
 
 
 /***/ },
-/* 54 */
+/* 56 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -8980,7 +9469,7 @@ var StockChart =
 	//! author : Ebrahim Byagowi : https://github.com/ebraminio
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9084,7 +9573,7 @@ var StockChart =
 
 
 /***/ },
-/* 55 */
+/* 57 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9092,7 +9581,7 @@ var StockChart =
 	//! author : Tarmo Aidantausta : https://github.com/bleadof
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9196,7 +9685,7 @@ var StockChart =
 
 
 /***/ },
-/* 56 */
+/* 58 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9204,7 +9693,7 @@ var StockChart =
 	//! author : Ragnar Johannesen : https://github.com/ragnar123
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9261,7 +9750,7 @@ var StockChart =
 
 
 /***/ },
-/* 57 */
+/* 59 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9269,7 +9758,7 @@ var StockChart =
 	//! author : John Fischer : https://github.com/jfroffice
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9330,7 +9819,7 @@ var StockChart =
 
 
 /***/ },
-/* 58 */
+/* 60 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9338,7 +9827,7 @@ var StockChart =
 	//! author : Jonathan Abourbih : https://github.com/jonbca
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9395,7 +9884,7 @@ var StockChart =
 
 
 /***/ },
-/* 59 */
+/* 61 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9403,7 +9892,7 @@ var StockChart =
 	//! author : Gaspard Bucher : https://github.com/gaspard
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9464,7 +9953,7 @@ var StockChart =
 
 
 /***/ },
-/* 60 */
+/* 62 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9472,7 +9961,7 @@ var StockChart =
 	//! author : Robin van der Vliet : https://github.com/robin0van0der0v
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9542,7 +10031,7 @@ var StockChart =
 
 
 /***/ },
-/* 61 */
+/* 63 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9550,7 +10039,7 @@ var StockChart =
 	//! author : Jon Ashdown : https://github.com/jonashdown
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9623,7 +10112,7 @@ var StockChart =
 
 
 /***/ },
-/* 62 */
+/* 64 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9631,7 +10120,7 @@ var StockChart =
 	//! author : Juan G. Hurtado : https://github.com/juanghurtado
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9705,7 +10194,7 @@ var StockChart =
 
 
 /***/ },
-/* 63 */
+/* 65 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9715,7 +10204,7 @@ var StockChart =
 	//! author : Tal Ater : https://github.com/TalAter
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9809,7 +10298,7 @@ var StockChart =
 
 
 /***/ },
-/* 64 */
+/* 66 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9817,7 +10306,7 @@ var StockChart =
 	//! author : Mayank Singhal : https://github.com/mayanksinghal
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -9938,7 +10427,7 @@ var StockChart =
 
 
 /***/ },
-/* 65 */
+/* 67 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -9946,7 +10435,7 @@ var StockChart =
 	//! author : Bojan Marković : https://github.com/bmarkovic
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -10088,7 +10577,7 @@ var StockChart =
 
 
 /***/ },
-/* 66 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -10096,7 +10585,7 @@ var StockChart =
 	//! author : Adam Brunner : https://github.com/adambrunner
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -10202,7 +10691,7 @@ var StockChart =
 
 
 /***/ },
-/* 67 */
+/* 69 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -10210,7 +10699,7 @@ var StockChart =
 	//! author : Armendarabyan : https://github.com/armendarabyan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -10302,7 +10791,7 @@ var StockChart =
 
 
 /***/ },
-/* 68 */
+/* 70 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -10311,7 +10800,7 @@ var StockChart =
 	//! reference: http://id.wikisource.org/wiki/Pedoman_Umum_Ejaan_Bahasa_Indonesia_yang_Disempurnakan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -10390,7 +10879,7 @@ var StockChart =
 
 
 /***/ },
-/* 69 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -10398,7 +10887,7 @@ var StockChart =
 	//! author : Hinrik Örn Sigurðsson : https://github.com/hinrik
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -10522,7 +11011,7 @@ var StockChart =
 
 
 /***/ },
-/* 70 */
+/* 72 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -10531,7 +11020,7 @@ var StockChart =
 	//! author: Mattia Larentis: https://github.com/nostalgiaz
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -10597,7 +11086,7 @@ var StockChart =
 
 
 /***/ },
-/* 71 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -10605,7 +11094,7 @@ var StockChart =
 	//! author : LI Long : https://github.com/baryon
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -10678,7 +11167,7 @@ var StockChart =
 
 
 /***/ },
-/* 72 */
+/* 74 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -10687,7 +11176,7 @@ var StockChart =
 	//! reference: http://jv.wikipedia.org/wiki/Basa_Jawa
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -10766,7 +11255,7 @@ var StockChart =
 
 
 /***/ },
-/* 73 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -10774,7 +11263,7 @@ var StockChart =
 	//! author : Irakli Janiashvili : https://github.com/irakli-janiashvili
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -10860,7 +11349,7 @@ var StockChart =
 
 
 /***/ },
-/* 74 */
+/* 76 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -10868,7 +11357,7 @@ var StockChart =
 	//! authors : Nurlan Rakhimzhanov : https://github.com/nurlan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -10952,7 +11441,7 @@ var StockChart =
 
 
 /***/ },
-/* 75 */
+/* 77 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -10960,7 +11449,7 @@ var StockChart =
 	//! author : Kruy Vanna : https://github.com/kruyvanna
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11015,7 +11504,7 @@ var StockChart =
 
 
 /***/ },
-/* 76 */
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11024,7 +11513,7 @@ var StockChart =
 	//! author : Jeeeyul Lee <jeeeyul@gmail.com>
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11085,7 +11574,7 @@ var StockChart =
 
 
 /***/ },
-/* 77 */
+/* 79 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11093,7 +11582,7 @@ var StockChart =
 	//! author : Chyngyz Arystan uulu : https://github.com/chyngyz
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11178,7 +11667,7 @@ var StockChart =
 
 
 /***/ },
-/* 78 */
+/* 80 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11187,7 +11676,7 @@ var StockChart =
 	//! author : David Raison : https://github.com/kwisatz
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11320,7 +11809,7 @@ var StockChart =
 
 
 /***/ },
-/* 79 */
+/* 81 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11328,7 +11817,7 @@ var StockChart =
 	//! author : Ryan Hart : https://github.com/ryanhart2
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11395,7 +11884,7 @@ var StockChart =
 
 
 /***/ },
-/* 80 */
+/* 82 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11403,7 +11892,7 @@ var StockChart =
 	//! author : Mindaugas Mozūras : https://github.com/mmozuras
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11517,7 +12006,7 @@ var StockChart =
 
 
 /***/ },
-/* 81 */
+/* 83 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11526,7 +12015,7 @@ var StockChart =
 	//! author : Jānis Elmeris : https://github.com/JanisE
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11619,7 +12108,7 @@ var StockChart =
 
 
 /***/ },
-/* 82 */
+/* 84 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11627,7 +12116,7 @@ var StockChart =
 	//! author : Miodrag Nikač <miodrag@restartit.me> : https://github.com/miodragnikac
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11735,7 +12224,7 @@ var StockChart =
 
 
 /***/ },
-/* 83 */
+/* 85 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11743,7 +12232,7 @@ var StockChart =
 	//! author : John Corrigan <robbiecloset@gmail.com> : https://github.com/johnideal
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11804,7 +12293,7 @@ var StockChart =
 
 
 /***/ },
-/* 84 */
+/* 86 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11812,7 +12301,7 @@ var StockChart =
 	//! author : Borislav Mickov : https://github.com/B0k0
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11899,7 +12388,7 @@ var StockChart =
 
 
 /***/ },
-/* 85 */
+/* 87 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11907,7 +12396,7 @@ var StockChart =
 	//! author : Floyd Pink : https://github.com/floydpink
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -11985,7 +12474,7 @@ var StockChart =
 
 
 /***/ },
-/* 86 */
+/* 88 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -11994,7 +12483,7 @@ var StockChart =
 	//! author : Vivek Athalye : https://github.com/vnathalye
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -12149,7 +12638,7 @@ var StockChart =
 
 
 /***/ },
-/* 87 */
+/* 89 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -12157,7 +12646,7 @@ var StockChart =
 	//! author : Weldan Jamili : https://github.com/weldan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -12236,7 +12725,7 @@ var StockChart =
 
 
 /***/ },
-/* 88 */
+/* 90 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -12245,7 +12734,7 @@ var StockChart =
 	//! author : Weldan Jamili : https://github.com/weldan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -12324,7 +12813,7 @@ var StockChart =
 
 
 /***/ },
-/* 89 */
+/* 91 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -12334,7 +12823,7 @@ var StockChart =
 	//! author : Tin Aung Lin : https://github.com/thanyawzinmin
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -12425,7 +12914,7 @@ var StockChart =
 
 
 /***/ },
-/* 90 */
+/* 92 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -12434,7 +12923,7 @@ var StockChart =
 	//!           Sigurd Gartmann : https://github.com/sigurdga
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -12493,7 +12982,7 @@ var StockChart =
 
 
 /***/ },
-/* 91 */
+/* 93 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -12501,7 +12990,7 @@ var StockChart =
 	//! author : suvash : https://github.com/suvash
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -12621,7 +13110,7 @@ var StockChart =
 
 
 /***/ },
-/* 92 */
+/* 94 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -12630,7 +13119,7 @@ var StockChart =
 	//! author : Jacob Middag : https://github.com/middagj
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -12712,7 +13201,7 @@ var StockChart =
 
 
 /***/ },
-/* 93 */
+/* 95 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -12721,7 +13210,7 @@ var StockChart =
 	//! author : Jacob Middag : https://github.com/middagj
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -12803,7 +13292,7 @@ var StockChart =
 
 
 /***/ },
-/* 94 */
+/* 96 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -12811,7 +13300,7 @@ var StockChart =
 	//! author : https://github.com/mechuwind
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -12868,7 +13357,7 @@ var StockChart =
 
 
 /***/ },
-/* 95 */
+/* 97 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -12876,7 +13365,7 @@ var StockChart =
 	//! author : Harpreet Singh : https://github.com/harpreetkhalsagtbit
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -12997,7 +13486,7 @@ var StockChart =
 
 
 /***/ },
-/* 96 */
+/* 98 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -13005,7 +13494,7 @@ var StockChart =
 	//! author : Rafal Hirsz : https://github.com/evoL
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -13107,7 +13596,7 @@ var StockChart =
 
 
 /***/ },
-/* 97 */
+/* 99 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -13115,7 +13604,7 @@ var StockChart =
 	//! author : Jefferson : https://github.com/jalex79
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -13177,7 +13666,7 @@ var StockChart =
 
 
 /***/ },
-/* 98 */
+/* 100 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -13185,7 +13674,7 @@ var StockChart =
 	//! author : Caio Ribeiro Pereira : https://github.com/caio-ribeiro-pereira
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -13243,7 +13732,7 @@ var StockChart =
 
 
 /***/ },
-/* 99 */
+/* 101 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -13252,7 +13741,7 @@ var StockChart =
 	//! author : Valentin Agachi : https://github.com/avaly
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -13323,7 +13812,7 @@ var StockChart =
 
 
 /***/ },
-/* 100 */
+/* 102 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -13333,7 +13822,7 @@ var StockChart =
 	//! author : Коренберг Марк : https://github.com/socketpair
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -13511,7 +14000,7 @@ var StockChart =
 
 
 /***/ },
-/* 101 */
+/* 103 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -13519,7 +14008,7 @@ var StockChart =
 	//! authors : Bård Rolstad Henriksen : https://github.com/karamell
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -13577,7 +14066,7 @@ var StockChart =
 
 
 /***/ },
-/* 102 */
+/* 104 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -13585,7 +14074,7 @@ var StockChart =
 	//! author : Sampath Sitinamaluwa : https://github.com/sampathsris
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -13653,7 +14142,7 @@ var StockChart =
 
 
 /***/ },
-/* 103 */
+/* 105 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -13662,7 +14151,7 @@ var StockChart =
 	//! based on work of petrbela : https://github.com/petrbela
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -13808,7 +14297,7 @@ var StockChart =
 
 
 /***/ },
-/* 104 */
+/* 106 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -13816,7 +14305,7 @@ var StockChart =
 	//! author : Robert Sedovšek : https://github.com/sedovsek
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -13975,7 +14464,7 @@ var StockChart =
 
 
 /***/ },
-/* 105 */
+/* 107 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -13985,7 +14474,7 @@ var StockChart =
 	//! author : Oerd Cukalla : https://github.com/oerd
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14050,7 +14539,7 @@ var StockChart =
 
 
 /***/ },
-/* 106 */
+/* 108 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14058,7 +14547,7 @@ var StockChart =
 	//! author : Milan Janačković<milanjanackovic@gmail.com> : https://github.com/milan-j
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14165,7 +14654,7 @@ var StockChart =
 
 
 /***/ },
-/* 107 */
+/* 109 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14173,7 +14662,7 @@ var StockChart =
 	//! author : Milan Janačković<milanjanackovic@gmail.com> : https://github.com/milan-j
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14280,7 +14769,7 @@ var StockChart =
 
 
 /***/ },
-/* 108 */
+/* 110 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14288,7 +14777,7 @@ var StockChart =
 	//! author : Nicolai Davies<mail@nicolai.io> : https://github.com/nicolaidavies
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14374,7 +14863,7 @@ var StockChart =
 
 
 /***/ },
-/* 109 */
+/* 111 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14382,7 +14871,7 @@ var StockChart =
 	//! author : Jens Alm : https://github.com/ulmus
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14448,7 +14937,7 @@ var StockChart =
 
 
 /***/ },
-/* 110 */
+/* 112 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14456,7 +14945,7 @@ var StockChart =
 	//! author : Fahad Kassim : https://github.com/fadsel
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14512,7 +15001,7 @@ var StockChart =
 
 
 /***/ },
-/* 111 */
+/* 113 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14520,7 +15009,7 @@ var StockChart =
 	//! author : Arjunkumar Krishnamoorthy : https://github.com/tk120404
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14647,7 +15136,7 @@ var StockChart =
 
 
 /***/ },
-/* 112 */
+/* 114 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14655,7 +15144,7 @@ var StockChart =
 	//! author : Krishna Chaitanya Thota : https://github.com/kcthota
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14741,7 +15230,7 @@ var StockChart =
 
 
 /***/ },
-/* 113 */
+/* 115 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14750,7 +15239,7 @@ var StockChart =
 	//! author : Onorio De J. Afonso : https://github.com/marobo
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14814,7 +15303,7 @@ var StockChart =
 
 
 /***/ },
-/* 114 */
+/* 116 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14822,7 +15311,7 @@ var StockChart =
 	//! author : Kridsada Thanabulpong : https://github.com/sirn
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14886,7 +15375,7 @@ var StockChart =
 
 
 /***/ },
-/* 115 */
+/* 117 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14894,7 +15383,7 @@ var StockChart =
 	//! author : Dan Hagman : https://github.com/hagmandan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -14953,7 +15442,7 @@ var StockChart =
 
 
 /***/ },
-/* 116 */
+/* 118 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -14961,7 +15450,7 @@ var StockChart =
 	//! author : Dominika Kruk : https://github.com/amaranthrose
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15078,7 +15567,7 @@ var StockChart =
 
 
 /***/ },
-/* 117 */
+/* 119 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15087,7 +15576,7 @@ var StockChart =
 	//!           Burak Yiğit Kaya: https://github.com/BYK
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15173,7 +15662,7 @@ var StockChart =
 
 
 /***/ },
-/* 118 */
+/* 120 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15182,7 +15671,7 @@ var StockChart =
 	//! author : Iustì Canun
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15269,7 +15758,7 @@ var StockChart =
 
 
 /***/ },
-/* 119 */
+/* 121 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15277,7 +15766,7 @@ var StockChart =
 	//! author : Abdel Said : https://github.com/abdelsaid
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15332,7 +15821,7 @@ var StockChart =
 
 
 /***/ },
-/* 120 */
+/* 122 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15340,7 +15829,7 @@ var StockChart =
 	//! author : Abdel Said : https://github.com/abdelsaid
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15395,7 +15884,7 @@ var StockChart =
 
 
 /***/ },
-/* 121 */
+/* 123 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15404,7 +15893,7 @@ var StockChart =
 	//! Author : Menelion Elensúle : https://github.com/Oire
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15546,7 +16035,7 @@ var StockChart =
 
 
 /***/ },
-/* 122 */
+/* 124 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15554,7 +16043,7 @@ var StockChart =
 	//! author : Sardor Muminov : https://github.com/muminoff
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15609,7 +16098,7 @@ var StockChart =
 
 
 /***/ },
-/* 123 */
+/* 125 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15617,7 +16106,7 @@ var StockChart =
 	//! author : Bang Nguyen : https://github.com/bangnk
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15693,7 +16182,7 @@ var StockChart =
 
 
 /***/ },
-/* 124 */
+/* 126 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15701,7 +16190,7 @@ var StockChart =
 	//! author : Andrew Hood : https://github.com/andrewhood125
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15766,7 +16255,7 @@ var StockChart =
 
 
 /***/ },
-/* 125 */
+/* 127 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15774,7 +16263,7 @@ var StockChart =
 	//! author : Atolagbe Abisoye : https://github.com/andela-batolagbe
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15831,7 +16320,7 @@ var StockChart =
 
 
 /***/ },
-/* 126 */
+/* 128 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15840,7 +16329,7 @@ var StockChart =
 	//! author : Zeno Zeng : https://github.com/zenozeng
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -15963,7 +16452,7 @@ var StockChart =
 
 
 /***/ },
-/* 127 */
+/* 129 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -15973,7 +16462,7 @@ var StockChart =
 	//! author : Konstantin : https://github.com/skfd
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';
@@ -16073,7 +16562,7 @@ var StockChart =
 
 
 /***/ },
-/* 128 */
+/* 130 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -16082,7 +16571,7 @@ var StockChart =
 	//! author : Chris Lam : https://github.com/hehachris
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(17)) :
+	    true ? factory(__webpack_require__(19)) :
 	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
 	   factory(global.moment)
 	}(this, (function (moment) { 'use strict';

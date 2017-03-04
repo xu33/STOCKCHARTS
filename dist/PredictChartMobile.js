@@ -292,14 +292,23 @@ var PredictChartMobile =
 	      group.append('rect').attr('x', 0).attr('y', 0).attr('width', width).attr('height', VOL_HEIGHT).attr('class', 'volume');
 
 	      var scaleX = this.scaleBandX;
-	      group.selectAll('.bar').data(candleData).enter().append('rect').attr('class', 'bar').attr('x', function (d, i) {
+	      var rects = group.selectAll('.bar').data(candleData).enter().append('rect').attr('class', 'bar').attr('x', function (d, i) {
 	        return scaleX(i);
 	      }).attr('y', function (d) {
-	        return scaleY(d.volume);
+	        var y = scaleY(d.volume);
+	        if (y >= VOL_HEIGHT) {
+	          y = VOL_HEIGHT - 1;
+	        }
+
+	        return y;
 	      }).attr('width', scaleX.bandwidth()).attr('height', function (d) {
-	        return VOL_HEIGHT - scaleY(d.volume);
-	      }).attr('fill', function (d) {
-	        return d.open < d.close ? _config.WIN_COLOR : _config.LOSS_COLOR;
+	        var height = VOL_HEIGHT - scaleY(d.volume);
+
+	        return height < 1 ? 1 : height;
+	      });
+
+	      rects.attr('fill', function (d, i) {
+	        return d.close >= d.open ? _config.WIN_COLOR : _config.LOSS_COLOR;
 	      });
 
 	      group.selectAll('.bar').data(candleData).enter().append('rect').attr('class', 'bar');
@@ -670,8 +679,8 @@ var PredictChartMobile =
 	var OUTTER_MARGIN = 2;
 	var VOL_HEIGHT = 66;
 	var FONT_SIZE = 12;
-	var WIN_COLOR = '#e63232';
-	var LOSS_COLOR = '#55a500';
+	var WIN_COLOR = '#de4c39';
+	var LOSS_COLOR = '#55a32d';
 	var EQUAL_COLOR = '#999999';
 	var STROKE_COLOR = '#d8d8d8';
 	var DASH_COLOR = '#999999';
@@ -735,7 +744,7 @@ var PredictChartMobile =
 
 
 	// module
-	exports.push([module.id, "* {\r\n    margin:0;\r\n    padding:0;\r\n}\r\n\r\nbody {\r\n    -webkit-user-select: none;\r\n}\r\n\r\n/*svg {\r\n    margin-left:10px;\r\n    margin-top:10px;\r\n}*/\r\n\r\nsvg * {\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n/* 数字文字颜色 */\r\n.axis text {\r\n    fill: #999999;\r\n}\r\n\r\n/* 数轴颜色 */\r\n.axis path {\r\n    stroke: #ccc;\r\n}\r\n\r\n.shadow {\r\n    stroke-width: 1px;\r\n    fill: none;\r\n}\r\n\r\n.tick line {\r\n    stroke: #ccc;\r\n}\r\n\r\n.predict {\r\n    fill: #e7f2fc;\r\n    fill-opacity: 0.6;\r\n}\r\n\r\n.ceil, .flor, .profit {\r\n    shape-rendering: auto;\r\n}\r\n\r\n.ceil, .flor {\r\n    stroke: #80b5ff;\r\n    fill: none;\r\n}\r\n\r\n.profit {\r\n    stroke: #e63232;\r\n    fill: none;\r\n}\r\n\r\n.volume {\r\n    stroke: #ccc;\r\n    fill: none;\r\n}\r\n\r\n.none {\r\n    display: none;\r\n}\r\n\r\n.poly path {\r\n    shape-rendering: auto;\r\n}\r\n\r\n/* 参考线 */\r\n.help {\r\n    stroke: #d8d8d8;\r\n}", ""]);
+	exports.push([module.id, "* {\r\n    margin:0;\r\n    padding:0;\r\n}\r\n\r\nbody {\r\n    -webkit-user-select: none;\r\n}\r\n\r\nsvg {\r\n    overflow: visible;\r\n}\r\n\r\nsvg rect, svg line {\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n/* 数字文字颜色 */\r\n.axis text {\r\n    fill: #999999;\r\n}\r\n\r\n/* 数轴颜色 */\r\n.axis path {\r\n    stroke: #ccc;\r\n}\r\n\r\n.shadow {\r\n    stroke-width: 1px;\r\n    fill: none;\r\n}\r\n\r\n.tick line {\r\n    stroke: #ccc;\r\n}\r\n\r\n.predict {\r\n    fill: #e7f2fc;\r\n    fill-opacity: 0.6;\r\n}\r\n\r\n.ceil, .flor, .profit {\r\n    shape-rendering: auto;\r\n}\r\n\r\n.ceil, .flor {\r\n    stroke: #80b5ff;\r\n    fill: none;\r\n}\r\n\r\n.profit {\r\n    stroke: #e63232;\r\n    fill: none;\r\n}\r\n\r\n.volume {\r\n    stroke: #ccc;\r\n    fill: none;\r\n}\r\n\r\n.none {\r\n    display: none;\r\n}\r\n\r\n.poly path {\r\n    shape-rendering: auto;\r\n}\r\n\r\n/* 参考线 */\r\n.help {\r\n    stroke: #d8d8d8;\r\n}\r\n\r\n/* brush area */\r\n.brush-bar {\r\n    fill: none;\r\n    stroke: #ccc;\r\n}\r\n\r\n.selection {\r\n    fill: #2f84cc;\r\n    opacity: 0.4;\r\n    stroke: #000000;\r\n}\r\n\r\n/* #cd4343, #8c3037, #ffca53, #0055a2*/\r\n/* 均线 */\r\n.ma5, .ma10, .ma20, .ma30 {\r\n    fill:none;\r\n}\r\n\r\n.ma5 {\r\n    stroke: #cd4343;\r\n}\r\n\r\n.ma10 {\r\n    stroke: #8c3037;\r\n}\r\n\r\n.ma20 {\r\n    stroke: #ffca53;\r\n}\r\n\r\n.ma30 {\r\n    stroke: #0055a2;\r\n}\r\n\r\n/* macd */\r\n.macd {\r\n    shape-rendering:crispEdges;\r\n}\r\n.dea {\r\n    stroke: rgb(1, 67, 117);\r\n    fill: none;\r\n}\r\n.dif {\r\n    stroke: rgb(221, 34, 0);\r\n    fill: none;\r\n}", ""]);
 
 	// exports
 

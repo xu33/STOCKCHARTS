@@ -180,7 +180,7 @@ class SampleChart {
       .attr('y', d => scaleY(d.volume))
       .attr('width', scaleX.bandwidth())
       .attr('height', d => VOL_HEIGHT - scaleY(d.volume))
-      .attr('fill', d => d.open < d.close ? WIN_COLOR : LOSS_COLOR)
+      .attr('fill', d => d.close >= d.open ? WIN_COLOR : LOSS_COLOR)
 
       group.selectAll('.bar').data(candleData).enter()
       .append('rect')
@@ -417,6 +417,10 @@ class SampleChart {
     if (interactive) {
       this.events()
     }
+  }
+
+  destory() {
+    this.svg.remove()
   }
 }
 

@@ -214,14 +214,28 @@ class Predict extends EventEmitter {
     .attr('class', 'volume')
 
     var scaleX = this.scaleBandX
-    group.selectAll('.bar').data(candleData).enter()
+    var rects = group.selectAll('.bar').data(candleData).enter()
       .append('rect')
       .attr('class', 'bar')
       .attr('x', (d, i) => scaleX(i))
-      .attr('y', d => scaleY(d.volume))
+      .attr('y', d => {
+        var y = scaleY(d.volume)
+        if (y >= VOL_HEIGHT) {
+          y = VOL_HEIGHT - 1;
+        }
+
+        return y;
+      })
       .attr('width', scaleX.bandwidth())
-      .attr('height', d => VOL_HEIGHT - scaleY(d.volume))
-      .attr('fill', d => d.open < d.close ? WIN_COLOR : LOSS_COLOR)
+      .attr('height', d => {
+        var height = VOL_HEIGHT - scaleY(d.volume)
+
+        return height < 1 ? 1: height
+      });
+
+      rects.attr('fill', (d, i) => {
+        return d.close >= d.open ? WIN_COLOR : LOSS_COLOR
+      })
 
       group.selectAll('.bar').data(candleData).enter()
       .append('rect')
