@@ -3,6 +3,7 @@ var webpack = require('webpack');
 
 module.exports = {
   entry: {
+    test: './src/test.js',
     index: './src/index.js',
     d3example: './src/d3example.js',
     st: './src/st.js'

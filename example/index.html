@@ -1,69 +1,27 @@
 <!doctype html>
 <html>
   <head>
-    <meta charset="utf-8">
     <title>Sample App</title>
     <style>
     	#container, #root {
     		margin-top: 20px;
     	}
+
+      .tooltip {
+        border: 1px solid #ccc;
+        width: 200px;
+        height: 100px;
+        background: #fff;
+      }
     </style>
   </head>
   <body>
     <button id="showCandlesBtn">k线</button>
     <button id="showPolylineBtn">折线</button>
+    <button id="clearBtn">清除</button>
     <div id="root"></div>
     <div id="container"></div>
-    <script src="/jquery.min.js"></script>
-    <script src="/raphael.min.js"></script>
-    <script src="/d3-scale.js"></script>
-    <script src="/PredictChart.js"></script>
-    <script src="/ChartWithVolume.js"></script>
-    <script>
-      window.onload = function() {
-      var fakeData = PredictChart.fakeData
-
-      var pc = new PredictChart(document.getElementById('root'), {
-        chartWidth: 400,
-        chartHeight: 300,
-        candleData: fakeData.slice(0, 20),
-        predictData: fakeData.slice(-5),
-          needVolume: true,
-          ticksY: 6,
-          // tooltip: function(item) {
-          //  var { open, close, low, high } = item
-            
-          //  return `${open}${close}${low}${high}`
-          // }
-      })
-
-      pc.draw()
-
-      var cwv = new ChartWithVolume(document.getElementById('container'), {
-        chartWidth:400,
-        chartHeight:300,
-        candleData: fakeData.slice(0, 40),
-        needVolume: true,
-        cycle: 10,
-        tooltip: function(item) {
-            var { open, close, low, high } = item
-            
-            return `${open}${close}${low}${high}`
-          }
-      })
-
-      cwv.draw()
-
-      $('#showCandlesBtn').on('click', function(e) {
-        cwv.hidePolySet()
-        cwv.showCandleSet()
-      })
-
-      $('#showPolylineBtn').on('click', function(e) {
-        cwv.hideCandleSet()
-        cwv.showPolySet()
-      })
-    }
-    </script>
+    <script src="/static/common.js"></script>
+    <script src="/static/index.js"></script>
   </body>
 </html>

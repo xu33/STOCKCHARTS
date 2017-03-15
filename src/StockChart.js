@@ -60,16 +60,16 @@ class StockChart extends EventEmitter {
     var scaleY = d3.scaleLinear().domain([min, max]).range([this.overviewAreaHeight, 10])
     var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, this.options.width])
 
+    var line = d3.line()
+      .x((d, i) => scaleX(i))
+      .y(d => scaleY(d.close))
+
     /*
      * y0 和 y1 可以分別看成是上方 y 座標與下方 y 坐標，
      * x0 和 x1 可以看成左方的 x 座標與右方的 x 座標，
      * 基本上一定要有 x 一組數據搭配 y0、y1 或 y 一組數據搭配 x0、x1，
      * 因此最重要的其實就是必須要有一組座標來產生 area
-      */
-
-    var line = d3.line()
-      .x((d, i) => scaleX(i))
-      .y(d => scaleY(d.close))
+     */
 
     var area = d3.area()
       .x((d, i) => scaleX(i))

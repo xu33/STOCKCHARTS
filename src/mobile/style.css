@@ -1,0 +1,18 @@
+/* 数字文字颜色 */
+.axis text {
+    fill: #777777;
+}
+
+/* 数轴颜色 */
+.axis path {
+    stroke: #CCC;
+}
+
+.axis line {
+    stroke: #CCC;
+    shape-rendering:crispEdges;
+}
+
+.trend-area {
+
+}
