@@ -5,14 +5,18 @@
 
 /* 数轴颜色 */
 .axis path {
-    stroke: #CCC;
+    stroke: #d4d4d4;
 }
 
 .axis line {
-    stroke: #CCC;
+    stroke: #d4d4d4;
     shape-rendering:crispEdges;
 }
 
 .trend-area {
 
+}
+
+.guide-line, .candle, .shadow, .volume {
+    shape-rendering:crispEdges;
 }
