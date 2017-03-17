@@ -41,7 +41,54 @@ class CandleStickChart extends EventEmitter {
   }
 
   initTouchEvents() {
+    var {svg, width, height} = this
+    var self = this
+    var line = d3.line().x(d => d.x).y(d => d.y)
+    var drawLine = (data) => {
+      var lines = svg.selectAll('.guide-line').data(data)
+      lines.enter().append('path')
+        .attr('class', 'guide-line')
+        .merge(lines)
+        .attr('d', line)
 
+      lines.exit().remove()
+    }
+
+    var handleTouch = function() {
+      var [[x]] = d3.touches(this)
+      var eachBand = self.barScale.step()
+      var bandWidth = self.barScale.bandwidth()
+      var index = Math.round(x / eachBand)
+
+      x = self.barScale(index) + bandWidth / 2
+
+      var verticalGuideLineCoords = [{
+        x: x,
+        y: 0
+      }, {
+        x: x,
+        y: height
+      }]
+
+      var data = [verticalGuideLineCoords]
+
+      if (index < 0 || index >= self.data.length) {
+        return
+      }
+
+      var datum = self.data[index]
+      self.axisLeftElement.select('.tick text').text(`VOL:${datum.volume}`)
+
+      drawLine(data)
+    }
+
+    svg.on('touchstart', handleTouch)
+      .on('touchmove', handleTouch)
+      .on('touchend', function() {
+        drawLine([])
+
+        self.updateVolumeLeftAxis()
+      })
   }
 
   renderAxis() {
@@ -51,7 +98,7 @@ class CandleStickChart extends EventEmitter {
 
   // 绘制水平方向的坐标和辅助线
   createHorizontalAxis() {
-    var { width, baseHeight, svg, data} = this
+    var {width, baseHeight, svg, data} = this
     var bottomAxis = this.createBottomTickAxis()
     var bottomAxisElement = this.bottomAxisElement = svg.append('g').attr('class', 'axis')
       .attr('transform', `translate(0, ${baseHeight})`)
@@ -60,14 +107,14 @@ class CandleStickChart extends EventEmitter {
 
     // 辅助线 从顶部伸出
     var step = width / 4
-    var scale = d3.scaleOrdinal().domain([0, 1, 2, 3, 4]).range([0, step * 1, step * 2, step *3, width - 1])
+    var scale = d3.scaleOrdinal().domain([0, 1, 2, 3, 4]).range([0, step * 1, step * 2, step * 3, width - 1])
     var topAxis = d3.axisBottom(scale).tickSize(baseHeight).tickFormat('')
 
     // 保存该比例尺 画量图辅助线时使用
     this.verticalGuideScale = scale
 
     svg.append('g').attr('class', 'axis').call(topAxis)
-    .selectAll('.tick line').attr('stroke-dasharray', (d, i) => {
+      .selectAll('.tick line').attr('stroke-dasharray', (d, i) => {
       if (i == 1 || i == 3) return '10, 4'
     })
   }
@@ -156,7 +203,7 @@ class CandleStickChart extends EventEmitter {
     var candles = svg.selectAll('.candle').data(data)
 
     candles.enter()
-    .append('rect')
+      .append('rect')
       .attr('class', 'candle')
       .merge(candles)
       .attr('x', (d, i) => scaleX(i))
@@ -179,22 +226,22 @@ class CandleStickChart extends EventEmitter {
     var line = d3.line().x(d => d.x).y(d => d.y)
     var shadows = svg.selectAll('.shadow').data(data)
 
-      shadows.enter()
+    shadows.enter()
       .append('path')
       .attr('class', 'shadow')
-        .merge(shadows)
-        .attr('d', (d, i) => {
-          var x = scaleX(i) + bandWidth / 2
-          var y1 = scaleY(d.high)
-          var y2 = scaleY(d.low)
+      .merge(shadows)
+      .attr('d', (d, i) => {
+        var x = scaleX(i) + bandWidth / 2
+        var y1 = scaleY(d.high)
+        var y2 = scaleY(d.low)
 
-          return line([{
-            x: x, y: y1
-          }, {
-            x: x, y: y2
-          }])
-        })
-        .attr('stroke', color)
+        return line([{
+          x: x, y: y1
+        }, {
+          x: x, y: y2
+        }])
+      })
+      .attr('stroke', color)
 
     shadows.exit().remove()
   }
@@ -203,13 +250,13 @@ class CandleStickChart extends EventEmitter {
     var {volHeight, data} = this
     var min = 0
     var max = d3.max(data, d => d.volume)
-    var scale = d3.scaleOrdinal().domain(['VOL:0', max, 0]).range([0, 20, volHeight])
+    var scale = d3.scaleOrdinal().domain([`VOL:${max}`, max, 0]).range([0, 20, volHeight])
     var axisLeft = d3.axisRight(scale).tickSize(0)
 
     this.axisLeftElement.call(axisLeft)
 
     this.axisLeftElement.selectAll('.tick text')
-      .attr('transform', (d, i) => `translate(0, ${i == 2 ? -10: 10})`)
+      .attr('transform', (d, i) => `translate(0, ${i == 2 ? -10 : 10})`)
   }
 
   renderVolumes() {
@@ -250,7 +297,7 @@ class CandleStickChart extends EventEmitter {
     bars.enter().append('rect')
       .attr('class', 'volume')
       .merge(bars)
-      .attr('x', (d,i) => {
+      .attr('x', (d, i) => {
         return this.barScale(i)
       })
       .attr('y', (d, i) => {

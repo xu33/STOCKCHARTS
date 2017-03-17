@@ -56,20 +56,21 @@ class TimeTrendChart extends EventEmitter {
         .attr('class', 'guide-line')
         .merge(lines)
         .attr('d', line)
-        .attr('stroke', '#555')
 
       lines.exit().remove()
     }
     var handleTouch = function() {
       var [[x]] = d3.touches(this)
 
-      var data = [[{
+      var verticalGuideLineCoords = [{
         x: x,
         y: 0
       }, {
         x: x,
         y: height
-      }]]
+      }]
+
+      var data = [verticalGuideLineCoords]
 
       var index = Math.floor(scaleX.invert(x))
 
@@ -90,14 +91,14 @@ class TimeTrendChart extends EventEmitter {
     svg.on('touchstart', handleTouch)
       .on('touchmove', handleTouch)
       .on('touchend', function() {
-      var data = []
+        var data = []
 
-      drawLine(data)
+        drawLine(data)
 
-      that.updateVolumesYAxis()
+        that.updateVolumesYAxis()
 
-      that.emit('change', that.data[that.data.length - 1])
-    })
+        that.emit('change', that.data[that.data.length - 1])
+      })
   }
 
   // 创建水平数轴

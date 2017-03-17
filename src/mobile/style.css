@@ -17,6 +17,10 @@
 
 }
 
+.guide-line {
+    stroke: #555;
+}
+
 .guide-line, .candle, .shadow, .volume {
     shape-rendering:crispEdges;
 }
