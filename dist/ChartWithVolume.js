@@ -47,12 +47,12 @@ var ChartWithVolume =
 
 	'use strict';
 
-	var str2number = __webpack_require__(1);
-	var scaleLinear = __webpack_require__(2);
-	var Raphel = __webpack_require__(3);
-	var objectAssign = __webpack_require__(4);
+	var str2number = __webpack_require__(8);
+	var scaleLinear = __webpack_require__(9);
+	var Raphel = __webpack_require__(10);
+	var objectAssign = __webpack_require__(11);
 
-	var _require = __webpack_require__(5),
+	var _require = __webpack_require__(12),
 	    OUTTER_MARGIN = _require.OUTTER_MARGIN,
 	    VOL_HEIGHT = _require.VOL_HEIGHT,
 	    BOTTOM_TEXT_HEIGHT = _require.BOTTOM_TEXT_HEIGHT,
@@ -62,9 +62,9 @@ var ChartWithVolume =
 	    TEXT_COLOR = _require.TEXT_COLOR,
 	    TEXT_MARGIN = _require.TEXT_MARGIN;
 
-	var px = __webpack_require__(6);
-	var createPathString = __webpack_require__(7);
-	var ChartPrototype = __webpack_require__(8);
+	var px = __webpack_require__(13);
+	var createPathString = __webpack_require__(14);
+	var ChartPrototype = __webpack_require__(15);
 
 	var ChartWithVolume = function ChartWithVolume(container, _ref) {
 		var chartWidth = _ref.chartWidth,
@@ -276,7 +276,14 @@ var ChartWithVolume =
 	module.exports = ChartWithVolume;
 
 /***/ },
-/* 1 */
+/* 1 */,
+/* 2 */,
+/* 3 */,
+/* 4 */,
+/* 5 */,
+/* 6 */,
+/* 7 */,
+/* 8 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -292,7 +299,7 @@ var ChartWithVolume =
 	};
 
 /***/ },
-/* 2 */
+/* 9 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -347,13 +354,13 @@ var ChartWithVolume =
 	module.exports = scaleLinear;
 
 /***/ },
-/* 3 */
+/* 10 */
 /***/ function(module, exports) {
 
 	module.exports = window.Raphael;
 
 /***/ },
-/* 4 */
+/* 11 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -442,7 +449,7 @@ var ChartWithVolume =
 
 
 /***/ },
-/* 5 */
+/* 12 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -484,7 +491,7 @@ var ChartWithVolume =
 	};
 
 /***/ },
-/* 6 */
+/* 13 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -499,7 +506,7 @@ var ChartWithVolume =
 	module.exports = px;
 
 /***/ },
-/* 7 */
+/* 14 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -521,20 +528,20 @@ var ChartWithVolume =
 	module.exports = createPathString;
 
 /***/ },
-/* 8 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
-	var scaleLinear = __webpack_require__(2);
-	var $ = __webpack_require__(9);
-	var Raphel = __webpack_require__(3);
-	var str2number = __webpack_require__(1);
-	var UnitUtil = __webpack_require__(10);
+	var scaleLinear = __webpack_require__(9);
+	var $ = __webpack_require__(16);
+	var Raphel = __webpack_require__(10);
+	var str2number = __webpack_require__(8);
+	var UnitUtil = __webpack_require__(17);
 
-	var _require = __webpack_require__(5),
+	var _require = __webpack_require__(12),
 	    OUTTER_MARGIN = _require.OUTTER_MARGIN,
 	    VOL_HEIGHT = _require.VOL_HEIGHT,
 	    FONT_SIZE = _require.FONT_SIZE,
@@ -544,8 +551,8 @@ var ChartWithVolume =
 	    EQUAL_COLOR = _require.EQUAL_COLOR,
 	    TEXT_MARGIN = _require.TEXT_MARGIN;
 
-	var px = __webpack_require__(6);
-	var createPathString = __webpack_require__(7);
+	var px = __webpack_require__(13);
+	var createPathString = __webpack_require__(14);
 
 	var ChartPrototype = {
 		drawBasic: function drawBasic() {},
@@ -1096,13 +1103,13 @@ var ChartWithVolume =
 	module.exports = ChartPrototype;
 
 /***/ },
-/* 9 */
+/* 16 */
 /***/ function(module, exports) {
 
 	module.exports = window.$;
 
 /***/ },
-/* 10 */
+/* 17 */
 /***/ function(module, exports) {
 
 	'use strict';

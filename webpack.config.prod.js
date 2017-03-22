@@ -7,7 +7,9 @@ module.exports = {
     ChartWithVolume: './src/ChartWithVolume.js',
     PredictChartMobile: './src/Predict.js',
     SampleChart: './src/Sample.js',
-    StockChart: './src/StockChart.js'
+    StockChart: './src/StockChart.js',
+    TimeTrendChart: './src/mobile/TimeTrendChart.js',
+    CandleStickChart: './src/mobile/CandleStickChart'
   },
   externals: {
     jquery: 'window.$',

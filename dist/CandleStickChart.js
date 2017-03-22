@@ -1,4 +1,4 @@
-var PredictChartMobile =
+var CandleStickChart =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -51,601 +51,486 @@ var PredictChartMobile =
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _config = __webpack_require__(12);
+	__webpack_require__(1);
 
-	__webpack_require__(18);
+	var _getArrayBetween = __webpack_require__(5);
+
+	var _getArrayBetween2 = _interopRequireDefault(_getArrayBetween);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; } /**
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                * Created by shinan on 2016/12/29.
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                * Created by 99171 on 2017/3/16.
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                */
 
 
-	var str2number = __webpack_require__(8);
 	var d3 = __webpack_require__(6);
-	var PREDICT_PERCENT = 0.7;
-	var MARGIN_BOTTOM = 15;
-	var MARGIN_RIGHT = 2;
-	var TEXT_MARGIN = 5;
-	var VOL_HEIGHT = 66;
 	var EventEmitter = __webpack_require__(7);
+	var VOL_RATIO = 0.3;
+	var BOTTOM_MARGIN = 16;
+	var RED = '#e94f69';
+	var GREEN = '#139125';
+	var UNKNOW = '#CCCCCC';
+	var ORANGE = '#ec9e4a';
 
-	var Predict = function (_EventEmitter) {
-	  _inherits(Predict, _EventEmitter);
 
-	  function Predict(selector, options) {
-	    _classCallCheck(this, Predict);
+	var color = function color(d) {
+	  return d.close > d.open ? RED : GREEN;
+	};
 
-	    var _this = _possibleConstructorReturn(this, (Predict.__proto__ || Object.getPrototypeOf(Predict)).call(this));
+	var CandleStickChart = function (_EventEmitter) {
+	  _inherits(CandleStickChart, _EventEmitter);
 
-	    _this.options = options;
+	  function CandleStickChart(_ref) {
+	    var width = _ref.width,
+	        height = _ref.height,
+	        container = _ref.container,
+	        data = _ref.data;
 
-	    _this.svg = d3.select(selector).append('svg').attr('width', options.width).attr('height', options.height);
+	    _classCallCheck(this, CandleStickChart);
 
-	    _this.totalHeight = _this.options.height;
-	    _this.candleStickAreaHeight = options.height - MARGIN_BOTTOM;
-	    _this.options.width = options.width - MARGIN_RIGHT;
+	    var _this = _possibleConstructorReturn(this, (CandleStickChart.__proto__ || Object.getPrototypeOf(CandleStickChart)).call(this));
 
-	    if (_this.options.volume) {
-	      _this.candleStickAreaHeight -= VOL_HEIGHT;
-	    }
+	    _this.element = d3.select(container);
+	    _this.svg = _this.element.append('svg');
+	    _this.svg.attr('width', width).attr('height', height);
 
-	    _this.options.candleData = _this.options.candleData.map(str2number);
-	    _this.options.predictData = _this.options.predictData.map(str2number);
-
-	    var candleData = options.candleData,
-	        predictData = options.predictData;
-
-	    var all = candleData.concat(predictData);
-
-	    var min = d3.min(all, function (d) {
-	      return +d.low;
-	    });
-	    var max = d3.max(all, function (d) {
-	      return +d.high;
-	    });
-
-	    min = min - min / 50;
-	    max = max + max / 50;
-
-	    var scaleY = d3.scaleLinear().domain([min, max]).range([_this.candleStickAreaHeight, 0]);
-
-	    _this.min = min;
-	    _this.max = max;
-	    _this.scaleY = scaleY;
+	    _this.container = container;
+	    _this.width = width;
+	    _this.height = height;
+	    _this.volHeight = height * VOL_RATIO;
+	    _this.baseHeight = height - _this.volHeight - BOTTOM_MARGIN;
+	    _this.data = data;
 	    _this.render();
+	    _this.initTouchEvents();
 	    return _this;
 	  }
 
-	  // 预测线
-
-
-	  _createClass(Predict, [{
-	    key: 'predictLines',
-	    value: function predictLines() {
-	      var svg = this.svg,
-	          scaleY = this.scaleY;
-	      var _options = this.options,
-	          width = _options.width,
-	          candleData = _options.candleData,
-	          predictData = _options.predictData;
-
-	      var height = this.candleStickAreaHeight;
-	      var offset = width * PREDICT_PERCENT;
-	      var g = svg.append('g').attr('transform', 'translate(' + offset + ', 0)');
-	      // 预测部分虚框
-	      var area = d3.area().x(function (d) {
-	        return d.x;
-	      }).y0(0).y1(function (d) {
-	        return d.y;
-	      });
-
-	      g.append('path').datum([{
-	        x: 0,
-	        y: height
-	      }, {
-	        x: width * (1 - PREDICT_PERCENT),
-	        y: height
-	      }]).attr('d', area).attr('class', 'predict');
-
-	      var last = candleData[candleData.length - 1];
-
-	      predictData.unshift({
-	        high: last.close,
-	        low: last.close,
-	        close: last.close
-	      });
-
-	      // 预测部分折线
-	      var scaleX = d3.scaleLinear().domain([0, predictData.length - 1]).range([0, width * (1 - PREDICT_PERCENT)]);
-
-	      this.predictScaleX = scaleX;
-
-	      var lineCeil = d3.line().y(function (d) {
-	        return scaleY(d.high);
-	      }).x(function (d, i) {
-	        return scaleX(i);
-	      });
-
-	      g.append('path').datum(predictData).attr('class', 'ceil').attr('d', lineCeil);
-
-	      var lineProfit = d3.line().y(function (d) {
-	        return scaleY(d.close);
-	      }).x(function (d, i) {
-	        return scaleX(i);
-	      });
-
-	      g.append('path').datum(predictData).attr('class', 'profit').attr('d', lineProfit);
-
-	      var lineFlor = d3.line().y(function (d) {
-	        return scaleY(d.low);
-	      }).x(function (d, i) {
-	        return scaleX(i);
-	      });
-
-	      g.append('path').datum(predictData).attr('class', 'flor').attr('d', lineFlor);
-
-	      // 分割虚线
-	      var helpLine = d3.line().y(function (d) {
-	        return d.y;
-	      }).x(function (d) {
-	        return d.x;
-	      });
-
-	      g.append('path').datum([{
-	        x: 0,
-	        y: 0
-	      }, {
-	        x: 0,
-	        y: this.options.volume ? this.totalHeight : height
-	      }]).attr('d', helpLine).attr('stroke', '#ccc').attr("stroke-dasharray", '5, 3');
+	  _createClass(CandleStickChart, [{
+	    key: 'render',
+	    value: function render() {
+	      this.renderAxis();
+	      this.renderCandleStick();
+	      this.renderVolumes();
 	    }
 
-	    // 蜡烛线
+	    // 初始化触摸事件
 
 	  }, {
-	    key: 'candleSticks',
-	    value: function candleSticks() {
+	    key: 'initTouchEvents',
+	    value: function initTouchEvents() {
 	      var svg = this.svg,
-	          scaleY = this.scaleY;
-	      var _options2 = this.options,
-	          width = _options2.width,
-	          candleData = _options2.candleData;
+	          width = this.width,
+	          height = this.height;
 
-	      var height = this.candleStickAreaHeight;
-	      var offset = width * PREDICT_PERCENT;
-	      var scaleX = d3.scaleBand().domain(candleData.map(function (o, i) {
-	        return i;
-	      })).range([0, offset]).padding(0.4);
+	      var self = this;
+	      var line = d3.line().x(function (d) {
+	        return d.x;
+	      }).y(function (d) {
+	        return d.y;
+	      });
+	      var drawLine = function drawLine(data) {
+	        var lines = svg.selectAll('.guide-line').data(data);
+	        lines.enter().append('path').attr('class', 'guide-line').merge(lines).attr('d', line);
 
-	      this.scaleBandX = scaleX;
-
-	      var group = svg.append('g').attr('class', 'candles');
-	      var calColor = function calColor(d) {
-	        if (d.close > d.open) {
-	          return _config.WIN_COLOR;
-	        } else if (d.close < d.open) {
-	          return _config.LOSS_COLOR;
-	        } else {
-	          return _config.EQUAL_COLOR;
-	        }
+	        lines.exit().remove();
 	      };
 
-	      group.selectAll('rect').data(candleData).enter().append('rect').attr('class', 'bar').attr('x', function (d, i) {
+	      var handleTouch = function handleTouch() {
+	        var _d3$touches = d3.touches(this),
+	            _d3$touches2 = _slicedToArray(_d3$touches, 1),
+	            _d3$touches2$ = _slicedToArray(_d3$touches2[0], 1),
+	            x = _d3$touches2$[0];
+
+	        var barScale = self.barScale;
+
+	        var eachBand = barScale.step();
+	        var bandWidth = barScale.bandwidth();
+	        var index = Math.round(x / eachBand);
+
+	        x = barScale(index) + bandWidth / 2;
+
+	        var verticalGuideLineCoords = [{
+	          x: x,
+	          y: 0
+	        }, {
+	          x: x,
+	          y: height
+	        }];
+
+	        var data = [verticalGuideLineCoords];
+
+	        if (index < 0 || index >= self.data.length) {
+	          return;
+	        }
+
+	        var datum = self.data[index];
+	        self.axisLeftElement.select('.tick text').text('VOL:' + datum.volume);
+
+	        drawLine(data);
+
+	        self.emit('change', self.data[index]);
+	      };
+
+	      svg.on('touchstart', handleTouch).on('touchmove', handleTouch).on('touchend', function () {
+	        drawLine([]);
+
+	        self.updateVolumeLeftAxis();
+	      });
+	    }
+
+	    // 绘制坐标轴
+
+	  }, {
+	    key: 'renderAxis',
+	    value: function renderAxis() {
+	      this.createHorizontalAxis();
+	      this.createVerticalAxis();
+	    }
+
+	    // 绘制水平方向的坐标和辅助线
+
+	  }, {
+	    key: 'createHorizontalAxis',
+	    value: function createHorizontalAxis() {
+	      var width = this.width,
+	          baseHeight = this.baseHeight,
+	          svg = this.svg,
+	          data = this.data;
+
+	      var bottomAxis = this.createBottomTickAxis();
+	      var bottomAxisElement = this.bottomAxisElement = svg.append('g').attr('class', 'chart-axis').attr('transform', 'translate(0, ' + baseHeight + ')');
+
+	      this.updateCandleAreaBottomAxis();
+
+	      // 辅助线 从顶部伸出
+	      var step = width / 4;
+	      var scale = d3.scaleOrdinal().domain([0, 1, 2, 3, 4]).range([0, step * 1, step * 2, step * 3, width - 1]);
+	      var topAxis = d3.axisBottom(scale).tickSize(baseHeight).tickFormat('');
+
+	      // 保存该比例尺 画量图辅助线时使用
+	      this.verticalGuideScale = scale;
+
+	      svg.append('g').attr('class', 'chart-axis').call(topAxis).selectAll('.tick line').attr('stroke-dasharray', function (d, i) {
+	        if (i == 1 || i == 3) return '10, 4';
+	      });
+	    }
+
+	    // 绘制垂直方向的坐标和辅助线
+
+	  }, {
+	    key: 'createVerticalAxis',
+	    value: function createVerticalAxis() {
+	      var svg = this.svg,
+	          baseHeight = this.baseHeight,
+	          data = this.data,
+	          width = this.width;
+
+
+	      var leftAxisElement = this.leftAxisElement = svg.append('g').attr('class', 'chart-axis');
+
+	      this.updateCandleAreaLeftAxis();
+
+	      // 辅助线 从右侧伸出
+	      var rangeRight = (0, _getArrayBetween2.default)(baseHeight, 0, 4);
+	      var scaleRight = d3.scaleOrdinal().domain(rangeRight).range(rangeRight);
+	      var rightAxis = d3.axisLeft(scaleRight).tickSize(width).tickFormat('');
+
+	      svg.append('g').attr('class', 'chart-axis').attr('transform', 'translate(' + (width - 1) + ', 0)').call(rightAxis).selectAll('.tick line').attr('stroke-dasharray', function (d, i) {
+	        if (i == 1 || i == 3) return '10, 4';
+	      });
+	    }
+
+	    // 更新需要更新的坐标轴
+
+	  }, {
+	    key: 'updateAxis',
+	    value: function updateAxis() {
+	      this.updateCandleAreaBottomAxis();
+	      this.updateCandleAreaLeftAxis();
+	      this.updateVolumeLeftAxis();
+	    }
+
+	    // 生成蜡烛图左侧的坐标轴对象
+
+	  }, {
+	    key: 'createLeftTickAxis',
+	    value: function createLeftTickAxis() {
+	      var baseHeight = this.baseHeight,
+	          data = this.data;
+
+	      var min = d3.min(data, function (d) {
+	        return d.low;
+	      });
+	      var max = d3.max(data, function (d) {
+	        return d.high;
+	      });
+
+	      var domain = [min, max];
+	      var range = [baseHeight, 0];
+
+	      var scale = d3.scaleOrdinal().domain(domain).range(range);
+	      var leftAxis = d3.axisRight(scale).tickSize(0);
+
+	      return leftAxis;
+	    }
+
+	    // 绘制蜡烛图左侧的坐标轴
+
+	  }, {
+	    key: 'updateCandleAreaLeftAxis',
+	    value: function updateCandleAreaLeftAxis() {
+	      this.leftAxisElement.call(this.createLeftTickAxis());
+	      this.leftAxisElement.selectAll('.tick text').attr('transform', function (d, i) {
+	        return 'translate(0, ' + (i == 0 ? -10 : 10) + ')';
+	      }).attr('fill', function (d, i) {
+	        return i == 1 ? RED : GREEN;
+	      });
+	    }
+
+	    // 生成蜡烛图底部的坐标轴对象
+
+	  }, {
+	    key: 'createBottomTickAxis',
+	    value: function createBottomTickAxis() {
+	      var width = this.width,
+	          data = this.data;
+
+	      var length = data.length;
+	      var domain = [data[0].date, length > 1 ? data[length - 1].date : ''];
+	      var range = [0, width];
+	      var scale = d3.scaleOrdinal().domain(domain).range(range);
+	      var bottomAxis = d3.axisBottom(scale).tickSize(0).tickPadding(6);
+
+	      return bottomAxis;
+	    }
+
+	    // 绘制蜡烛图底部的坐标轴
+
+	  }, {
+	    key: 'updateCandleAreaBottomAxis',
+	    value: function updateCandleAreaBottomAxis() {
+	      this.bottomAxisElement.call(this.createBottomTickAxis());
+	      this.bottomAxisElement.selectAll('.tick text').attr('text-anchor', function (d, i) {
+	        return i == 0 ? 'start' : 'end';
+	      });
+	    }
+
+	    // 绘制蜡烛图实体和影线
+
+	  }, {
+	    key: 'renderCandleStick',
+	    value: function renderCandleStick() {
+	      var svg = this.svg,
+	          width = this.width,
+	          data = this.data,
+	          baseHeight = this.baseHeight;
+
+	      var scaleX = d3.scaleBand().domain(data.map(function (d, i) {
+	        return i;
+	      })).range([0, width]).padding(0.4);
+
+	      var bandWidth = parseInt(scaleX.bandwidth());
+
+	      var min = d3.min(data, function (d) {
+	        return d.low;
+	      });
+	      var max = d3.max(data, function (d) {
+	        return d.high;
+	      });
+	      var scaleY = d3.scaleLinear().domain([min, max]).range([baseHeight, 10]);
+
+	      this.barScale = scaleX;
+
+	      // 实体
+	      var candles = svg.selectAll('.candle').data(data);
+
+	      candles.enter().append('rect').attr('class', 'candle').merge(candles).attr('x', function (d, i) {
 	        return scaleX(i);
-	      }).attr('y', function (d) {
+	      }).attr('y', function (d, i) {
 	        return scaleY(Math.max(d.open, d.close));
-	      }).attr('width', scaleX.bandwidth()).attr('height', function (d) {
+	      }).attr('width', bandWidth).attr('height', function (d) {
 	        var h = scaleY(Math.min(d.open, d.close)) - scaleY(Math.max(d.open, d.close));
+
 	        if (h < 1) {
 	          h = 1;
 	        }
 
 	        return h;
-	      }).attr('fill', calColor);
+	      }).attr('fill', color);
 
+	      candles.exit().remove();
+
+	      // 影线
 	      var line = d3.line().x(function (d) {
 	        return d.x;
 	      }).y(function (d) {
 	        return d.y;
 	      });
-	      group.selectAll('path.shadow').data(candleData).enter().append('path').attr('class', 'shadow').attr('d', function (d, i) {
-	        var x = scaleX(i) + scaleX.bandwidth() / 2;
+	      var shadows = svg.selectAll('.shadow').data(data);
+
+	      shadows.enter().append('path').attr('class', 'shadow').merge(shadows).attr('d', function (d, i) {
+	        var x = scaleX(i) + bandWidth / 2;
 	        var y1 = scaleY(d.high);
 	        var y2 = scaleY(d.low);
 
-	        return line([{ x: x, y: y1 }, { x: x, y: y2 }]);
-	      }).attr('stroke', calColor);
+	        return line([{
+	          x: x, y: y1
+	        }, {
+	          x: x, y: y2
+	        }]);
+	      }).attr('stroke', color);
 
-	      this.candleGroup = group;
+	      shadows.exit().remove();
 	    }
 
-	    // 量线
+	    // 绘制量图左侧纵坐标
 
 	  }, {
-	    key: 'volumes',
-	    value: function volumes() {
-	      var svg = this.svg;
-	      var _options3 = this.options,
-	          width = _options3.width,
-	          candleData = _options3.candleData;
+	    key: 'updateVolumeLeftAxis',
+	    value: function updateVolumeLeftAxis() {
+	      var volHeight = this.volHeight,
+	          data = this.data;
 
-	      var height = this.candleStickAreaHeight;
-	      var min = d3.min(candleData, function (d) {
+	      var min = 0;
+	      var max = d3.max(data, function (d) {
 	        return d.volume;
 	      });
-	      var max = d3.max(candleData, function (d) {
-	        return d.volume;
+	      var scale = d3.scaleOrdinal().domain(['VOL:' + max, max, 0]).range([0, 20, volHeight]);
+	      var axisLeft = d3.axisRight(scale).tickSize(0);
+
+	      this.axisLeftElement.call(axisLeft);
+
+	      this.axisLeftElement.selectAll('.tick text').attr('transform', function (d, i) {
+	        return 'translate(0, ' + (i == 2 ? -10 : 10) + ')';
 	      });
-
-	      // 增加一些
-	      max += max / 10;
-
-	      var VOL_HEIGHT = 66;
-	      var offset = width * PREDICT_PERCENT;
-	      var scaleY = d3.scaleLinear().domain([min, max]).range([VOL_HEIGHT, 0]);
-	      var group = svg.append('g').attr('transform', 'translate(0, ' + (height + MARGIN_BOTTOM - 1) + ')');
-
-	      group.append('rect').attr('x', 0).attr('y', 0).attr('width', width).attr('height', VOL_HEIGHT).attr('class', 'volume');
-
-	      var scaleX = this.scaleBandX;
-	      var rects = group.selectAll('.bar').data(candleData).enter().append('rect').attr('class', 'bar').attr('x', function (d, i) {
-	        return scaleX(i);
-	      }).attr('y', function (d) {
-	        var y = scaleY(d.volume);
-	        if (y >= VOL_HEIGHT) {
-	          y = VOL_HEIGHT - 1;
-	        }
-
-	        return y;
-	      }).attr('width', scaleX.bandwidth()).attr('height', function (d) {
-	        var height = VOL_HEIGHT - scaleY(d.volume);
-
-	        return height < 1 ? 1 : height;
-	      });
-
-	      rects.attr('fill', function (d, i) {
-	        return d.close >= d.open ? _config.WIN_COLOR : _config.LOSS_COLOR;
-	      });
-
-	      group.selectAll('.bar').data(candleData).enter().append('rect').attr('class', 'bar');
 	    }
 
-	    // 数轴&辅助线
+	    // 绘制量图
 
 	  }, {
-	    key: 'axis',
-	    value: function axis() {
+	    key: 'renderVolumes',
+	    value: function renderVolumes() {
 	      var svg = this.svg,
-	          scaleY = this.scaleY;
-	      var _options4 = this.options,
-	          width = _options4.width,
-	          candleData = _options4.candleData,
-	          predictData = _options4.predictData;
+	          baseHeight = this.baseHeight,
+	          volHeight = this.volHeight,
+	          width = this.width,
+	          data = this.data;
 
-	      var height = this.candleStickAreaHeight;
-	      var offset = width * PREDICT_PERCENT;
+	      var volumeWrapper = svg.append('g').attr('class', 'volume-wrap');
+	      volumeWrapper.attr('transform', 'translate(0, ' + (baseHeight + BOTTOM_MARGIN) + ')');
 
-	      var scaleXReal = d3.scaleOrdinal().domain([candleData[0].time, candleData[candleData.length - 1].time, predictData[predictData.length - 1].time]).range([0, offset, width]);
+	      this.volumeWrapper = volumeWrapper;
 
-	      var min = this.min,
-	          max = this.max;
+	      // 量柱绘制
+	      this.renderVolumeBars();
 
-	      min = +min;
-	      max = +max;
-	      var scaleYReal = d3.scaleOrdinal().domain([min, (max + min) / 2, max]).range([height, height / 2, 0]);
+	      // 垂直坐标轴 左边刻度开始
+	      var axisLeftElement = this.axisLeftElement = volumeWrapper.append('g').attr('class', 'chart-axis');
+	      this.updateVolumeLeftAxis();
 
-	      // 底部X轴
-	      var axisX = d3.axisBottom(scaleXReal).tickSize(0).tickPadding(TEXT_MARGIN);
-	      // 右侧Y轴
-	      var axisY = d3.axisLeft(scaleYReal).tickSize(0).tickPadding(TEXT_MARGIN).tickFormat(function (d) {
-	        return Number(d).toFixed(2);
-	      });
-	      // 顶部X轴（辅助线）
-	      var topAxis = d3.axisBottom(scaleXReal).tickSize(0).tickFormat('');
-	      // 左侧Y轴
-	      var leftAxis = d3.axisRight(scaleYReal).tickSize(width).tickFormat('');
+	      // 垂直坐标轴 右边辅助线开始
+	      var scale = d3.scaleOrdinal().domain([1, 2, 3]).range([0, 19, volHeight]);
+	      volumeWrapper.append('g').attr('class', 'chart-axis').attr('transform', 'translate(' + (width - 1) + ', 0)').call(d3.axisLeft(scale).tickSize(width).tickFormat(''));
 
-	      svg.append('g').attr('class', 'axis').attr('transform', 'translate(0, 0)').call(topAxis);
-	      var leftAxisElement = svg.append('g').attr('class', 'axis').attr('transform', 'translate(0, 0)').call(leftAxis);
-
-	      var axisXElement = svg.append('g').attr('class', 'axis').attr('transform', 'translate(0, ' + height + ')').call(axisX);
-	      var axisYElement = svg.append('g').attr('class', 'axis').attr('transform', 'translate(' + width + ', 0)').call(axisY);
-
-	      axisXElement.selectAll('.tick text').attr('text-anchor', 'end');
-
-	      // 偏移数轴第一个刻度值
-	      axisXElement.select('.tick text').attr('text-anchor', 'start');
-	      // 偏移第二个刻度值 防止贴辅助线太紧
-	      // axisXElement.selectAll('.tick text').select(function(d, i) {
-	      //   if (i == 1) {
-	      //     return this
-	      //   }
-	      // }).attr('transform', `translate(-2, 0)`)
-
-	      axisYElement.selectAll('.tick text').each(function (d, i) {
-	        if (i == 2) {
-	          d3.select(this).attr('transform', 'translate(0, 10)');
-	        } else {
-	          d3.select(this).attr('transform', 'translate(0, -10)');
-	        }
-	      });
-
-	      // 纵向辅助线改为虚线
-	      var selection = leftAxisElement.selectAll('.tick line');
-	      selection.each(function (d, i) {
-	        if (i != 0 || i != selection.length - 1) {
-	          d3.select(this).attr("stroke-dasharray", '5, 3');
-	        }
-	      });
+	      // 水平坐标轴 底部伸出辅助线
+	      volumeWrapper.append('g').attr('class', 'chart-axis').attr('transform', 'translate(0, ' + (volHeight - 1) + ')').call(d3.axisTop(this.verticalGuideScale).tickSize(volHeight - 20).tickFormat(''));
 	    }
 
-	    /* 显示折线 */
+	    // 量柱绘制
 
 	  }, {
-	    key: 'drawPolyline',
-	    value: function drawPolyline() {
-	      var _options5 = this.options,
-	          candleData = _options5.candleData,
-	          width = _options5.width;
+	    key: 'renderVolumeBars',
+	    value: function renderVolumeBars() {
+	      var _this2 = this;
 
-	      var scaleX = d3.scaleLinear().domain([0, candleData.length - 1]).range([0, width * PREDICT_PERCENT]);
-	      var scaleY = this.scaleY;
-	      var line = d3.line().x(function (d, i) {
-	        return scaleX(i);
-	      }).y(function (d) {
-	        return scaleY(d.close);
+	      var svg = this.svg,
+	          baseHeight = this.baseHeight,
+	          volHeight = this.volHeight,
+	          data = this.data;
+
+	      var min = 0;
+	      var max = d3.max(data, function (d) {
+	        return d.volume;
 	      });
 
-	      var group = this.svg.append('g').attr('class', 'poly');
+	      var scaleY = d3.scaleLinear().domain([min, max]).range([volHeight, 20]);
+	      var bars = this.volumeWrapper.selectAll('.volume').data(data);
+	      var barwidth = this.barScale.bandwidth();
 
-	      group.append('path').datum(candleData).attr('d', line).attr('stroke', '#297cda').attr('stroke-width', 2).attr('fill', 'none');
+	      bars.enter().append('rect').attr('class', 'volume').merge(bars).attr('x', function (d, i) {
+	        return _this2.barScale(i);
+	      }).attr('y', function (d, i) {
+	        return scaleY(d.volume);
+	      }).attr('width', barwidth).attr('height', function (d, i) {
+	        return volHeight - scaleY(d.volume);
+	      }).attr('fill', color);
 
-	      this.lineGroup = group;
+	      bars.exit().remove();
 	    }
+
+	    // 更新
+
 	  }, {
-	    key: 'togglePoly',
-	    value: function togglePoly(bool) {
-	      if (!this.lineGroup) {
-	        this.drawPolyline();
-	      } else {
-	        this.lineGroup.attr('class', bool ? 'poly' : 'none');
-	      }
-	    }
-	  }, {
-	    key: 'toggleCandle',
-	    value: function toggleCandle(bool) {
-	      this.candleGroup.attr('class', bool ? 'candle' : 'none');
-	    }
-	  }, {
-	    key: 'events',
-	    value: function events() {
-	      // let drag = d3.drag()
-	      //   .container(function() {
-	      //     return this
-	      //   })
-	      //   .on('start', () => {
-	      //     this.handleDragStart(d3.event.x, d3.event.y)
-	      //   })
-	      //   .on('drag', () => {
-	      //     this.handleDragMove(d3.event.x, d3.event.y)
-	      //   })
-	      //   .on('end', () => {
-	      //     this.handleDragEnd()
-	      //   })
-
-	      // this.svg.call(drag)
-
-	      var t = this;
-	      var timer;
-	      var interactiveEnabled = false;
-
-	      this.svg.on('touchstart', function () {
-	        var _d3$touches = d3.touches(this),
-	            _d3$touches2 = _slicedToArray(_d3$touches, 1),
-	            _d3$touches2$ = _slicedToArray(_d3$touches2[0], 2),
-	            x = _d3$touches2$[0],
-	            y = _d3$touches2$[1];
-
-	        timer = setTimeout(function () {
-	          t.handleDragStart(x, y);
-	          interactiveEnabled = true;
-	        }, 500);
-	      });
-
-	      this.svg.on('touchmove', function () {
-	        if (interactiveEnabled) {
-	          var _d3$touches3 = d3.touches(this),
-	              _d3$touches4 = _slicedToArray(_d3$touches3, 1),
-	              _d3$touches4$ = _slicedToArray(_d3$touches4[0], 2),
-	              x = _d3$touches4$[0],
-	              y = _d3$touches4$[1];
-
-	          t.handleDragMove(x, y);
-	        } else {
-	          clearTimeout(timer);
-	        }
-	      });
-
-	      this.svg.on('touchend', function () {
-	        if (interactiveEnabled) {
-	          t.handleDragEnd();
-	        } else {
-	          clearTimeout(timer);
-	        }
-
-	        interactiveEnabled = false;
-	      });
-	    }
-	  }, {
-	    key: 'getHelperLineXY',
-	    value: function getHelperLineXY(x) {
-	      var _options6 = this.options,
-	          candleData = _options6.candleData,
-	          predictData = _options6.predictData,
-	          width = _options6.width;
-	      var scaleBandX = this.scaleBandX,
-	          scaleY = this.scaleY,
-	          predictScaleX = this.predictScaleX;
-
-
-	      var offset = this.options.width * PREDICT_PERCENT;
-
-	      if (x > offset) {
-	        var step = width * (1 - PREDICT_PERCENT) / predictData.length;
-	        var relX = x - offset;
-	        var index = Math.ceil(relX / step);
-
-	        if (index < 0 || index >= predictData.length) {
-	          return { x: -1, y: -1, index: index };
-	        }
-
-	        var lineX = offset + predictScaleX(index);
-	        var lineY = scaleY(predictData[index].close);
-
-	        return {
-	          x: lineX,
-	          y: lineY,
-	          point: predictData[index]
-	        };
-	      } else {
-	        var _step = scaleBandX.step();
-	        var _index = Math.floor(x / _step);
-
-	        if (_index < 0 || _index >= candleData.length) {
-	          return { x: -1, y: -1, index: _index };
-	        }
-
-	        var bandWidth = scaleBandX.bandwidth();
-	        var _lineX = scaleBandX(_index) + bandWidth / 2;
-	        var _lineY = scaleY(candleData[_index].close);
-
-	        return { x: _lineX, y: _lineY, point: candleData[_index] };
-	      }
-	    }
-	  }, {
-	    key: 'handleDragStart',
-	    value: function handleDragStart(x) {
-	      var _getHelperLineXY = this.getHelperLineXY(x),
-	          x = _getHelperLineXY.x,
-	          y = _getHelperLineXY.y,
-	          point = _getHelperLineXY.point;
-
-	      if (x === -1) return;
-
-	      var hData = [{
-	        x: 0,
-	        y: y
-	      }, {
-	        x: this.options.width,
-	        y: y
-	      }];
-
-	      var vData = [{
-	        x: x,
-	        y: 0
-	      }, {
-	        x: x,
-	        y: this.options.volume ? this.totalHeight : this.candleStickAreaHeight
-	      }];
-
-	      var line = d3.line().x(function (d) {
-	        return d.x;
-	      }).y(function (d) {
-	        return d.y;
-	      });
-
-	      var horizontalLine = this.svg.append('path');
-	      var verticalLine = this.svg.append('path');
-
-	      horizontalLine.datum(hData).attr('d', line).attr('class', 'help');
-	      verticalLine.datum(vData).attr('d', line).attr('class', 'help');
-
-	      this.horizontalLine = horizontalLine;
-	      this.verticalLine = verticalLine;
-
-	      this.emit('drag-start', point);
-	    }
-	  }, {
-	    key: 'handleDragMove',
-	    value: function handleDragMove(x) {
-	      var _getHelperLineXY2 = this.getHelperLineXY(x),
-	          x = _getHelperLineXY2.x,
-	          y = _getHelperLineXY2.y,
-	          point = _getHelperLineXY2.point;
-
-	      if (x === -1) return;
-
-	      var hData = [{
-	        x: 0,
-	        y: y
-	      }, {
-	        x: this.options.width,
-	        y: y
-	      }];
-
-	      var vData = [{
-	        x: x,
-	        y: 0
-	      }, {
-	        x: x,
-	        y: this.options.volume ? this.totalHeight : this.candleStickAreaHeight
-	      }];
-
-	      var line = d3.line().x(function (d) {
-	        return d.x;
-	      }).y(function (d) {
-	        return d.y;
-	      });
-
-	      this.horizontalLine.datum(hData).attr('d', line);
-	      this.verticalLine.datum(vData).attr('d', line);
-
-	      this.emit('drag-move', point);
-	    }
-	  }, {
-	    key: 'handleDragEnd',
-	    value: function handleDragEnd() {
-	      if (this.horizontalLine || this.verticalLine) {
-	        this.horizontalLine.remove();
-	        this.verticalLine.remove();
-	      }
-
-	      this.emit('drag-end');
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      var _options7 = this.options,
-	          volume = _options7.volume,
-	          interactive = _options7.interactive;
-
-
-	      this.candleSticks();
-	      this.predictLines();
-	      this.axis();
-
-	      if (volume) {
-	        this.volumes();
-	      }
-
-	      if (interactive) {
-	        this.events();
-	      }
+	    key: 'update',
+	    value: function update(data) {
+	      this.data = data;
+	      this.renderCandleStick();
+	      this.renderVolumeBars();
+	      this.updateAxis();
 	    }
 	  }]);
 
-	  return Predict;
+	  return CandleStickChart;
 	}(EventEmitter);
 
-	module.exports = Predict;
+	module.exports = CandleStickChart;
 
 /***/ },
-/* 1 */,
-/* 2 */,
+/* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+
+	// load the styles
+	var content = __webpack_require__(2);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(4)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!./../../node_modules/css-loader/index.js!./style.css", function() {
+				var newContent = require("!!./../../node_modules/css-loader/index.js!./style.css");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(3)();
+	// imports
+
+
+	// module
+	exports.push([module.id, "/* 数轴颜色 */\r\n.chart-axis path {\r\n    stroke: #d4d4d4;\r\n}\r\n\r\n.chart-axis line {\r\n    stroke: #d4d4d4;\r\n    /*shape-rendering:crispEdges;*/\r\n}\r\n\r\n.guide-line {\r\n    stroke: #555;\r\n}\r\n\r\n.guide-line, .candle, .shadow, .volume {\r\n    /*shape-rendering:crispEdges;*/\r\n}", ""]);
+
+	// exports
+
+
+/***/ },
 /* 3 */
 /***/ function(module, exports) {
 
@@ -954,7 +839,31 @@ var PredictChartMobile =
 
 
 /***/ },
-/* 5 */,
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	/**
+	 * Created by 99171 on 2017/3/16.
+	 */
+	var d3 = __webpack_require__(6);
+	var getArrayBetween = function getArrayBetween(startValue, endValue, length) {
+	  var interpolater = d3.interpolateNumber(startValue, endValue);
+	  var result = [];
+	  for (var i = 0; i <= length; i++) {
+	    result.push(interpolater(i / length));
+	  }
+
+	  return result;
+	};
+
+	exports.default = getArrayBetween;
+
+/***/ },
 /* 6 */
 /***/ function(module, exports) {
 
@@ -1266,112 +1175,6 @@ var PredictChartMobile =
 	function isUndefined(arg) {
 	  return arg === void 0;
 	}
-
-
-/***/ },
-/* 8 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	module.exports = function (stock) {
-		var keys = ['low', 'high', 'open', 'close'];
-
-		keys.forEach(function (key) {
-			stock[key] = +stock[key];
-		});
-
-		return stock;
-	};
-
-/***/ },
-/* 9 */,
-/* 10 */,
-/* 11 */,
-/* 12 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	var MARGIN_TABLE = {
-		10: 4,
-		20: 3,
-		40: 1,
-		60: 1
-	};
-
-	var PIXEL_FIX = 0.5;
-	var OUTTER_MARGIN = 2;
-	var VOL_HEIGHT = 66;
-	var FONT_SIZE = 12;
-	var WIN_COLOR = '#de4c39';
-	var LOSS_COLOR = '#55a32d';
-	var EQUAL_COLOR = '#999999';
-	var STROKE_COLOR = '#d8d8d8';
-	var DASH_COLOR = '#999999';
-	var BOTTOM_TEXT_HEIGHT = 20;
-	var TEXT_COLOR = '#0287fe';
-	var TEXT_MARGIN = 10;
-
-	module.exports = {
-		MARGIN_TABLE: MARGIN_TABLE,
-		OUTTER_MARGIN: OUTTER_MARGIN,
-		VOL_HEIGHT: VOL_HEIGHT,
-		FONT_SIZE: FONT_SIZE,
-		PIXEL_FIX: PIXEL_FIX,
-		WIN_COLOR: WIN_COLOR,
-		LOSS_COLOR: LOSS_COLOR,
-		STROKE_COLOR: STROKE_COLOR,
-		DASH_COLOR: DASH_COLOR,
-		BOTTOM_TEXT_HEIGHT: BOTTOM_TEXT_HEIGHT,
-		TEXT_COLOR: TEXT_COLOR,
-		TEXT_MARGIN: TEXT_MARGIN,
-		EQUAL_COLOR: EQUAL_COLOR
-	};
-
-/***/ },
-/* 13 */,
-/* 14 */,
-/* 15 */,
-/* 16 */,
-/* 17 */,
-/* 18 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// style-loader: Adds some css to the DOM by adding a <style> tag
-
-	// load the styles
-	var content = __webpack_require__(19);
-	if(typeof content === 'string') content = [[module.id, content, '']];
-	// add the styles to the DOM
-	var update = __webpack_require__(4)(content, {});
-	if(content.locals) module.exports = content.locals;
-	// Hot Module Replacement
-	if(false) {
-		// When the styles change, update the <style> tags
-		if(!content.locals) {
-			module.hot.accept("!!./../../node_modules/css-loader/index.js!./d3.css", function() {
-				var newContent = require("!!./../../node_modules/css-loader/index.js!./d3.css");
-				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-				update(newContent);
-			});
-		}
-		// When the module is disposed, remove the <style> tags
-		module.hot.dispose(function() { update(); });
-	}
-
-/***/ },
-/* 19 */
-/***/ function(module, exports, __webpack_require__) {
-
-	exports = module.exports = __webpack_require__(3)();
-	// imports
-
-
-	// module
-	exports.push([module.id, "* {\r\n    margin:0;\r\n    padding:0;\r\n}\r\n\r\nbody {\r\n    -webkit-user-select: none;\r\n}\r\n\r\nsvg {\r\n    overflow: visible;\r\n}\r\n\r\nsvg rect, svg line {\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n/* 数字文字颜色 */\r\n.axis text {\r\n    fill: #999999;\r\n}\r\n\r\n/* 数轴颜色 */\r\n.axis path {\r\n    stroke: #ccc;\r\n}\r\n\r\n.shadow {\r\n    stroke-width: 1px;\r\n    fill: none;\r\n}\r\n\r\n.tick line {\r\n    stroke: #ccc;\r\n}\r\n\r\n.predict {\r\n    fill: #e7f2fc;\r\n    fill-opacity: 0.6;\r\n}\r\n\r\n.ceil, .flor, .profit {\r\n    shape-rendering: auto;\r\n}\r\n\r\n.ceil, .flor {\r\n    stroke: #80b5ff;\r\n    fill: none;\r\n}\r\n\r\n.profit {\r\n    stroke: #e63232;\r\n    fill: none;\r\n}\r\n\r\n.volume {\r\n    stroke: #ccc;\r\n    fill: none;\r\n}\r\n\r\n.none {\r\n    display: none;\r\n}\r\n\r\n.poly path {\r\n    shape-rendering: auto;\r\n}\r\n\r\n/* 参考线 */\r\n.help {\r\n    stroke: #d8d8d8;\r\n}\r\n\r\n/* brush area */\r\n.brush-bar {\r\n    fill: none;\r\n    stroke: #ccc;\r\n}\r\n\r\n.selection {\r\n    fill: #2f84cc;\r\n    opacity: 0.4;\r\n    stroke: #000000;\r\n}\r\n\r\n/* #cd4343, #8c3037, #ffca53, #0055a2*/\r\n/* 均线 */\r\n.ma5, .ma10, .ma20, .ma30 {\r\n    fill:none;\r\n}\r\n\r\n.ma5 {\r\n    stroke: #cd4343;\r\n}\r\n\r\n.ma10 {\r\n    stroke: #8c3037;\r\n}\r\n\r\n.ma20 {\r\n    stroke: #ffca53;\r\n}\r\n\r\n.ma30 {\r\n    stroke: #0055a2;\r\n}\r\n\r\n/* macd */\r\n.macd {\r\n    shape-rendering:crispEdges;\r\n}\r\n.dea {\r\n    stroke: rgb(1, 67, 117);\r\n    fill: none;\r\n}\r\n.dif {\r\n    stroke: rgb(221, 34, 0);\r\n    fill: none;\r\n}", ""]);
-
-	// exports
 
 
 /***/ }

@@ -10,6 +10,7 @@ const BOTTOM_MARGIN = 16
 const RED = '#e94f69'
 const GREEN = '#139125'
 const UNKNOW = '#CCCCCC'
+const ORANGE = '#ec9e4a'
 import getArrayBetween from './lib/getArrayBetween'
 
 const color = d => {
@@ -30,16 +31,22 @@ class CandleStickChart extends EventEmitter {
     this.baseHeight = height - this.volHeight - BOTTOM_MARGIN
     this.data = data
     this.render()
-
     this.initTouchEvents()
   }
 
   render() {
     this.renderAxis()
+    this.renderAverageLines()
     this.renderCandleStick()
     this.renderVolumes()
   }
 
+  // 绘制均线
+  renderAverageLines() {
+
+  }
+
+  // 初始化触摸事件
   initTouchEvents() {
     var {svg, width, height} = this
     var self = this
@@ -56,11 +63,18 @@ class CandleStickChart extends EventEmitter {
 
     var handleTouch = function() {
       var [[x]] = d3.touches(this)
-      var eachBand = self.barScale.step()
-      var bandWidth = self.barScale.bandwidth()
+      var {barScale} = self
+      var eachBand = barScale.step()
+      var bandWidth = barScale.bandwidth()
       var index = Math.round(x / eachBand)
 
-      x = self.barScale(index) + bandWidth / 2
+      if (index < 0 || index >= self.data.length) {
+        return
+      }
+
+      var datum = self.data[index]
+
+      x = barScale(index) + bandWidth / 2
 
       var verticalGuideLineCoords = [{
         x: x,
@@ -70,16 +84,21 @@ class CandleStickChart extends EventEmitter {
         y: height
       }]
 
-      var data = [verticalGuideLineCoords]
+      var y = self.areaScaleY(datum.close)
+      var horizontalGuideLineCoords = [{
+        x: 0,
+        y: y
+      }, {
+        x: width,
+        y: y
+      }]
 
-      if (index < 0 || index >= self.data.length) {
-        return
-      }
-
-      var datum = self.data[index]
-      self.axisLeftElement.select('.tick text').text(`VOL:${datum.volume}`)
+      var data = [verticalGuideLineCoords, horizontalGuideLineCoords]
 
       drawLine(data)
+      self.axisLeftElement.select('.tick text').text(`VOL:${datum.volume}`)
+
+      self.emit('change', self.data[index])
     }
 
     svg.on('touchstart', handleTouch)
@@ -91,6 +110,7 @@ class CandleStickChart extends EventEmitter {
       })
   }
 
+  // 绘制坐标轴
   renderAxis() {
     this.createHorizontalAxis()
     this.createVerticalAxis()
@@ -100,7 +120,7 @@ class CandleStickChart extends EventEmitter {
   createHorizontalAxis() {
     var {width, baseHeight, svg, data} = this
     var bottomAxis = this.createBottomTickAxis()
-    var bottomAxisElement = this.bottomAxisElement = svg.append('g').attr('class', 'axis')
+    var bottomAxisElement = this.bottomAxisElement = svg.append('g').attr('class', 'chart-axis')
       .attr('transform', `translate(0, ${baseHeight})`)
 
     this.updateCandleAreaBottomAxis()
@@ -113,7 +133,7 @@ class CandleStickChart extends EventEmitter {
     // 保存该比例尺 画量图辅助线时使用
     this.verticalGuideScale = scale
 
-    svg.append('g').attr('class', 'axis').call(topAxis)
+    svg.append('g').attr('class', 'chart-axis').call(topAxis)
       .selectAll('.tick line').attr('stroke-dasharray', (d, i) => {
       if (i == 1 || i == 3) return '10, 4'
     })
@@ -123,7 +143,7 @@ class CandleStickChart extends EventEmitter {
   createVerticalAxis() {
     var {svg, baseHeight, data, width} = this
 
-    var leftAxisElement = this.leftAxisElement = svg.append('g').attr('class', 'axis')
+    var leftAxisElement = this.leftAxisElement = svg.append('g').attr('class', 'chart-axis')
 
     this.updateCandleAreaLeftAxis()
 
@@ -132,12 +152,13 @@ class CandleStickChart extends EventEmitter {
     var scaleRight = d3.scaleOrdinal().domain(rangeRight).range(rangeRight)
     var rightAxis = d3.axisLeft(scaleRight).tickSize(width).tickFormat('')
 
-    svg.append('g').attr('class', 'axis').attr('transform', `translate(${width - 1}, 0)`).call(rightAxis)
+    svg.append('g').attr('class', 'chart-axis').attr('transform', `translate(${width - 1}, 0)`).call(rightAxis)
       .selectAll('.tick line').attr('stroke-dasharray', (d, i) => {
       if (i == 1 || i == 3) return '10, 4'
     })
   }
 
+  // 更新需要更新的坐标轴
   updateAxis() {
     this.updateCandleAreaBottomAxis()
     this.updateCandleAreaLeftAxis()
@@ -162,7 +183,9 @@ class CandleStickChart extends EventEmitter {
   // 绘制蜡烛图左侧的坐标轴
   updateCandleAreaLeftAxis() {
     this.leftAxisElement.call(this.createLeftTickAxis())
-    this.leftAxisElement.selectAll('.tick text').attr('transform', (d, i) => `translate(0, ${i == 0 ? -10 : 10})`)
+    this.leftAxisElement.selectAll('.tick text')
+      .attr('transform', (d, i) => `translate(0, ${i == 0 ? -10 : 10})`)
+      .attr('fill', (d, i) => i == 1 ? RED : GREEN)
   }
 
   // 生成蜡烛图底部的坐标轴对象
@@ -184,6 +207,7 @@ class CandleStickChart extends EventEmitter {
       .attr('text-anchor', (d, i) => i == 0 ? 'start' : 'end')
   }
 
+  // 绘制蜡烛图实体和影线
   renderCandleStick() {
     var {svg, width, data, baseHeight} = this
     var scaleX = d3.scaleBand()
@@ -196,7 +220,7 @@ class CandleStickChart extends EventEmitter {
     var min = d3.min(data, d => d.low)
     var max = d3.max(data, d => d.high)
     var scaleY = d3.scaleLinear().domain([min, max]).range([baseHeight, 10])
-
+    this.areaScaleY = scaleY
     this.barScale = scaleX
 
     // 实体
@@ -246,6 +270,7 @@ class CandleStickChart extends EventEmitter {
     shadows.exit().remove()
   }
 
+  // 绘制量图左侧纵坐标
   updateVolumeLeftAxis() {
     var {volHeight, data} = this
     var min = 0
@@ -259,29 +284,31 @@ class CandleStickChart extends EventEmitter {
       .attr('transform', (d, i) => `translate(0, ${i == 2 ? -10 : 10})`)
   }
 
+  // 绘制量图
   renderVolumes() {
     var {svg, baseHeight, volHeight, width, data} = this
     var volumeWrapper = svg.append('g').attr('class', 'volume-wrap')
     volumeWrapper.attr('transform', `translate(0, ${baseHeight + BOTTOM_MARGIN})`)
 
+    this.volumeWrapper = volumeWrapper
+
+    // 量柱绘制
+    this.renderVolumeBars()
+
     // 垂直坐标轴 左边刻度开始
-    var axisLeftElement = this.axisLeftElement = volumeWrapper.append('g').attr('class', 'axis')
+    var axisLeftElement = this.axisLeftElement = volumeWrapper.append('g').attr('class', 'chart-axis')
     this.updateVolumeLeftAxis()
 
     // 垂直坐标轴 右边辅助线开始
     var scale = d3.scaleOrdinal().domain([1, 2, 3]).range([0, 19, volHeight])
-    volumeWrapper.append('g').attr('class', 'axis')
+    volumeWrapper.append('g').attr('class', 'chart-axis')
       .attr('transform', `translate(${width - 1}, 0)`)
       .call(d3.axisLeft(scale).tickSize(width).tickFormat(''))
 
     // 水平坐标轴 底部伸出辅助线
-    volumeWrapper.append('g').attr('class', 'axis')
+    volumeWrapper.append('g').attr('class', 'chart-axis')
       .attr('transform', `translate(0, ${volHeight - 1})`)
       .call(d3.axisTop(this.verticalGuideScale).tickSize(volHeight - 20).tickFormat(''))
-
-    this.volumeWrapper = volumeWrapper
-    // 量柱绘制
-    this.renderVolumeBars()
   }
 
   // 量柱绘制
@@ -312,6 +339,7 @@ class CandleStickChart extends EventEmitter {
     bars.exit().remove()
   }
 
+  // 更新
   update(data) {
     this.data = data
     this.renderCandleStick()

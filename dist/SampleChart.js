@@ -52,14 +52,14 @@ var SampleChart =
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
 
 
-	var _config = __webpack_require__(5);
+	var _config = __webpack_require__(12);
 
-	__webpack_require__(11);
+	__webpack_require__(18);
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var str2number = __webpack_require__(1);
-	var d3 = __webpack_require__(15);
+	var str2number = __webpack_require__(8);
+	var d3 = __webpack_require__(6);
 	var MARGIN_BOTTOM = 15;
 	var MARGIN_RIGHT = 2;
 	var TEXT_MARGIN = 5;
@@ -519,113 +519,9 @@ var SampleChart =
 	module.exports = SampleChart;
 
 /***/ },
-/* 1 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	module.exports = function (stock) {
-		var keys = ['low', 'high', 'open', 'close'];
-
-		keys.forEach(function (key) {
-			stock[key] = +stock[key];
-		});
-
-		return stock;
-	};
-
-/***/ },
+/* 1 */,
 /* 2 */,
-/* 3 */,
-/* 4 */,
-/* 5 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	var MARGIN_TABLE = {
-		10: 4,
-		20: 3,
-		40: 1,
-		60: 1
-	};
-
-	var PIXEL_FIX = 0.5;
-	var OUTTER_MARGIN = 2;
-	var VOL_HEIGHT = 66;
-	var FONT_SIZE = 12;
-	var WIN_COLOR = '#de4c39';
-	var LOSS_COLOR = '#55a32d';
-	var EQUAL_COLOR = '#999999';
-	var STROKE_COLOR = '#d8d8d8';
-	var DASH_COLOR = '#999999';
-	var BOTTOM_TEXT_HEIGHT = 20;
-	var TEXT_COLOR = '#0287fe';
-	var TEXT_MARGIN = 10;
-
-	module.exports = {
-		MARGIN_TABLE: MARGIN_TABLE,
-		OUTTER_MARGIN: OUTTER_MARGIN,
-		VOL_HEIGHT: VOL_HEIGHT,
-		FONT_SIZE: FONT_SIZE,
-		PIXEL_FIX: PIXEL_FIX,
-		WIN_COLOR: WIN_COLOR,
-		LOSS_COLOR: LOSS_COLOR,
-		STROKE_COLOR: STROKE_COLOR,
-		DASH_COLOR: DASH_COLOR,
-		BOTTOM_TEXT_HEIGHT: BOTTOM_TEXT_HEIGHT,
-		TEXT_COLOR: TEXT_COLOR,
-		TEXT_MARGIN: TEXT_MARGIN,
-		EQUAL_COLOR: EQUAL_COLOR
-	};
-
-/***/ },
-/* 6 */,
-/* 7 */,
-/* 8 */,
-/* 9 */,
-/* 10 */,
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// style-loader: Adds some css to the DOM by adding a <style> tag
-
-	// load the styles
-	var content = __webpack_require__(12);
-	if(typeof content === 'string') content = [[module.id, content, '']];
-	// add the styles to the DOM
-	var update = __webpack_require__(14)(content, {});
-	if(content.locals) module.exports = content.locals;
-	// Hot Module Replacement
-	if(false) {
-		// When the styles change, update the <style> tags
-		if(!content.locals) {
-			module.hot.accept("!!./../../node_modules/css-loader/index.js!./d3.css", function() {
-				var newContent = require("!!./../../node_modules/css-loader/index.js!./d3.css");
-				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-				update(newContent);
-			});
-		}
-		// When the module is disposed, remove the <style> tags
-		module.hot.dispose(function() { update(); });
-	}
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	exports = module.exports = __webpack_require__(13)();
-	// imports
-
-
-	// module
-	exports.push([module.id, "* {\r\n    margin:0;\r\n    padding:0;\r\n}\r\n\r\nbody {\r\n    -webkit-user-select: none;\r\n}\r\n\r\nsvg {\r\n    overflow: visible;\r\n}\r\n\r\nsvg rect, svg line {\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n/* 数字文字颜色 */\r\n.axis text {\r\n    fill: #999999;\r\n}\r\n\r\n/* 数轴颜色 */\r\n.axis path {\r\n    stroke: #ccc;\r\n}\r\n\r\n.shadow {\r\n    stroke-width: 1px;\r\n    fill: none;\r\n}\r\n\r\n.tick line {\r\n    stroke: #ccc;\r\n}\r\n\r\n.predict {\r\n    fill: #e7f2fc;\r\n    fill-opacity: 0.6;\r\n}\r\n\r\n.ceil, .flor, .profit {\r\n    shape-rendering: auto;\r\n}\r\n\r\n.ceil, .flor {\r\n    stroke: #80b5ff;\r\n    fill: none;\r\n}\r\n\r\n.profit {\r\n    stroke: #e63232;\r\n    fill: none;\r\n}\r\n\r\n.volume {\r\n    stroke: #ccc;\r\n    fill: none;\r\n}\r\n\r\n.none {\r\n    display: none;\r\n}\r\n\r\n.poly path {\r\n    shape-rendering: auto;\r\n}\r\n\r\n/* 参考线 */\r\n.help {\r\n    stroke: #d8d8d8;\r\n}\r\n\r\n/* brush area */\r\n.brush-bar {\r\n    fill: none;\r\n    stroke: #ccc;\r\n}\r\n\r\n.selection {\r\n    fill: #2f84cc;\r\n    opacity: 0.4;\r\n    stroke: #000000;\r\n}\r\n\r\n/* #cd4343, #8c3037, #ffca53, #0055a2*/\r\n/* 均线 */\r\n.ma5, .ma10, .ma20, .ma30 {\r\n    fill:none;\r\n}\r\n\r\n.ma5 {\r\n    stroke: #cd4343;\r\n}\r\n\r\n.ma10 {\r\n    stroke: #8c3037;\r\n}\r\n\r\n.ma20 {\r\n    stroke: #ffca53;\r\n}\r\n\r\n.ma30 {\r\n    stroke: #0055a2;\r\n}\r\n\r\n/* macd */\r\n.macd {\r\n    shape-rendering:crispEdges;\r\n}\r\n.dea {\r\n    stroke: rgb(1, 67, 117);\r\n    fill: none;\r\n}\r\n.dif {\r\n    stroke: rgb(221, 34, 0);\r\n    fill: none;\r\n}", ""]);
-
-	// exports
-
-
-/***/ },
-/* 13 */
+/* 3 */
 /***/ function(module, exports) {
 
 	/*
@@ -681,7 +577,7 @@ var SampleChart =
 
 
 /***/ },
-/* 14 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -933,10 +829,118 @@ var SampleChart =
 
 
 /***/ },
-/* 15 */
+/* 5 */,
+/* 6 */
 /***/ function(module, exports) {
 
 	module.exports = window.d3;
+
+/***/ },
+/* 7 */,
+/* 8 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	module.exports = function (stock) {
+		var keys = ['low', 'high', 'open', 'close'];
+
+		keys.forEach(function (key) {
+			stock[key] = +stock[key];
+		});
+
+		return stock;
+	};
+
+/***/ },
+/* 9 */,
+/* 10 */,
+/* 11 */,
+/* 12 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var MARGIN_TABLE = {
+		10: 4,
+		20: 3,
+		40: 1,
+		60: 1
+	};
+
+	var PIXEL_FIX = 0.5;
+	var OUTTER_MARGIN = 2;
+	var VOL_HEIGHT = 66;
+	var FONT_SIZE = 12;
+	var WIN_COLOR = '#de4c39';
+	var LOSS_COLOR = '#55a32d';
+	var EQUAL_COLOR = '#999999';
+	var STROKE_COLOR = '#d8d8d8';
+	var DASH_COLOR = '#999999';
+	var BOTTOM_TEXT_HEIGHT = 20;
+	var TEXT_COLOR = '#0287fe';
+	var TEXT_MARGIN = 10;
+
+	module.exports = {
+		MARGIN_TABLE: MARGIN_TABLE,
+		OUTTER_MARGIN: OUTTER_MARGIN,
+		VOL_HEIGHT: VOL_HEIGHT,
+		FONT_SIZE: FONT_SIZE,
+		PIXEL_FIX: PIXEL_FIX,
+		WIN_COLOR: WIN_COLOR,
+		LOSS_COLOR: LOSS_COLOR,
+		STROKE_COLOR: STROKE_COLOR,
+		DASH_COLOR: DASH_COLOR,
+		BOTTOM_TEXT_HEIGHT: BOTTOM_TEXT_HEIGHT,
+		TEXT_COLOR: TEXT_COLOR,
+		TEXT_MARGIN: TEXT_MARGIN,
+		EQUAL_COLOR: EQUAL_COLOR
+	};
+
+/***/ },
+/* 13 */,
+/* 14 */,
+/* 15 */,
+/* 16 */,
+/* 17 */,
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+
+	// load the styles
+	var content = __webpack_require__(19);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(4)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!./../../node_modules/css-loader/index.js!./d3.css", function() {
+				var newContent = require("!!./../../node_modules/css-loader/index.js!./d3.css");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(3)();
+	// imports
+
+
+	// module
+	exports.push([module.id, "* {\r\n    margin:0;\r\n    padding:0;\r\n}\r\n\r\nbody {\r\n    -webkit-user-select: none;\r\n}\r\n\r\nsvg {\r\n    overflow: visible;\r\n}\r\n\r\nsvg rect, svg line {\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n/* 数字文字颜色 */\r\n.axis text {\r\n    fill: #999999;\r\n}\r\n\r\n/* 数轴颜色 */\r\n.axis path {\r\n    stroke: #ccc;\r\n}\r\n\r\n.shadow {\r\n    stroke-width: 1px;\r\n    fill: none;\r\n}\r\n\r\n.tick line {\r\n    stroke: #ccc;\r\n}\r\n\r\n.predict {\r\n    fill: #e7f2fc;\r\n    fill-opacity: 0.6;\r\n}\r\n\r\n.ceil, .flor, .profit {\r\n    shape-rendering: auto;\r\n}\r\n\r\n.ceil, .flor {\r\n    stroke: #80b5ff;\r\n    fill: none;\r\n}\r\n\r\n.profit {\r\n    stroke: #e63232;\r\n    fill: none;\r\n}\r\n\r\n.volume {\r\n    stroke: #ccc;\r\n    fill: none;\r\n}\r\n\r\n.none {\r\n    display: none;\r\n}\r\n\r\n.poly path {\r\n    shape-rendering: auto;\r\n}\r\n\r\n/* 参考线 */\r\n.help {\r\n    stroke: #d8d8d8;\r\n}\r\n\r\n/* brush area */\r\n.brush-bar {\r\n    fill: none;\r\n    stroke: #ccc;\r\n}\r\n\r\n.selection {\r\n    fill: #2f84cc;\r\n    opacity: 0.4;\r\n    stroke: #000000;\r\n}\r\n\r\n/* #cd4343, #8c3037, #ffca53, #0055a2*/\r\n/* 均线 */\r\n.ma5, .ma10, .ma20, .ma30 {\r\n    fill:none;\r\n}\r\n\r\n.ma5 {\r\n    stroke: #cd4343;\r\n}\r\n\r\n.ma10 {\r\n    stroke: #8c3037;\r\n}\r\n\r\n.ma20 {\r\n    stroke: #ffca53;\r\n}\r\n\r\n.ma30 {\r\n    stroke: #0055a2;\r\n}\r\n\r\n/* macd */\r\n.macd {\r\n    shape-rendering:crispEdges;\r\n}\r\n.dea {\r\n    stroke: rgb(1, 67, 117);\r\n    fill: none;\r\n}\r\n.dif {\r\n    stroke: rgb(221, 34, 0);\r\n    fill: none;\r\n}", ""]);
+
+	// exports
+
 
 /***/ }
 /******/ ]);

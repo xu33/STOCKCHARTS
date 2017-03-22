@@ -36,14 +36,12 @@ var rest = data.slice(10)
 
 var ttc = new TimeTrendChart({
   width: 320,
-  height: 200,
+  height: 300,
   container: '#time-chart-container',
   data: curr
 })
 
-ttc.on('change', v => {
-  // console.log(v)
-})
+// ttc.on('change', v => console.log(v))
 // 更新
 function updateA() {
   var data = ttc.data
@@ -70,19 +68,21 @@ var csc = new CandleStickChart({
   width: 320,
   height: 200,
   container: '#cs-wrap',
-  data: klineData
+  data: curr1
 })
 
-// function update() {
-//   var data = csc.data
-//
-//   data.push(rest1.shift())
-//
-//   csc.update(data)
-//
-//   if (rest1.length <= 0) return
-//
-//   requestAnimationFrame(update)
-// }
-//
-// update()
+csc.on('change', item => console.log(item))
+
+function update() {
+  var data = csc.data
+
+  data.push(rest1.shift())
+
+  csc.update(data)
+
+  if (rest1.length <= 0) return
+
+  requestAnimationFrame(update)
+}
+
+update()

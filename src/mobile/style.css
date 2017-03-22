@@ -1,26 +1,29 @@
-/* 数字文字颜色 */
-.axis text {
-    fill: #777777;
-}
-
 /* 数轴颜色 */
-.axis path {
+.chart-axis path {
     stroke: #d4d4d4;
 }
 
-.axis line {
+.chart-axis line {
     stroke: #d4d4d4;
-    shape-rendering:crispEdges;
-}
-
-.trend-area {
-
+    /*shape-rendering:crispEdges;*/
 }
 
 .guide-line {
     stroke: #555;
+    shape-rendering:crispEdges;
 }
 
 .guide-line, .candle, .shadow, .volume {
+    /*shape-rendering:crispEdges;*/
+}
+
+.tip-cell {
+    stroke: #555;
+    fill: #FFF;
     shape-rendering:crispEdges;
+}
+
+.tip-text {
+    fill: #555;
+    font-size: 10px;
 }
