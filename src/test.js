@@ -68,21 +68,21 @@ var csc = new CandleStickChart({
   width: 320,
   height: 200,
   container: '#cs-wrap',
-  data: curr1
+  data: klineData
 })
 
-csc.on('change', item => console.log(item))
+// csc.on('change', item => console.log(item))
 
-function update() {
-  var data = csc.data
-
-  data.push(rest1.shift())
-
-  csc.update(data)
-
-  if (rest1.length <= 0) return
-
-  requestAnimationFrame(update)
-}
-
-update()
+// function update() {
+//   var data = csc.data
+//
+//   data.push(rest1.shift())
+//
+//   csc.update(data)
+//
+//   if (rest1.length <= 0) return
+//
+//   requestAnimationFrame(update)
+// }
+//
+// update()

@@ -50,7 +50,8 @@ class TimeTrendChart extends EventEmitter {
     var line = d3.line().x(d => d.x).y(d => d.y)
     var that = this
 
-    var drawLine = (data) => {
+    const TIP_PADDING = 2
+    const drawLine = (data) => {
       var lines = svg.selectAll('.guide-line').data(data)
 
       lines.enter().append('path')
@@ -61,85 +62,76 @@ class TimeTrendChart extends EventEmitter {
       lines.exit().remove()
     }
 
-    const TIP_BOX_WIDTH = 28
-    const TIP_BOX_HEIGHT = 12
-    const TIP_BOX_MARGIN = (BOTTOM_MARGIN - TIP_BOX_HEIGHT) / 2
-
-    const drawTipBottom = (x, y, time) => {
-      var data = time ? [time] : []
-      var tipGroup = svg.selectAll('.tip-group').data(data)
-      var x = x - TIP_BOX_WIDTH / 2
-      var y = y + TIP_BOX_MARGIN
-
-      if (x < 0) x = 0
-      if (x > width - TIP_BOX_WIDTH) x = width - TIP_BOX_WIDTH
-      tipGroup.enter().append('g').attr('class', 'tip-group')
-        .merge(tipGroup)
-        .attr('transform', `translate(${x}, ${y})`)
-
-      tipGroup.exit().remove()
-
-      if (data.length === 0) {
-        return
-      }
-
-      var rect = tipGroup.selectAll('.tip-cell').data([time])
-
-      rect.enter().append('rect')
-        .attr('class', 'tip-cell')
-        .merge(rect)
-        .attr('width', TIP_BOX_WIDTH)
-        .attr('height', TIP_BOX_HEIGHT)
-
-      var text = tipGroup.selectAll('.tip-text').data([time])
-
-      text.enter().append('text')
-        .attr('class', 'tip-text')
-        .merge(text)
-        .text(time)
-        .attr('transform', `translate(14, 7)`)
-        .attr('alignment-baseline', 'middle')
-        .attr('text-anchor', 'middle')
-
-      // var textNode = text.node()
-      //
-      // if (textNode) {
-      //   var bound = textNode.getBBox()
-      //
-      //   rect.attr('width', bound.width + 4)
-      //   rect.attr('height', bound.height)
-      // }
-    }
-
     const drawTip = (data, datum) => {
       var tips = svg.selectAll('.tip-group').data(data)
 
-      tips.enter().append('g')
+      tips.exit().remove()
+
+      tips = tips.enter()
+        .append('g')
         .attr('class', 'tip-group')
         .merge(tips)
-        .attr('transform', d => `translate(${d.x}, ${d.y})`)
-
-      tips.exit().remove()
+        // .attr('transform', d => `translate(${d.x}, ${d.y})`)
 
       tips.selectAll('.tip-cell')
         .data([datum])
         .enter()
         .append('rect')
         .attr('class', 'tip-cell')
-        .attr('width', TIP_BOX_WIDTH)
-        .attr('height', TIP_BOX_HEIGHT)
 
       tips.selectAll('.tip-text')
         .data([datum])
         .enter()
         .append('text')
         .attr('class', 'tip-text')
-        .attr('alignment-baseline', 'middle')
-        .attr('text-anchor', 'middle')
-        .text(d => d.time)
+
+      tips.each(function(d, i) {
+        var g = d3.select(this)
+        var text
+
+        if (i === 0) {
+          text = g.select('.tip-text').text(datum.date)
+        }
+
+        if (i === 1) {
+          text = g.select('.tip-text').text(datum.price)
+        }
+
+        var bbox = text.node().getBBox()
+
+        var outerX, outerY
+
+        // 底部
+        if (i === 0) {
+
+          outerX = d.x- (bbox.width + TIP_PADDING * 2) / 2
+          outerY = d.y + bbox.height
+
+          if (outerX < 0) outerX = 0
+          if (outerX > width - bbox.width - TIP_PADDING * 2) outerX = width - bbox.width - TIP_PADDING * 2
+        }
+        // 左侧
+        else if (i === 1) {
+          outerX = d.x + 1 // 加1防止贴边
+          outerY = d.y + bbox.height / 2 - TIP_PADDING
+
+          if (outerY < 0)  outerY = 0
+          if (outerY > baseHeight - bbox.height / 2)  outerY = baseHeight - bbox.height / 2
+        }
+
+        g.attr('transform', `translate(${outerX}, ${outerY})`)
+
+        text.attr('transform', `translate(${TIP_PADDING}, 0)`)
+
+        var rect = g.select('rect')
+          .attr('x', bbox.x)
+          .attr('y', bbox.y)
+          .attr('width', bbox.width + TIP_PADDING * 2)
+          .attr('height', bbox.height)
+      })
     }
 
-    var handleTouch = function() {
+    const handleTouch = function() {
       var [[x]] = d3.touches(this)
       var index = Math.floor(scaleX.invert(x))
 
@@ -171,9 +163,6 @@ class TimeTrendChart extends EventEmitter {
       // 绘制辅助线
       drawLine([verticalGuideLineCoords, horizontalGuideLineCoords])
 
-      // drawTipBottom(x, that.baseHeight, datum.data)
-      // drawTipLeft(0, y, datum.price)
-
       // 绘制悬浮框
       drawTip([
         // 底部tip坐标
@@ -195,8 +184,7 @@ class TimeTrendChart extends EventEmitter {
       .on('touchmove', handleTouch)
       .on('touchend', function() {
         drawLine([])
-        // drawTipBottom(null)
-        // drawTipLeft()
+        drawTip([])
 
         that.updateVolumesYAxis()
 
@@ -374,7 +362,8 @@ class TimeTrendChart extends EventEmitter {
   updateVolumesYAxis() {
     var min = 0
     var max = d3.max(this.data, d => d.volume)
-    var scale = d3.scaleOrdinal().domain([`成交量:${max}`, max, 0]).range([0, 20, this.volHeight])
+    var curr = this.data.length > 0 ? this.data[this.data.length - 1].volume: 0;
+    var scale = d3.scaleOrdinal().domain([`成交量:${curr}`, max, 0]).range([0, 20, this.volHeight])
     var axis = d3.axisRight(scale).tickSize(0)
     this.volumeLeftAxisElement.call(axis)
 

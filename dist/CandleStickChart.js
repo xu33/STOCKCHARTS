@@ -114,9 +114,16 @@ var CandleStickChart =
 	    key: 'render',
 	    value: function render() {
 	      this.renderAxis();
+	      this.renderAverageLines();
 	      this.renderCandleStick();
 	      this.renderVolumes();
 	    }
+
+	    // 绘制均线
+
+	  }, {
+	    key: 'renderAverageLines',
+	    value: function renderAverageLines() {}
 
 	    // 初始化触摸事件
 
@@ -125,7 +132,8 @@ var CandleStickChart =
 	    value: function initTouchEvents() {
 	      var svg = this.svg,
 	          width = this.width,
-	          height = this.height;
+	          height = this.height,
+	          baseHeight = this.baseHeight;
 
 	      var self = this;
 	      var line = d3.line().x(function (d) {
@@ -133,11 +141,66 @@ var CandleStickChart =
 	      }).y(function (d) {
 	        return d.y;
 	      });
+
 	      var drawLine = function drawLine(data) {
 	        var lines = svg.selectAll('.guide-line').data(data);
 	        lines.enter().append('path').attr('class', 'guide-line').merge(lines).attr('d', line);
 
 	        lines.exit().remove();
+	      };
+	      var TIP_PADDING = 2;
+	      var drawTip = function drawTip(data, datum) {
+	        var tips = svg.selectAll('.tip-group').data(data);
+
+	        tips.exit().remove();
+
+	        tips = tips.enter().append('g').attr('class', 'tip-group').merge(tips);
+	        // .attr('transform', d => `translate(${d.x}, ${d.y})`)
+
+	        tips.selectAll('.tip-cell').data([datum]).enter().append('rect').attr('class', 'tip-cell');
+
+	        tips.selectAll('.tip-text').data([datum]).enter().append('text').attr('class', 'tip-text');
+
+	        tips.each(function (d, i) {
+	          var g = d3.select(this);
+	          var text;
+
+	          if (i === 0) {
+	            text = g.select('.tip-text').text(datum.date);
+	          }
+
+	          if (i === 1) {
+	            text = g.select('.tip-text').text(datum.close);
+	          }
+
+	          var bbox = text.node().getBBox();
+
+	          var outerX, outerY;
+
+	          // 底部
+	          if (i === 0) {
+
+	            outerX = d.x - (bbox.width + TIP_PADDING * 2) / 2;
+	            outerY = d.y + bbox.height;
+
+	            if (outerX < 0) outerX = 0;
+	            if (outerX > width - bbox.width - TIP_PADDING * 2) outerX = width - bbox.width - TIP_PADDING * 2;
+	          }
+	          // 左侧
+	          else if (i === 1) {
+	              outerX = d.x + 1; // 加1防止贴边
+	              outerY = d.y + bbox.height / 2 - TIP_PADDING;
+
+	              if (outerY < 0) outerY = 0;
+	              if (outerY > baseHeight - bbox.height / 2) outerY = baseHeight - bbox.height / 2;
+	            }
+
+	          g.attr('transform', 'translate(' + outerX + ', ' + outerY + ')');
+
+	          text.attr('transform', 'translate(' + TIP_PADDING + ', 0)');
+
+	          var rect = g.select('rect').attr('x', bbox.x).attr('y', bbox.y).attr('width', bbox.width + TIP_PADDING * 2).attr('height', bbox.height);
+	        });
 	      };
 
 	      var handleTouch = function handleTouch() {
@@ -152,6 +215,12 @@ var CandleStickChart =
 	        var bandWidth = barScale.bandwidth();
 	        var index = Math.round(x / eachBand);
 
+	        if (index < 0 || index >= self.data.length) {
+	          return;
+	        }
+
+	        var datum = self.data[index];
+
 	        x = barScale(index) + bandWidth / 2;
 
 	        var verticalGuideLineCoords = [{
@@ -162,22 +231,35 @@ var CandleStickChart =
 	          y: height
 	        }];
 
-	        var data = [verticalGuideLineCoords];
+	        var y = self.areaScaleY(datum.close);
+	        var horizontalGuideLineCoords = [{
+	          x: 0,
+	          y: y
+	        }, {
+	          x: width,
+	          y: y
+	        }];
 
-	        if (index < 0 || index >= self.data.length) {
-	          return;
-	        }
-
-	        var datum = self.data[index];
-	        self.axisLeftElement.select('.tick text').text('VOL:' + datum.volume);
-
+	        var data = [verticalGuideLineCoords, horizontalGuideLineCoords];
+	        // 绘制辅助线
 	        drawLine(data);
+	        // 绘制悬浮框
+	        drawTip([{
+	          x: x,
+	          y: baseHeight
+	        }, {
+	          x: 0,
+	          y: y
+	        }], datum);
+
+	        self.axisLeftElement.select('.tick text').text('VOL:' + datum.volume);
 
 	        self.emit('change', self.data[index]);
 	      };
 
 	      svg.on('touchstart', handleTouch).on('touchmove', handleTouch).on('touchend', function () {
 	        drawLine([]);
+	        drawTip([], null);
 
 	        self.updateVolumeLeftAxis();
 	      });
@@ -343,7 +425,7 @@ var CandleStickChart =
 	        return d.high;
 	      });
 	      var scaleY = d3.scaleLinear().domain([min, max]).range([baseHeight, 10]);
-
+	      this.areaScaleY = scaleY;
 	      this.barScale = scaleX;
 
 	      // 实体
@@ -525,7 +607,7 @@ var CandleStickChart =
 
 
 	// module
-	exports.push([module.id, "/* 数轴颜色 */\r\n.chart-axis path {\r\n    stroke: #d4d4d4;\r\n}\r\n\r\n.chart-axis line {\r\n    stroke: #d4d4d4;\r\n    /*shape-rendering:crispEdges;*/\r\n}\r\n\r\n.guide-line {\r\n    stroke: #555;\r\n}\r\n\r\n.guide-line, .candle, .shadow, .volume {\r\n    /*shape-rendering:crispEdges;*/\r\n}", ""]);
+	exports.push([module.id, "/* 数轴颜色 */\r\n.chart-axis path {\r\n    stroke: #d4d4d4;\r\n}\r\n\r\n.chart-axis line {\r\n    stroke: #d4d4d4;\r\n    /*shape-rendering:crispEdges;*/\r\n}\r\n\r\n.guide-line {\r\n    stroke: #555;\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n.guide-line, .candle, .shadow, .volume {\r\n    /*shape-rendering:crispEdges;*/\r\n}\r\n\r\n.tip-cell {\r\n    stroke: #555;\r\n    fill: #FFF;\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n.tip-text {\r\n    fill: #555;\r\n    font-size: 10px;\r\n}", ""]);
 
 	// exports
 

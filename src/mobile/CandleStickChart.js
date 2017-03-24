@@ -48,10 +48,11 @@ class CandleStickChart extends EventEmitter {
 
   // 初始化触摸事件
   initTouchEvents() {
-    var {svg, width, height} = this
+    var {svg, width, height, baseHeight} = this
     var self = this
     var line = d3.line().x(d => d.x).y(d => d.y)
-    var drawLine = (data) => {
+
+    const drawLine = (data) => {
       var lines = svg.selectAll('.guide-line').data(data)
       lines.enter().append('path')
         .attr('class', 'guide-line')
@@ -60,8 +61,77 @@ class CandleStickChart extends EventEmitter {
 
       lines.exit().remove()
     }
+    const TIP_PADDING = 2
+    const drawTip = (data, datum) => {
+      var tips = svg.selectAll('.tip-group').data(data)
 
-    var handleTouch = function() {
+      tips.exit().remove()
+
+      tips = tips.enter()
+        .append('g')
+        .attr('class', 'tip-group')
+        .merge(tips)
+      // .attr('transform', d => `translate(${d.x}, ${d.y})`)
+
+      tips.selectAll('.tip-cell')
+        .data([datum])
+        .enter()
+        .append('rect')
+        .attr('class', 'tip-cell')
+
+      tips.selectAll('.tip-text')
+        .data([datum])
+        .enter()
+        .append('text')
+        .attr('class', 'tip-text')
+
+      tips.each(function(d, i) {
+        var g = d3.select(this)
+        var text
+
+        if (i === 0) {
+          text = g.select('.tip-text').text(datum.date)
+        }
+
+        if (i === 1) {
+          text = g.select('.tip-text').text(datum.close)
+        }
+
+        var bbox = text.node().getBBox()
+
+        var outerX, outerY
+
+        // 底部
+        if (i === 0) {
+
+          outerX = d.x- (bbox.width + TIP_PADDING * 2) / 2
+          outerY = d.y + bbox.height
+
+          if (outerX < 0) outerX = 0
+          if (outerX > width - bbox.width - TIP_PADDING * 2) outerX = width - bbox.width - TIP_PADDING * 2
+        }
+        // 左侧
+        else if (i === 1) {
+          outerX = d.x + 1 // 加1防止贴边
+          outerY = d.y + bbox.height / 2 - TIP_PADDING
+
+          if (outerY < 0)  outerY = 0
+          if (outerY > baseHeight - bbox.height / 2)  outerY = baseHeight - bbox.height / 2
+        }
+
+        g.attr('transform', `translate(${outerX}, ${outerY})`)
+
+        text.attr('transform', `translate(${TIP_PADDING}, 0)`)
+
+        var rect = g.select('rect')
+          .attr('x', bbox.x)
+          .attr('y', bbox.y)
+          .attr('width', bbox.width + TIP_PADDING * 2)
+          .attr('height', bbox.height)
+      })
+    }
+
+    const handleTouch = function() {
       var [[x]] = d3.touches(this)
       var {barScale} = self
       var eachBand = barScale.step()
@@ -94,8 +164,20 @@ class CandleStickChart extends EventEmitter {
       }]
 
       var data = [verticalGuideLineCoords, horizontalGuideLineCoords]
-
+      // 绘制辅助线
       drawLine(data)
+      // 绘制悬浮框
+      drawTip([
+        {
+          x: x,
+          y: baseHeight
+        },
+        {
+          x: 0,
+          y: y
+        }
+      ], datum)
+
       self.axisLeftElement.select('.tick text').text(`VOL:${datum.volume}`)
 
       self.emit('change', self.data[index])
@@ -105,6 +187,7 @@ class CandleStickChart extends EventEmitter {
       .on('touchmove', handleTouch)
       .on('touchend', function() {
         drawLine([])
+        drawTip([], null)
 
         self.updateVolumeLeftAxis()
       })
@@ -275,7 +358,8 @@ class CandleStickChart extends EventEmitter {
     var {volHeight, data} = this
     var min = 0
     var max = d3.max(data, d => d.volume)
-    var scale = d3.scaleOrdinal().domain([`VOL:${max}`, max, 0]).range([0, 20, volHeight])
+    var curr = data.length > 0 ? data[data.length - 1].volume : 0
+    var scale = d3.scaleOrdinal().domain([`VOL:${curr}`, max, 0]).range([0, 20, volHeight])
     var axisLeft = d3.axisRight(scale).tickSize(0)
 
     this.axisLeftElement.call(axisLeft)

@@ -41,8 +41,9 @@ var TimeTrendChart =
 /******/ 	return __webpack_require__(0);
 /******/ })
 /************************************************************************/
-/******/ ([
-/* 0 */
+/******/ ({
+
+/***/ 0:
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -65,6 +66,7 @@ var TimeTrendChart =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+	var debounce = __webpack_require__(134);
 	var EventEmitter = __webpack_require__(7);
 	var d3 = __webpack_require__(6);
 	var VOL_RATIO = 0.3;
@@ -127,7 +129,8 @@ var TimeTrendChart =
 	    value: function initTouchEvents() {
 	      var svg = this.svg,
 	          width = this.width,
-	          height = this.height;
+	          height = this.height,
+	          baseHeight = this.baseHeight;
 
 	      var scaleX = d3.scaleLinear().domain([0, TOTAL_COUNT]).range([0, width]);
 	      var line = d3.line().x(function (d) {
@@ -137,6 +140,7 @@ var TimeTrendChart =
 	      });
 	      var that = this;
 
+	      var TIP_PADDING = 2;
 	      var drawLine = function drawLine(data) {
 	        var lines = svg.selectAll('.guide-line').data(data);
 
@@ -144,21 +148,66 @@ var TimeTrendChart =
 
 	        lines.exit().remove();
 	      };
+
+	      var drawTip = function drawTip(data, datum) {
+	        var tips = svg.selectAll('.tip-group').data(data);
+
+	        tips.exit().remove();
+
+	        tips = tips.enter().append('g').attr('class', 'tip-group').merge(tips);
+	        // .attr('transform', d => `translate(${d.x}, ${d.y})`)
+
+	        tips.selectAll('.tip-cell').data([datum]).enter().append('rect').attr('class', 'tip-cell');
+
+	        tips.selectAll('.tip-text').data([datum]).enter().append('text').attr('class', 'tip-text');
+
+	        tips.each(function (d, i) {
+	          var g = d3.select(this);
+	          var text;
+
+	          if (i === 0) {
+	            text = g.select('.tip-text').text(datum.date);
+	          }
+
+	          if (i === 1) {
+	            text = g.select('.tip-text').text(datum.price);
+	          }
+
+	          var bbox = text.node().getBBox();
+
+	          var outerX, outerY;
+
+	          // 底部
+	          if (i === 0) {
+
+	            outerX = d.x - (bbox.width + TIP_PADDING * 2) / 2;
+	            outerY = d.y + bbox.height;
+
+	            if (outerX < 0) outerX = 0;
+	            if (outerX > width - bbox.width - TIP_PADDING * 2) outerX = width - bbox.width - TIP_PADDING * 2;
+	          }
+	          // 左侧
+	          else if (i === 1) {
+	              outerX = d.x + 1; // 加1防止贴边
+	              outerY = d.y + bbox.height / 2 - TIP_PADDING;
+
+	              if (outerY < 0) outerY = 0;
+	              if (outerY > baseHeight - bbox.height / 2) outerY = baseHeight - bbox.height / 2;
+	            }
+
+	          g.attr('transform', 'translate(' + outerX + ', ' + outerY + ')');
+
+	          text.attr('transform', 'translate(' + TIP_PADDING + ', 0)');
+
+	          var rect = g.select('rect').attr('x', bbox.x).attr('y', bbox.y).attr('width', bbox.width + TIP_PADDING * 2).attr('height', bbox.height);
+	        });
+	      };
+
 	      var handleTouch = function handleTouch() {
 	        var _d3$touches = d3.touches(this),
 	            _d3$touches2 = _slicedToArray(_d3$touches, 1),
 	            _d3$touches2$ = _slicedToArray(_d3$touches2[0], 1),
 	            x = _d3$touches2$[0];
-
-	        var verticalGuideLineCoords = [{
-	          x: x,
-	          y: 0
-	        }, {
-	          x: x,
-	          y: height
-	        }];
-
-	        var data = [verticalGuideLineCoords];
 
 	        var index = Math.floor(scaleX.invert(x));
 
@@ -166,20 +215,49 @@ var TimeTrendChart =
 	          return;
 	        }
 
-	        drawLine(data);
-
-	        // 更新成交量文字
 	        var datum = that.data[index];
-
+	        // 更新成交量文字
 	        that.volumeLeftAxisElement.select('.tick text').text('\u6210\u4EA4\u91CF:' + datum.volume);
+
+	        // 绘制辅助线
+	        var verticalGuideLineCoords = [{
+	          x: x,
+	          y: 0
+	        }, {
+	          x: x,
+	          y: height
+	        }];
+	        var y = that.areaScaleY(datum.price);
+	        var horizontalGuideLineCoords = [{
+	          x: 0,
+	          y: y
+	        }, {
+	          x: width,
+	          y: y
+	        }];
+
+	        // 绘制辅助线
+	        drawLine([verticalGuideLineCoords, horizontalGuideLineCoords]);
+
+	        // 绘制悬浮框
+	        drawTip([
+	        // 底部tip坐标
+	        {
+	          x: x,
+	          y: baseHeight
+	        },
+	        // 左侧tip坐标
+	        {
+	          x: 0,
+	          y: y
+	        }], datum);
 
 	        that.emit('change', datum);
 	      };
 
 	      svg.on('touchstart', handleTouch).on('touchmove', handleTouch).on('touchend', function () {
-	        var data = [];
-
-	        drawLine(data);
+	        drawLine([]);
+	        drawTip([]);
 
 	        that.updateVolumesYAxis();
 
@@ -411,7 +489,6 @@ var TimeTrendChart =
 	      });
 	      var scaleX = d3.scaleLinear().domain([0, TOTAL_COUNT]).range([0, this.width]);
 	      var scaleY = d3.scaleLinear().domain([min, max]).range([baseHeight, 10]);
-
 	      var areaElement = this.svg.select('.trend-area-wrap');
 
 	      var line = d3.line().x(function (d, i) {
@@ -437,6 +514,8 @@ var TimeTrendChart =
 	      trendArea.exit().remove();
 
 	      trendArea.enter().append('path').attr('class', 'trend-area').merge(trendArea).attr('d', area).attr('fill', AREA_STROKE_COLOR).attr('opacity', '0.3');
+
+	      this.areaScaleY = scaleY;
 	    }
 	  }, {
 	    key: 'update',
@@ -456,7 +535,8 @@ var TimeTrendChart =
 	module.exports = TimeTrendChart;
 
 /***/ },
-/* 1 */
+
+/***/ 1:
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
@@ -482,7 +562,8 @@ var TimeTrendChart =
 	}
 
 /***/ },
-/* 2 */
+
+/***/ 2:
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(3)();
@@ -490,13 +571,14 @@ var TimeTrendChart =
 
 
 	// module
-	exports.push([module.id, "/* 数轴颜色 */\r\n.chart-axis path {\r\n    stroke: #d4d4d4;\r\n}\r\n\r\n.chart-axis line {\r\n    stroke: #d4d4d4;\r\n    /*shape-rendering:crispEdges;*/\r\n}\r\n\r\n.guide-line {\r\n    stroke: #555;\r\n}\r\n\r\n.guide-line, .candle, .shadow, .volume {\r\n    /*shape-rendering:crispEdges;*/\r\n}", ""]);
+	exports.push([module.id, "/* 数轴颜色 */\r\n.chart-axis path {\r\n    stroke: #d4d4d4;\r\n}\r\n\r\n.chart-axis line {\r\n    stroke: #d4d4d4;\r\n    /*shape-rendering:crispEdges;*/\r\n}\r\n\r\n.guide-line {\r\n    stroke: #555;\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n.guide-line, .candle, .shadow, .volume {\r\n    /*shape-rendering:crispEdges;*/\r\n}\r\n\r\n.tip-cell {\r\n    stroke: #555;\r\n    fill: #FFF;\r\n    shape-rendering:crispEdges;\r\n}\r\n\r\n.tip-text {\r\n    fill: #555;\r\n    font-size: 10px;\r\n}", ""]);
 
 	// exports
 
 
 /***/ },
-/* 3 */
+
+/***/ 3:
 /***/ function(module, exports) {
 
 	/*
@@ -552,7 +634,8 @@ var TimeTrendChart =
 
 
 /***/ },
-/* 4 */
+
+/***/ 4:
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -804,7 +887,8 @@ var TimeTrendChart =
 
 
 /***/ },
-/* 5 */
+
+/***/ 5:
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -829,13 +913,15 @@ var TimeTrendChart =
 	exports.default = getArrayBetween;
 
 /***/ },
-/* 6 */
+
+/***/ 6:
 /***/ function(module, exports) {
 
 	module.exports = window.d3;
 
 /***/ },
-/* 7 */
+
+/***/ 7:
 /***/ function(module, exports) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -1142,5 +1228,78 @@ var TimeTrendChart =
 	}
 
 
+/***/ },
+
+/***/ 134:
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * Module dependencies.
+	 */
+
+	var now = __webpack_require__(135);
+
+	/**
+	 * Returns a function, that, as long as it continues to be invoked, will not
+	 * be triggered. The function will be called after it stops being called for
+	 * N milliseconds. If `immediate` is passed, trigger the function on the
+	 * leading edge, instead of the trailing.
+	 *
+	 * @source underscore.js
+	 * @see http://unscriptable.com/2009/03/20/debouncing-javascript-methods/
+	 * @param {Function} function to wrap
+	 * @param {Number} timeout in ms (`100`)
+	 * @param {Boolean} whether to execute at the beginning (`false`)
+	 * @api public
+	 */
+
+	module.exports = function debounce(func, wait, immediate){
+	  var timeout, args, context, timestamp, result;
+	  if (null == wait) wait = 100;
+
+	  function later() {
+	    var last = now() - timestamp;
+
+	    if (last < wait && last > 0) {
+	      timeout = setTimeout(later, wait - last);
+	    } else {
+	      timeout = null;
+	      if (!immediate) {
+	        result = func.apply(context, args);
+	        if (!timeout) context = args = null;
+	      }
+	    }
+	  };
+
+	  return function debounced() {
+	    context = this;
+	    args = arguments;
+	    timestamp = now();
+	    var callNow = immediate && !timeout;
+	    if (!timeout) timeout = setTimeout(later, wait);
+	    if (callNow) {
+	      result = func.apply(context, args);
+	      context = args = null;
+	    }
+
+	    return result;
+	  };
+	};
+
+
+/***/ },
+
+/***/ 135:
+/***/ function(module, exports) {
+
+	module.exports = Date.now || now
+
+	function now() {
+	    return new Date().getTime()
+	}
+
+
 /***/ }
-/******/ ]);
+
+/******/ });
