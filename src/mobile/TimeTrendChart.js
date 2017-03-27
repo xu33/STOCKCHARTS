@@ -14,6 +14,7 @@ const ORANGE = '#ec9e4a'
 const TOTAL_COUNT = 661
 const TIMES = ['20:00', '0:00', '9:00', '13:30', '15:30']
 import getArrayBetween from './lib/getArrayBetween'
+import formatMoney from './lib/formatMoney'
 
 class TimeTrendChart extends EventEmitter {
   constructor({width, height, container, data}) {
@@ -258,7 +259,7 @@ class TimeTrendChart extends EventEmitter {
   // 更新左侧Y轴刻度
   updateYAxis() {
     var scale = this.createScaleForAxisY()
-    var leftAxis = d3.axisRight(scale).tickSize(0).tickFormat(d => parseInt(d))
+    var leftAxis = d3.axisRight(scale).tickSize(0)
 
     this.leftAxisElement.call(leftAxis)
 
@@ -305,11 +306,10 @@ class TimeTrendChart extends EventEmitter {
     var axisTopElement = this.volumeWrapper.append('g').attr('class', 'chart-axis').call(axisTop)
     this.updateVolumes()
 
-    // 量图水平辅助线'
+    // 量图水平辅助线(固定)
     var min = 0
     var max = d3.max(this.data, d => d.volume)
-
-    var scale = d3.scaleOrdinal().domain([`成交量:${max}`, max, 0]).range([0, 20, this.volHeight])
+    var scale = d3.scaleOrdinal().domain([1,2,3]).range([0, 20, this.volHeight])
     var axisLeft = d3.axisLeft(scale).tickSize(this.width)
     var axisLeftElement = this.volumeWrapper.append('g').attr('class', 'chart-axis').attr('transform', `translate(${this.width - 1}, 0)`)
       .call(axisLeft)
@@ -363,7 +363,11 @@ class TimeTrendChart extends EventEmitter {
     var min = 0
     var max = d3.max(this.data, d => d.volume)
     var curr = this.data.length > 0 ? this.data[this.data.length - 1].volume: 0;
-    var scale = d3.scaleOrdinal().domain([`成交量:${curr}`, max, 0]).range([0, 20, this.volHeight])
+    var scale = d3.scaleOrdinal().domain([
+      `成交量:${formatMoney(curr)}`,
+      formatMoney(max),
+      0]).range([0, 20, this.volHeight])
+
     var axis = d3.axisRight(scale).tickSize(0)
     this.volumeLeftAxisElement.call(axis)
 
@@ -379,7 +383,7 @@ class TimeTrendChart extends EventEmitter {
     var min = d3.min(this.data, d => d.price)
     var max = d3.max(this.data, d => d.price)
     var scaleX = d3.scaleLinear().domain([0, TOTAL_COUNT]).range([0, this.width])
-    var scaleY = d3.scaleLinear().domain([min, max]).range([baseHeight, 10])
+    var scaleY = d3.scaleLinear().domain([min, max]).range([baseHeight / 2, 10])
     var areaElement = this.svg.select('.trend-area-wrap')
 
     var line = d3.line()
@@ -415,7 +419,30 @@ class TimeTrendChart extends EventEmitter {
       .attr('fill', AREA_STROKE_COLOR)
       .attr('opacity', '0.3')
 
+    this.areaScaleX = scaleX
     this.areaScaleY = scaleY
+
+    this.updateAverage()
+  }
+
+  updateAverage() {
+    var svg = this.svg
+    var scaleX = this.areaScaleX
+    var scaleY = this.areaScaleY
+
+    var line = d3.line()
+      .x((d, i) => scaleX(i))
+      .y((d, i) => scaleY(d.average))
+
+    var areaElement = this.svg.select('.trend-area-wrap')
+
+    var maLine = areaElement.selectAll('.ma').data([this.data])
+    maLine.exit().remove()
+    maLine.enter()
+      .append('path')
+      .attr('class', 'ma')
+      .merge(maLine)
+      .attr('d', line)
   }
 
   update(data) {

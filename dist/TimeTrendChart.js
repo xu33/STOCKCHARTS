@@ -66,7 +66,7 @@ var TimeTrendChart =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var debounce = __webpack_require__(134);
+	var debounce = __webpack_require__(136);
 	var EventEmitter = __webpack_require__(7);
 	var d3 = __webpack_require__(6);
 	var VOL_RATIO = 0.3;
@@ -467,7 +467,8 @@ var TimeTrendChart =
 	      var max = d3.max(this.data, function (d) {
 	        return d.volume;
 	      });
-	      var scale = d3.scaleOrdinal().domain(['\u6210\u4EA4\u91CF:' + max, max, 0]).range([0, 20, this.volHeight]);
+	      var curr = this.data.length > 0 ? this.data[this.data.length - 1].volume : 0;
+	      var scale = d3.scaleOrdinal().domain(['\u6210\u4EA4\u91CF:' + curr, max, 0]).range([0, 20, this.volHeight]);
 	      var axis = d3.axisRight(scale).tickSize(0);
 	      this.volumeLeftAxisElement.call(axis);
 
@@ -1230,7 +1231,7 @@ var TimeTrendChart =
 
 /***/ },
 
-/***/ 134:
+/***/ 136:
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -1238,7 +1239,7 @@ var TimeTrendChart =
 	 * Module dependencies.
 	 */
 
-	var now = __webpack_require__(135);
+	var now = __webpack_require__(137);
 
 	/**
 	 * Returns a function, that, as long as it continues to be invoked, will not
@@ -1290,7 +1291,7 @@ var TimeTrendChart =
 
 /***/ },
 
-/***/ 135:
+/***/ 137:
 /***/ function(module, exports) {
 
 	module.exports = Date.now || now

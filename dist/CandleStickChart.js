@@ -482,7 +482,8 @@ var CandleStickChart =
 	      var max = d3.max(data, function (d) {
 	        return d.volume;
 	      });
-	      var scale = d3.scaleOrdinal().domain(['VOL:' + max, max, 0]).range([0, 20, volHeight]);
+	      var curr = data.length > 0 ? data[data.length - 1].volume : 0;
+	      var scale = d3.scaleOrdinal().domain(['VOL:' + curr, max, 0]).range([0, 20, volHeight]);
 	      var axisLeft = d3.axisRight(scale).tickSize(0);
 
 	      this.axisLeftElement.call(axisLeft);

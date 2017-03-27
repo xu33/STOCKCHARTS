@@ -38,26 +38,26 @@ var ttc = new TimeTrendChart({
   width: 320,
   height: 300,
   container: '#time-chart-container',
-  data: curr
+  data: data
 })
 
 // ttc.on('change', v => console.log(v))
 // 更新
-function updateA() {
-  var data = ttc.data
-
-  data.push(rest.shift())
-
-  ttc.update(data)
-
-  if (rest.length <= 0) {
-    return
-  }
-
-  requestAnimationFrame(updateA)
-}
-
-updateA()
+// function updateA() {
+//   var data = ttc.data
+//
+//   data.push(rest.shift())
+//
+//   ttc.update(data)
+//
+//   if (rest.length <= 0) {
+//     return
+//   }
+//
+//   requestAnimationFrame(updateA)
+// }
+//
+// updateA()
 
 var klineData = require('./fake_data/goldkline')
 var CandleStickChart = require('./mobile/CandleStickChart')

@@ -2,7 +2,8 @@
  * Created by shinan on 2016/12/29.
  */
 import { WIN_COLOR, LOSS_COLOR, EQUAL_COLOR } from './libs/config'
-import './css/d3.css'
+// import './css/d3.css'
+import './css/yzt.css'
 const str2number = require('./libs/str2number')
 const d3 = require('d3')
 const PREDICT_PERCENT = 0.7
@@ -125,9 +126,9 @@ class Predict extends EventEmitter {
       x: 0,
       y: this.options.volume ? this.totalHeight : height
     }])
-    .attr('d', helpLine)
-    .attr('stroke', '#ccc')
-    .attr("stroke-dasharray", '5, 3')
+      .attr('class', 'tick-line')
+      .attr('d', helpLine)
+      .attr("stroke-dasharray", '5, 3')
   }
 
   // 蜡烛线

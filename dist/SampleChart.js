@@ -54,7 +54,7 @@ var SampleChart =
 
 	var _config = __webpack_require__(12);
 
-	__webpack_require__(18);
+	__webpack_require__(20);
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -903,13 +903,15 @@ var SampleChart =
 /* 15 */,
 /* 16 */,
 /* 17 */,
-/* 18 */
+/* 18 */,
+/* 19 */,
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(19);
+	var content = __webpack_require__(21);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(4)(content, {});
@@ -929,7 +931,7 @@ var SampleChart =
 	}
 
 /***/ },
-/* 19 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(3)();
