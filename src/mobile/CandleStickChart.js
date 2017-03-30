@@ -12,6 +12,7 @@ const GREEN = '#139125'
 const UNKNOW = '#CCCCCC'
 const ORANGE = '#ec9e4a'
 import getArrayBetween from './lib/getArrayBetween'
+import formatMoney from './lib/formatMoney'
 
 const color = d => {
   return d.close > d.open ? RED : GREEN
@@ -36,14 +37,33 @@ class CandleStickChart extends EventEmitter {
 
   render() {
     this.renderAxis()
-    this.renderAverageLines()
+
     this.renderCandleStick()
+    this.renderAverageLines()
     this.renderVolumes()
   }
 
   // 绘制均线
   renderAverageLines() {
+    var svg = this.svg
+    var scaleY = this.areaScaleY
+    var scaleX = d3.scaleLinear().domain([0, this.data.length - 1]).range([0, this.width])
+    var types = ['ma5', 'ma10', 'ma20', 'ma60']
 
+    var line = d3.line().x((d, i) => scaleX(i)).y(d => scaleY(d))
+
+    for (var i = 0; i < types.length; i++) {
+      var prop = types[i]
+      var lines = svg.selectAll(`.${prop}`).data([this.data.map(d => d[prop])])
+
+      lines.enter()
+        .append('path')
+        .attr('class', prop)
+        .merge(lines)
+        .attr('d', line)
+
+      lines.exit().remove()
+    }
   }
 
   // 初始化触摸事件
@@ -54,6 +74,7 @@ class CandleStickChart extends EventEmitter {
 
     const drawLine = (data) => {
       var lines = svg.selectAll('.guide-line').data(data)
+
       lines.enter().append('path')
         .attr('class', 'guide-line')
         .merge(lines)
@@ -178,7 +199,7 @@ class CandleStickChart extends EventEmitter {
         }
       ], datum)
 
-      self.axisLeftElement.select('.tick text').text(`VOL:${datum.volume}`)
+      self.axisLeftElement.select('.tick text').text(`VOL:${formatMoney(datum.volume)}`)
 
       self.emit('change', self.data[index])
     }
@@ -300,9 +321,16 @@ class CandleStickChart extends EventEmitter {
 
     var bandWidth = parseInt(scaleX.bandwidth())
 
-    var min = d3.min(data, d => d.low)
-    var max = d3.max(data, d => d.high)
+    var min = d3.min(data, d => {
+      return d3.min([d.low, d.ma5, d.ma10, d.ma20, d.ma60])
+    })
+
+    var max = d3.max(data, d => {
+      return d3.max([d.high, d.ma5, d.ma10, d.ma20, d.ma60])
+    })
+
     var scaleY = d3.scaleLinear().domain([min, max]).range([baseHeight, 10])
+
     this.areaScaleY = scaleY
     this.barScale = scaleX
 
@@ -359,7 +387,7 @@ class CandleStickChart extends EventEmitter {
     var min = 0
     var max = d3.max(data, d => d.volume)
     var curr = data.length > 0 ? data[data.length - 1].volume : 0
-    var scale = d3.scaleOrdinal().domain([`VOL:${curr}`, max, 0]).range([0, 20, volHeight])
+    var scale = d3.scaleOrdinal().domain([`VOL:${formatMoney(curr)}`, formatMoney(max), 0]).range([0, 20, volHeight])
     var axisLeft = d3.axisRight(scale).tickSize(0)
 
     this.axisLeftElement.call(axisLeft)
@@ -427,6 +455,7 @@ class CandleStickChart extends EventEmitter {
   update(data) {
     this.data = data
     this.renderCandleStick()
+    this.renderAverageLines()
     this.renderVolumeBars()
     this.updateAxis()
   }

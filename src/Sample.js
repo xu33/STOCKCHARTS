@@ -1,7 +1,9 @@
 /**
  * Created by shinan on 2016/12/29.
  */
-import { WIN_COLOR, LOSS_COLOR, EQUAL_COLOR } from './libs/config'
+import { /*WIN_COLOR, LOSS_COLOR,*/ EQUAL_COLOR } from './libs/config'
+const WIN_COLOR = '#ff5b5b'
+const LOSS_COLOR = '#3ebf6d'
 import './css/d3.css'
 const str2number = require('./libs/str2number')
 const d3 = require('d3')

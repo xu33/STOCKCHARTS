@@ -33,5 +33,21 @@ module.exports = {
       test: /\.css$/,
       loader: 'style!css'
     }]
-  }
+  },
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin({
+
+      // Eliminate comments
+      comments: false,
+
+      // Compression specific options
+      compress: {
+        // remove warnings
+        warnings: false,
+
+        // Drop console statements
+        drop_console: true
+      }
+    })
+  ]
 };

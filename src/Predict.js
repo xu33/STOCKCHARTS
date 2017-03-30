@@ -1,7 +1,10 @@
 /**
  * Created by shinan on 2016/12/29.
  */
-import { WIN_COLOR, LOSS_COLOR, EQUAL_COLOR } from './libs/config'
+import { EQUAL_COLOR } from './libs/config'
+const WIN_COLOR = '#ff5b5b'
+const LOSS_COLOR = '#3ebf6d'
+
 // import './css/d3.css'
 import './css/yzt.css'
 const str2number = require('./libs/str2number')
@@ -356,34 +359,51 @@ class Predict extends EventEmitter {
     var t = this
     var timer
     var interactiveEnabled = false
+    var isMobile = 'ontouchstart' in document
 
-    this.svg.on('touchstart', function() {
-      let [[x, y]] = d3.touches(this)
-
-      timer = setTimeout(() => {
-        t.handleDragStart(x, y)
-        interactiveEnabled = true
-      }, 500)
-    })
-
-    this.svg.on('touchmove', function() {
-      if (interactiveEnabled) {
+    if (isMobile) {
+      this.svg.on('touchstart', function() {
         let [[x, y]] = d3.touches(this)
+
+        timer = setTimeout(() => {
+          t.handleDragStart(x, y)
+          interactiveEnabled = true
+        }, 500)
+      })
+
+      this.svg.on('touchmove', function() {
+        if (interactiveEnabled) {
+          let [[x, y]] = d3.touches(this)
+          t.handleDragMove(x, y)
+        } else {
+          clearTimeout(timer)
+        }
+      })
+
+      this.svg.on('touchend', () => {
+        if (interactiveEnabled) {
+          t.handleDragEnd()
+        } else {
+          clearTimeout(timer)
+        }
+
+        interactiveEnabled = false
+      })
+    } else {
+      this.svg.on('mouseover', function() {
+        let [x, y] = d3.mouse(this)
+        t.handleDragStart(x, y)
+      })
+
+      this.svg.on('mousemove', function() {
+        let [x, y] = d3.mouse(this)
         t.handleDragMove(x, y)
-      } else {
-        clearTimeout(timer)
-      }
-    })
+      })
 
-    this.svg.on('touchend', () => {
-      if (interactiveEnabled) {
+      this.svg.on('mouseout', () => {
         t.handleDragEnd()
-      } else {
-        clearTimeout(timer)
-      }
-
-      interactiveEnabled = false
-    })
+      })
+    }
   }
 
   getHelperLineXY(x) {

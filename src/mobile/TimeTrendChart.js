@@ -17,7 +17,7 @@ import getArrayBetween from './lib/getArrayBetween'
 import formatMoney from './lib/formatMoney'
 
 class TimeTrendChart extends EventEmitter {
-  constructor({width, height, container, data}) {
+  constructor({width, height, container, data, settlementPrice, high, low}) {
     super()
     this.element = d3.select(container)
     this.svg = this.element.append('svg')
@@ -29,6 +29,9 @@ class TimeTrendChart extends EventEmitter {
     this.volHeight = height * VOL_RATIO
     this.baseHeight = height - this.volHeight - BOTTOM_MARGIN
     this.data = data
+    this.settlementPrice = settlementPrice
+    this.high = high
+    this.low = low
     this.render()
     this.initTouchEvents()
   }
@@ -142,7 +145,7 @@ class TimeTrendChart extends EventEmitter {
 
       var datum = that.data[index]
       // 更新成交量文字
-      that.volumeLeftAxisElement.select('.tick text').text(`成交量:${datum.volume}`)
+      that.volumeLeftAxisElement.select('.tick text').text(`成交量:${formatMoney(datum.volume)}`)
 
       // 绘制辅助线
       var verticalGuideLineCoords = [{
@@ -223,14 +226,81 @@ class TimeTrendChart extends EventEmitter {
 
   // 创建垂直数轴的刻度尺
   createScaleForAxisY() {
+    // var settlementPrice = this.settlementPrice
+    // var baseHeight = this.baseHeight
+    // var min = this.low
+    // var max = this.high
+    //
+    // var minus = settlementPrice - min
+    //
+    //
+    // var domain = []
+    //
+    // if (settlementPrice < max) {
+    //   var top = max
+    //   var mid = settlementPrice
+    //   var bottom = settlementPrice - (max - settlementPrice)
+    // } else {
+    //   var bottom = max
+    //   var mid = settlementPrice
+    //   var top = settlementPrice - (settlementPrice - max)
+    // }
+    //
+    // domain = [bottom, mid, top].map(o => Number(o).toFixed(2))
+    //
+    // this.realMax = top
+    // this.realMin = bottom
+    //
+    // var step = baseHeight / (domain.length - 1)
+    // var range = domain.map((v, i) => step * i)
+    //
+    // range = range.reverse()
+    //
+    // var scale = d3.scaleOrdinal().domain(domain).range(range)
+    //
+    // return scale
+    var settlementPrice = this.settlementPrice
     var baseHeight = this.baseHeight
-    var min = d3.min(this.data, d => d.price)
-    var max = d3.max(this.data, d => d.price)
+    var min = this.low
+    var max = this.high
 
-    var domain = getArrayBetween(min, max, 2)
+    var diff = 0
+    var mindiff = 0
+    var maxdiff = 0
+    if (max > settlementPrice) {
+      maxdiff = max - settlementPrice
+    }else{
+      maxdiff = settlementPrice - max
+    }
+    if (min > settlementPrice) {
+      mindiff = min - settlementPrice
+    }else{
+      mindiff = settlementPrice - min
+    }
+    if(maxdiff > mindiff){
+      diff = maxdiff
+    }else{
+      diff = mindiff
+    }
+
+    var domain = []
+    var top = settlementPrice + diff
+    var mid = settlementPrice
+    var bottom = settlementPrice - diff
+
+    domain = [bottom, mid, top].map(o => Number(o).toFixed(2))
+
+    console.log(domain)
+
+    this.realMax = top
+    this.realMin = bottom
+
     var step = baseHeight / (domain.length - 1)
     var range = domain.map((v, i) => step * i)
-    var scale = d3.scaleOrdinal().domain(domain.reverse()).range(range)
+
+    range = range.reverse()
+
+    var scale = d3.scaleOrdinal().domain(domain).range(range)
 
     return scale
   }
@@ -266,7 +336,9 @@ class TimeTrendChart extends EventEmitter {
     // 调整刻度位置
     this.leftAxisElement.selectAll('.tick text')
       .attr('transform', (d, i, all) => {
-        var offset = i == 0 ? 10 : (i == all.length - 1 ? -10 : -10)
+        console.log(d, i)
+
+        var offset = i == 0 ? -10 : 10
 
         return `translate(0, ${offset})`
       })
@@ -362,7 +434,8 @@ class TimeTrendChart extends EventEmitter {
   updateVolumesYAxis() {
     var min = 0
     var max = d3.max(this.data, d => d.volume)
-    var curr = this.data.length > 0 ? this.data[this.data.length - 1].volume: 0;
+    var curr = this.data.length > 0 ? this.data[this.data.length - 1].volume: 0
+
     var scale = d3.scaleOrdinal().domain([
       `成交量:${formatMoney(curr)}`,
       formatMoney(max),
@@ -380,10 +453,16 @@ class TimeTrendChart extends EventEmitter {
   updateArea() {
     var baseHeight = this.baseHeight
     var svg = this.svg
-    var min = d3.min(this.data, d => d.price)
-    var max = d3.max(this.data, d => d.price)
-    var scaleX = d3.scaleLinear().domain([0, TOTAL_COUNT]).range([0, this.width])
-    var scaleY = d3.scaleLinear().domain([min, max]).range([baseHeight / 2, 10])
+    // var min = d3.min(this.data, d => d.price)
+    // var max = d3.max(this.data, d => d.price)
+
+    var min = this.realMin
+    var max = this.realMax
+
+    var { baseHeight, svg, width, data } = this
+
+    var scaleX = d3.scaleLinear().domain([0, TOTAL_COUNT]).range([0, width])
+    var scaleY = d3.scaleLinear().domain([min, max]).range([baseHeight, 0])
     var areaElement = this.svg.select('.trend-area-wrap')
 
     var line = d3.line()
@@ -395,7 +474,7 @@ class TimeTrendChart extends EventEmitter {
       .y0((d, i) => scaleY(d.price))
       .y1(baseHeight)
 
-    var trendLine = areaElement.selectAll('.trend-line').data([this.data])
+    var trendLine = areaElement.selectAll('.trend-line').data([data])
 
     trendLine.exit().remove()
 
@@ -407,7 +486,7 @@ class TimeTrendChart extends EventEmitter {
       .attr('fill', 'none')
       .attr('stroke', AREA_STROKE_COLOR)
 
-    var trendArea = areaElement.selectAll('.trend-area').data([this.data])
+    var trendArea = areaElement.selectAll('.trend-area').data([data])
 
     trendArea.exit().remove()
 

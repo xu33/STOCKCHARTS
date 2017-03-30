@@ -10,7 +10,7 @@
 
 .guide-line {
     stroke: #555;
-    shape-rendering:crispEdges;
+    shape-rendering: crispEdges;
 }
 
 .guide-line, .candle, .shadow, .volume {
@@ -20,7 +20,7 @@
 .tip-cell {
     stroke: #555;
     fill: #FFF;
-    shape-rendering:crispEdges;
+    shape-rendering: crispEdges;
 }
 
 .tip-text {
@@ -31,4 +31,24 @@
 .ma {
     fill: none;
     stroke: #ec9917;
+}
+
+.ma5 {
+    fill: none;
+    stroke: #508ce7;
+}
+
+.ma10 {
+    fill: none;
+    stroke: #ec9917;
+}
+
+.ma20 {
+    fill: none;
+    stroke: #f94636;
+}
+
+.ma60 {
+    fill: none;
+    stroke: #2baf2b;
 }

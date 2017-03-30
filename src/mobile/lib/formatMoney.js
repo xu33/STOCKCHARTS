@@ -10,9 +10,9 @@ module.exports = function(n) {
     if (n > size) {
       let ret = (n / size).toFixed(2)
 
-      if (i == 0) {
-        ret = parseInt(ret)
-      }
+      // if (i == 0) {
+      //   ret = parseInt(ret)
+      // }
 
       return ret + unit
     }

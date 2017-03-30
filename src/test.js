@@ -29,6 +29,9 @@
 // }, 1000)
 
 var data = require('./fake_data/gold')
+
+console.log(data.length)
+
 var TimeTrendChart = require('./mobile/TimeTrendChart')
 
 var curr = data.slice(0, 10)
@@ -38,7 +41,10 @@ var ttc = new TimeTrendChart({
   width: 320,
   height: 300,
   container: '#time-chart-container',
-  data: data
+  data: data,
+  settlementPrice: 280.06,
+  high: 280.15,
+  low: 279.25
 })
 
 // ttc.on('change', v => console.log(v))
