@@ -41,44 +41,44 @@ var ttc = new TimeTrendChart({
   width: 320,
   height: 300,
   container: '#time-chart-container',
-  data: data,
+  data: curr,
   settlementPrice: 280.06,
   high: 280.15,
   low: 279.25
 })
 
-// ttc.on('change', v => console.log(v))
+ttc.on('change', v => console.log(v))
 // 更新
-// function updateA() {
-//   var data = ttc.data
-//
-//   data.push(rest.shift())
-//
-//   ttc.update(data)
-//
-//   if (rest.length <= 0) {
-//     return
-//   }
-//
-//   requestAnimationFrame(updateA)
-// }
-//
-// updateA()
+function updateA() {
+  var data = ttc.data
 
-var klineData = require('./fake_data/goldkline')
-var CandleStickChart = require('./mobile/CandleStickChart')
-var curr1 = klineData.slice(0, 10)
-var rest1 = klineData.slice(10)
+  data.push(rest.shift())
 
-var csc = new CandleStickChart({
-  width: 320,
-  height: 200,
-  container: '#cs-wrap',
-  data: klineData
-})
+  ttc.update(data)
 
+  if (rest.length <= 0) {
+    return
+  }
+
+  requestAnimationFrame(updateA)
+}
+
+updateA()
+
+// var klineData = require('./fake_data/goldkline')
+// var CandleStickChart = require('./mobile/CandleStickChart')
+// var curr1 = klineData.slice(0, 10)
+// var rest1 = klineData.slice(10)
+//
+// var csc = new CandleStickChart({
+//   width: 320,
+//   height: 200,
+//   container: '#cs-wrap',
+//   data: curr1
+// })
+//
 // csc.on('change', item => console.log(item))
-
+//
 // function update() {
 //   var data = csc.data
 //

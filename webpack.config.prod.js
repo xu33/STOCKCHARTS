@@ -9,16 +9,12 @@ module.exports = {
     SampleChart: './src/Sample.js',
     StockChart: './src/StockChart.js',
     TimeTrendChart: './src/mobile/TimeTrendChart.js',
-    CandleStickChart: './src/mobile/CandleStickChart'
-  },
-  externals: {
-    jquery: 'window.$',
-    raphael: 'window.Raphael',
-    d3: 'window.d3'
+    CandleStickChart: './src/mobile/CandleStickChart',
+    d3: ['d3']
   },
   output: {
     path: path.join(__dirname, 'dist'),
-    filename: '[name].js',
+    filename: '[name].[chunkhash].js',
     library: '[name]'
   },
   module: {
@@ -35,6 +31,10 @@ module.exports = {
     }]
   },
   plugins: [
+    new webpack.optimize.CommonsChunkPlugin({
+      names: ['d3'],
+      minChunks: 3
+    }),
     new webpack.optimize.UglifyJsPlugin({
 
       // Eliminate comments

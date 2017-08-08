@@ -13,12 +13,12 @@ app.use(require('webpack-dev-middleware')(compiler, {
 
 // app.use(require('webpack-hot-middleware')(compiler));
 
-app.get('/', function(req, res) {
+app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, 'example/index.html'));
 });
 
-app.get('/example', function(req, res) {
-	res.sendFile(path.join(__dirname, 'example/example.html'));
+app.get('/example', function (req, res) {
+  res.sendFile(path.join(__dirname, 'example/example.html'));
 });
 
 app.get('/d3', (req, res) => {
@@ -30,14 +30,18 @@ app.get('/st', (req, res) => {
 })
 
 app.get('/brushexample', (req, res) => {
-	res.sendFile(path.join(__dirname, 'example/zoombrush.html'))
+  res.sendFile(path.join(__dirname, 'example/zoombrush.html'))
 })
 
 app.get('/test', (req, res) => {
   res.sendFile(path.join(__dirname, 'example/test.html'))
 })
 
-app.listen(3003, function(err) {
+app.get('/huice', (req, res) => {
+  res.sendFile(path.join(__dirname, 'example/huice.html'))
+});
+
+app.listen(3003, function (err) {
   if (err) {
     return console.error(err);
   }

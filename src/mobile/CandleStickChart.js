@@ -50,17 +50,41 @@ class CandleStickChart extends EventEmitter {
     var scaleX = d3.scaleLinear().domain([0, this.data.length - 1]).range([0, this.width])
     var types = ['ma5', 'ma10', 'ma20', 'ma60']
 
-    var line = d3.line().x((d, i) => scaleX(i)).y(d => scaleY(d))
-
     for (var i = 0; i < types.length; i++) {
       var prop = types[i]
+
+      // 找到有值的点才开始画
+      for (var j = 0; j < this.data.length; j++) {
+        if (this.data[j][prop] != '') {
+          break
+        }
+      }
+
+      console.log(`j:${j}`)
+
+      // 如果全都没有值，不画
+      if (j == this.data.length) {
+        break
+      }
+
+      var lineFn = d3.line()
+        .x((d, i) => {
+          // 第一点都画在有值的点上
+          return i < j ? scaleX(j) : scaleX(i)
+        })
+        .y((d, i, all) => {
+          // 第一点都画在有值的点上
+          // console.log(all[n], all.length, n)
+          return i < j ? scaleY(all[j]) : scaleY(d)
+        })
+
       var lines = svg.selectAll(`.${prop}`).data([this.data.map(d => d[prop])])
 
       lines.enter()
         .append('path')
         .attr('class', prop)
         .merge(lines)
-        .attr('d', line)
+        .attr('d', lineFn)
 
       lines.exit().remove()
     }
@@ -272,8 +296,15 @@ class CandleStickChart extends EventEmitter {
   // 生成蜡烛图左侧的坐标轴对象
   createLeftTickAxis() {
     var {baseHeight, data} = this
-    var min = d3.min(data, d => d.low)
-    var max = d3.max(data, d => d.high)
+
+    var min = d3.min(data, d => {
+      var arr = [d.low, d.ma5, d.ma10, d.ma20, d.ma60]
+      return d3.min(arr.filter(n => n != ''))
+    })
+
+    var max = d3.max(data, d => {
+      return d3.max([d.high, d.ma5, d.ma10, d.ma20, d.ma60])
+    })
 
     var domain = [min, max]
     var range = [baseHeight, 0]
@@ -322,7 +353,8 @@ class CandleStickChart extends EventEmitter {
     var bandWidth = parseInt(scaleX.bandwidth())
 
     var min = d3.min(data, d => {
-      return d3.min([d.low, d.ma5, d.ma10, d.ma20, d.ma60])
+      var arr = [d.low, d.ma5, d.ma10, d.ma20, d.ma60]
+      return d3.min(arr.filter(n => n != ''))
     })
 
     var max = d3.max(data, d => {
@@ -387,7 +419,7 @@ class CandleStickChart extends EventEmitter {
     var min = 0
     var max = d3.max(data, d => d.volume)
     var curr = data.length > 0 ? data[data.length - 1].volume : 0
-    var scale = d3.scaleOrdinal().domain([`VOL:${formatMoney(curr)}`, formatMoney(max), 0]).range([0, 20, volHeight])
+    var scale = d3.scaleOrdinal().domain([`VOL:${formatMoney(curr)}`, formatMoney(max), '']).range([0, 20, volHeight])
     var axisLeft = d3.axisRight(scale).tickSize(0)
 
     this.axisLeftElement.call(axisLeft)
@@ -404,9 +436,6 @@ class CandleStickChart extends EventEmitter {
 
     this.volumeWrapper = volumeWrapper
 
-    // 量柱绘制
-    this.renderVolumeBars()
-
     // 垂直坐标轴 左边刻度开始
     var axisLeftElement = this.axisLeftElement = volumeWrapper.append('g').attr('class', 'chart-axis')
     this.updateVolumeLeftAxis()
@@ -421,6 +450,9 @@ class CandleStickChart extends EventEmitter {
     volumeWrapper.append('g').attr('class', 'chart-axis')
       .attr('transform', `translate(0, ${volHeight - 1})`)
       .call(d3.axisTop(this.verticalGuideScale).tickSize(volHeight - 20).tickFormat(''))
+
+    // 量柱绘制
+    this.renderVolumeBars()
   }
 
   // 量柱绘制

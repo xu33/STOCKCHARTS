@@ -17,7 +17,7 @@ import getArrayBetween from './lib/getArrayBetween'
 import formatMoney from './lib/formatMoney'
 
 class TimeTrendChart extends EventEmitter {
-  constructor({width, height, container, data, settlementPrice, high, low}) {
+  constructor({ width, height, container, data, settlementPrice, high, low, showVolume }) {
     super()
     this.element = d3.select(container)
     this.svg = this.element.append('svg')
@@ -27,6 +27,12 @@ class TimeTrendChart extends EventEmitter {
     this.width = width
     this.height = height
     this.volHeight = height * VOL_RATIO
+
+    this.showVolume = showVolume
+    if (!showVolume) {
+      this.volHeight = 0
+    }
+
     this.baseHeight = height - this.volHeight - BOTTOM_MARGIN
     this.data = data
     this.settlementPrice = settlementPrice
@@ -39,7 +45,9 @@ class TimeTrendChart extends EventEmitter {
   render() {
     this.renderAxis()
     this.renderArea()
-    this.renderVolumes()
+    if (this.showVolume) {
+      this.renderVolumes()
+    }
   }
 
   renderAxis() {
@@ -49,7 +57,7 @@ class TimeTrendChart extends EventEmitter {
 
   // 初始化事件处理
   initTouchEvents() {
-    var {svg, width, height, baseHeight} = this
+    var { svg, width, height, baseHeight } = this
     var scaleX = d3.scaleLinear().domain([0, TOTAL_COUNT]).range([0, width])
     var line = d3.line().x(d => d.x).y(d => d.y)
     var that = this
@@ -75,7 +83,7 @@ class TimeTrendChart extends EventEmitter {
         .append('g')
         .attr('class', 'tip-group')
         .merge(tips)
-        // .attr('transform', d => `translate(${d.x}, ${d.y})`)
+      // .attr('transform', d => `translate(${d.x}, ${d.y})`)
 
       tips.selectAll('.tip-cell')
         .data([datum])
@@ -89,7 +97,7 @@ class TimeTrendChart extends EventEmitter {
         .append('text')
         .attr('class', 'tip-text')
 
-      tips.each(function(d, i) {
+      tips.each(function (d, i) {
         var g = d3.select(this)
         var text
 
@@ -108,7 +116,7 @@ class TimeTrendChart extends EventEmitter {
         // 底部
         if (i === 0) {
 
-          outerX = d.x- (bbox.width + TIP_PADDING * 2) / 2
+          outerX = d.x - (bbox.width + TIP_PADDING * 2) / 2
           outerY = d.y + bbox.height
 
           if (outerX < 0) outerX = 0
@@ -119,8 +127,8 @@ class TimeTrendChart extends EventEmitter {
           outerX = d.x + 1 // 加1防止贴边
           outerY = d.y + bbox.height / 2 - TIP_PADDING
 
-          if (outerY < 0)  outerY = 0
-          if (outerY > baseHeight - bbox.height / 2)  outerY = baseHeight - bbox.height / 2
+          if (outerY < 0) outerY = 0
+          if (outerY > baseHeight - bbox.height / 2) outerY = baseHeight - bbox.height / 2
         }
 
         g.attr('transform', `translate(${outerX}, ${outerY})`)
@@ -135,7 +143,7 @@ class TimeTrendChart extends EventEmitter {
       })
     }
 
-    const handleTouch = function() {
+    const handleTouch = function () {
       var [[x]] = d3.touches(this)
       var index = Math.floor(scaleX.invert(x))
 
@@ -144,8 +152,11 @@ class TimeTrendChart extends EventEmitter {
       }
 
       var datum = that.data[index]
-      // 更新成交量文字
-      that.volumeLeftAxisElement.select('.tick text').text(`成交量:${formatMoney(datum.volume)}`)
+
+      if (that.showVolume) {
+        // 更新成交量文字
+        that.volumeLeftAxisElement.select('.tick text').text(`成交量:${formatMoney(datum.volume)}`)
+      }
 
       // 绘制辅助线
       var verticalGuideLineCoords = [{
@@ -186,7 +197,7 @@ class TimeTrendChart extends EventEmitter {
 
     svg.on('touchstart', handleTouch)
       .on('touchmove', handleTouch)
-      .on('touchend', function() {
+      .on('touchend', function () {
         drawLine([])
         drawTip([])
 
@@ -269,17 +280,17 @@ class TimeTrendChart extends EventEmitter {
     var maxdiff = 0
     if (max > settlementPrice) {
       maxdiff = max - settlementPrice
-    }else{
+    } else {
       maxdiff = settlementPrice - max
     }
     if (min > settlementPrice) {
       mindiff = min - settlementPrice
-    }else{
+    } else {
       mindiff = settlementPrice - min
     }
-    if(maxdiff > mindiff){
+    if (maxdiff > mindiff) {
       diff = maxdiff
-    }else{
+    } else {
       diff = mindiff
     }
 
@@ -290,7 +301,6 @@ class TimeTrendChart extends EventEmitter {
 
     domain = [bottom, mid, top].map(o => Number(o).toFixed(2))
 
-    console.log(domain)
 
     this.realMax = top
     this.realMin = bottom
@@ -336,15 +346,15 @@ class TimeTrendChart extends EventEmitter {
     // 调整刻度位置
     this.leftAxisElement.selectAll('.tick text')
       .attr('transform', (d, i, all) => {
-        console.log(d, i)
+        // console.log(d, i)
 
         var offset = i == 0 ? -10 : 10
 
         return `translate(0, ${offset})`
       })
       .attr('fill', (d, i, all) => {
-        if (i == 0) return RED
-        if (i == all.length - 1) return GREEN
+        if (i == 0) return GREEN
+        if (i == all.length - 1) return RED
         return '#777'
       })
 
@@ -381,7 +391,7 @@ class TimeTrendChart extends EventEmitter {
     // 量图水平辅助线(固定)
     var min = 0
     var max = d3.max(this.data, d => d.volume)
-    var scale = d3.scaleOrdinal().domain([1,2,3]).range([0, 20, this.volHeight])
+    var scale = d3.scaleOrdinal().domain([1, 2, 3]).range([0, 20, this.volHeight])
     var axisLeft = d3.axisLeft(scale).tickSize(this.width)
     var axisLeftElement = this.volumeWrapper.append('g').attr('class', 'chart-axis').attr('transform', `translate(${this.width - 1}, 0)`)
       .call(axisLeft)
@@ -394,7 +404,7 @@ class TimeTrendChart extends EventEmitter {
     var scaleX = d3.scaleLinear().domain([0, TOTAL_COUNT]).range([0, this.width])
     var scaleY = d3.scaleLinear().domain([min, max]).range([this.volHeight, 20])
 
-    var data = this.data.map(({volume}, i) => {
+    var data = this.data.map(({ volume }, i) => {
       var x0 = scaleX(i)
       var y0 = scaleY(volume)
 
@@ -434,12 +444,12 @@ class TimeTrendChart extends EventEmitter {
   updateVolumesYAxis() {
     var min = 0
     var max = d3.max(this.data, d => d.volume)
-    var curr = this.data.length > 0 ? this.data[this.data.length - 1].volume: 0
+    var curr = this.data.length > 0 ? this.data[this.data.length - 1].volume : 0
 
     var scale = d3.scaleOrdinal().domain([
       `成交量:${formatMoney(curr)}`,
       formatMoney(max),
-      0]).range([0, 20, this.volHeight])
+      '']).range([0, 20, this.volHeight])
 
     var axis = d3.axisRight(scale).tickSize(0)
     this.volumeLeftAxisElement.call(axis)
@@ -469,26 +479,25 @@ class TimeTrendChart extends EventEmitter {
       .x((d, i) => scaleX(i))
       .y((d, i) => scaleY(d.price))
 
-    var area = d3.area()
-      .x((d, i) => scaleX(i))
-      .y0((d, i) => scaleY(d.price))
-      .y1(baseHeight)
-
-    var trendLine = areaElement.selectAll('.trend-line').data([data])
-
-    trendLine.exit().remove()
+    var trendLine = areaElement.selectAll('.trend-line').data([data]);
 
     trendLine.enter()
       .append('path')
       .attr('class', 'trend-line')
       .merge(trendLine)
-      .attr('d', line)
+      .attr('d', function (d) {
+        return line(d)
+      })
       .attr('fill', 'none')
       .attr('stroke', AREA_STROKE_COLOR)
 
-    var trendArea = areaElement.selectAll('.trend-area').data([data])
+    trendLine.exit().remove()
 
-    trendArea.exit().remove()
+    var trendArea = areaElement.selectAll('.trend-area').data([data])
+    var area = d3.area()
+      .x((d, i) => scaleX(i))
+      .y0((d, i) => scaleY(d.price))
+      .y1(baseHeight)
 
     trendArea.enter()
       .append('path')
@@ -497,6 +506,8 @@ class TimeTrendChart extends EventEmitter {
       .attr('d', area)
       .attr('fill', AREA_STROKE_COLOR)
       .attr('opacity', '0.3')
+
+    trendArea.exit().remove()
 
     this.areaScaleX = scaleX
     this.areaScaleY = scaleY
@@ -528,9 +539,10 @@ class TimeTrendChart extends EventEmitter {
     this.data = data
     this.updateArea()
     this.updateYAxis()
-
-    this.updateVolumes()
-    this.updateVolumesYAxis()
+    if (this.showVolume) {
+      this.updateVolumes()
+      this.updateVolumesYAxis()
+    }
   }
 }
 

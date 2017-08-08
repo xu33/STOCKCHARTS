@@ -52,3 +52,8 @@
     fill: none;
     stroke: #2baf2b;
 }
+
+.overlay {
+    fill: none;
+    pointer-events: all;
+}
