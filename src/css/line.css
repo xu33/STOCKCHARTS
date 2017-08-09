@@ -19,6 +19,11 @@
     stroke: #d4d4d4;
 }
 
+/* 数字文字颜色 */
+.chart-axis text {
+    fill: #999999;
+}
+
 .chart-axis line {
     stroke: #d4d4d4;
     shape-rendering:crispEdges;

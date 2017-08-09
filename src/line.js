@@ -1,9 +1,4 @@
-import * as d3 from 'd3';
-
-import {
-  startData,
-  data as huiceData
-} from './fake_data/data.js'
+const d3 = require('d3');
 
 import './css/line.css'
 
@@ -15,10 +10,10 @@ class LineChart {
     leftMargin: 20,
     bottomMargin: 20,
     margin: {
-      left: 20,
+      left: 30,
       bottom: 20,
-      right: 0,
-      top: 0
+      right: 10,
+      top: 5
     }
   }
 
@@ -38,10 +33,6 @@ class LineChart {
     this.chartWidth = containerWidth - left - right;
     this.chartHeight = containerHeight - top - bottom;
     this.data = options.data;
-    // this.data.forEach(o => {
-    //   console.log(o.date);
-    //   o.date = d3.timeParse('%M:%SZ')(o.date)
-    // });
 
     this.render();
   }
@@ -60,11 +51,11 @@ class LineChart {
   }
 
   createEventOverlay() {
-    let { scaleX, scaleY, domainX, domainY, data } = this;
     let { tooltip } = this.options;
     let div = d3.select('body').append('div').attr('class', 'tooltip').style('display', 'none')
     let crosshair = this.crosshair;
     let bisect = d3.bisector(d => d.date).left;
+    let that = this;
 
     this.chartGroup.append('rect')
       .attr('class', 'overlay')
@@ -75,19 +66,17 @@ class LineChart {
         crosshair.style('display', null);
       })
       .on('mousemove', function () {
+        let { scaleX, scaleY, domainX, domainY, domainYFix, data } = that;
         let mouseDate = scaleX.invert(d3.mouse(this)[0]);
         let index = bisect(data, mouseDate); // 返回当前这个数据项的索引
 
-        // div.html(that.options.tooltip(that.data[parseInt(index)].symbolPosition));
-        // div.style('left', d3.event.pageX + 'px');
-        // div.style('top', (d3.event.pageY - 10) + 'px');
+        // console.log(`index:${index}`);
 
-        // crosshair.select('#crossLineX').attr('x1')
         let d0 = data[index - 1];
         let d1 = data[index];
         let d;
         if (!d0) {
-          d = d0;
+          d = d1;
         } else {
           d = mouseDate - d0.date > d1.date - mouseDate ? d1 : d0;
         }
@@ -100,8 +89,12 @@ class LineChart {
         div.style('top', `${d3.event.pageY - 10}px`);
 
         crosshair.select('#crossLineX')
-          .attr('x1', x).attr('y1', scaleY(domainY[0]))
-          .attr('x2', x).attr('y2', scaleY(domainY[1]));
+          .attr('x1', x).attr('y1', 0)
+          .attr('x2', x).attr('y2', that.chartHeight);
+
+        crosshair.select('#crossLineY')
+          .attr('x1', 0).attr('y1', y)
+          .attr('x2', that.chartWidth).attr('y2', y);
 
         crosshair.select('#crossCenter')
           .attr('cx', x)
@@ -132,30 +125,61 @@ class LineChart {
   }
 
   renderLeftAxis() {
-    const leftAxisGroup = this.chartGroup.append('g').attr('class', 'chart-axis');
-    const leftAxis = d3.axisLeft(this.scaleY).tickSize(0).tickPadding(4);
+    const leftAxisGroup = this.chartGroup.append('g')
+      .attr('class', 'chart-axis')
+      .attr('id', 'leftAxis');
+
+    const leftAxis = d3.axisLeft(this.fixLengthScaleY).tickSize(0).tickPadding(4);
 
     leftAxisGroup.call(leftAxis);
+
+    leftAxisGroup.selectAll('text').attr('transform', (d, i) => {
+      if (i === 4) {
+        return `translate(${0}, ${5})`;
+      } else {
+        return ``;
+      }
+    })
+
+    this.leftAxis = leftAxis;
+
+    const rightAxisGroup = this.chartGroup.append('g').attr('class', 'chart-axis').attr('transform', `translate(${this.chartWidth}, 0)`);
+    const rightAxis = d3.axisLeft(this.fixLengthScaleY).tickSize(this.chartWidth).tickFormat('');
+    rightAxisGroup.call(rightAxis);
   }
 
   renderBottomAxis() {
-    const bottomAxisGroup = this.chartGroup.append('g').attr('class', 'chart-axis');
+    const bottomAxisGroup = this.chartGroup.append('g')
+      .attr('class', 'chart-axis')
+      .attr('id', 'bottomAxis');
+
     const bottomAxis = d3.axisBottom(this.scaleX).tickSize(0).tickPadding(4);
 
+    this.bottomAxisGroup = bottomAxisGroup;
+    this.bottomAxis = bottomAxis;
+
+    bottomAxis.ticks(5);
+
     bottomAxisGroup.call(bottomAxis.tickFormat(d3.timeFormat("%H:%M"))).attr('transform', `translate(0, ${this.chartHeight})`);
-    bottomAxisGroup.selectAll("text").attr('text-anchor', 'end');
   }
 
   initScale() {
     let domainX = d3.extent(this.data, d => d.date);
-    let domainY = d3.extent(this.data, d => d.urRatio);
+    // let domainY = d3.extent(this.data, d => d.urRatio);
+    let domainY = [-1, 2];
     let scaleX = d3.scaleTime().domain(domainX).range([0, this.chartWidth]);
     let scaleY = d3.scaleLinear().domain(domainY).range([this.chartHeight, 0]);
+
+    let domainYFix = linspace(domainY[0], domainY[1], 5).map(o => o.toFixed(2));
+    let rangeFix = linspace(this.chartHeight, 0, 5);
+    let fixLengthScaleY = d3.scaleOrdinal().domain(domainYFix).range(rangeFix);
 
     this.domainX = domainX;
     this.domainY = domainY;
     this.scaleX = scaleX;
     this.scaleY = scaleY;
+    this.domainYFix = domainYFix;
+    this.fixLengthScaleY = fixLengthScaleY;
   }
 
   renderChart() {
@@ -165,25 +189,58 @@ class LineChart {
       .x((d) => scaleX(d.date))
       .y((d) => scaleY(d.urRatio));
 
-    let lineSelection = lineChartGroup.selectAll('.ratio-line').data([this.data]);
-
-    lineSelection.enter()
+    lineChartGroup
       .append('path')
       .attr('class', 'ratio-line')
+      .datum(this.data)
       .attr('d', lineFn)
       .attr('fill', 'none')
-      .attr('stroke-width', 2)
       .attr('stroke', this.options.lineColor);
+  }
+
+  addData(data) {
+    this.data = [...this.data, ...data];
+
+    this.rescale();
+    this.updateChart();
+  }
+
+  updateData(data) {
+    this.data = data;
+    this.rescale();
+    this.updateChart();
+  }
+
+  rescale() {
+    let domainX = d3.extent(this.data, d => d.date);
+    this.scaleX.domain(domainX);
+
+    this.bottomAxisGroup.call(
+      this.bottomAxis.tickFormat(d3.timeFormat("%H:%M"))
+    )
+  }
+
+  updateChart() {
+    let scaleX = this.scaleX;
+    let scaleY = this.scaleY;
+
+    let lineFn = d3.line()
+      .x((d) => scaleX(d.date))
+      .y((d) => scaleY(d.urRatio));
+
+    this.chartGroup.select('.ratio-line')
+      .datum(this.data)
+      .attr('d', lineFn);
   }
 }
 
-huiceData.forEach(item => item.date = new Date(item.date));
+function linspace(a, b, n) {
+  if (typeof n === "undefined") n = Math.max(Math.round(b - a) + 1, 1);
+  if (n < 2) { return n === 1 ? [a] : []; }
+  var i, ret = Array(n);
+  n--;
+  for (i = n; i >= 0; i--) { ret[i] = (i * b + (n - i) * a) / n; }
+  return ret;
+}
 
-let chart = new LineChart(document.getElementById('target'), {
-  data: huiceData,
-  tooltip: function (dataItem) {
-    return `<code>${JSON.stringify(dataItem)}</code>`
-  }
-})
-
-export default LineChart;
+module.exports = LineChart;
