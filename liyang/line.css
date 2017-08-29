@@ -1,0 +1,43 @@
+.tooltip {
+  position: absolute;
+  padding: 10px;
+  max-width: 200px;
+  border: 1px solid #ccc;
+  background: #fff;
+  pointer-events: none;
+  word-break: break-all;
+  word-wrap: break-word;
+}
+
+.overlay {
+    fill: none;
+    pointer-events: all;
+}
+
+/* 数轴颜色 */
+.chart-axis path, .chart-axis line {
+    stroke: #d7e0f2;
+    shape-rendering:crispEdges;
+}
+
+/* 数字文字颜色 */
+.chart-axis text {
+    fill: #7a7a7a;
+}
+
+.crossline {
+    fill: none;
+    stroke: #6db5f1;
+    stroke-width: 1px;
+    shape-rendering:crispEdges;
+}
+
+.circle {
+    fill: #6db5f1;
+    stroke: none;
+    opacity: 0.6;
+}
+
+.ratio-line {
+    stroke-width: 3px;
+}

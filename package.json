@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "webpack": "webpack --config webpack.config.prod.js --watch --progress",
+    "devserver": "webpack-dev-server --config webpack.liyang.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -35,14 +36,16 @@
     "moment": "^2.17.0",
     "object-assign": "^4.1.0",
     "raphael": "^2.2.7",
-    "webpack-dev-middleware": "^1.8.4"
+    "url-loader": "^0.5.9",
+    "webpack": "^3.5.2",
+    "webpack-dev-middleware": "^1.8.4",
+    "webpack-dev-server": "^2.7.1"
   },
   "devDependencies": {
     "babel-plugin-syntax-class-properties": "^6.13.0",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "css-loader": "^0.26.1",
-    "style-loader": "^0.13.1",
-    "webpack": "^1.13.3"
+    "style-loader": "^0.13.2"
   }
 }

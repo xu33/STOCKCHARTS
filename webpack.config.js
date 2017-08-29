@@ -16,26 +16,43 @@ module.exports = {
     path: path.join(__dirname, 'dist'),
     sourceMapFilename: '[file].map',
     filename: '[name].js',
-    chunkFileName: '[id].[chunkhash].js',
+    // chunkFileName: '[id].[chunkhash].js',
     // You can use publicPath to point to
     // the location where you want webpack-dev-server
     // to serve its "virtual" files
     publicPath: '/static/'
   },
   module: {
-    loaders: [{
-      test: /\.js$/,
-      loader: 'babel-loader',
-      include: path.join(__dirname, 'src')
-    }, {
-      test: /\.css$/,
-      loader: 'style!css'
-    }]
+    rules: [
+      {
+        test: /\.js$/,
+        loader: 'babel-loader',
+        include: path.join(__dirname, 'src')
+      },
+      {
+        test: /\.css$/,
+        use: [
+          {
+            loader: 'style-loader'
+          },
+          {
+            loader: 'css-loader',
+            options: { minimize: true }
+          }
+        ]
+      }
+    ]
   },
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin('common.js'),
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'common',
+      minChunks: function(module, count) {
+        let context = module.context;
+        return context && context.indexOf('node_modules') >= 0;
+      }
+    }),
     new HtmlWebpackPlugin({
-      filename: "[name].html"
+      filename: '[name].html'
     })
   ]
 };

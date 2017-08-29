@@ -7,21 +7,41 @@ module.exports = {
     LineChart: './src/line.js'
   },
   output: {
+    publicPath: 'assets/',
     path: path.join(__dirname, 'liyang'),
     filename: '[name].js',
-    chunkFileName: '[name].js',
     libraryTarget: 'umd',
     library: '[name]'
   },
   module: {
-    loaders: [{
-      test: /\.js$/,
-      loader: 'babel-loader',
-      include: path.join(__dirname, 'src')
-    }, {
-      test: /\.css$/,
-      loader: 'style!css'
-    }]
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader'
+      },
+      {
+        test: /\.css$/,
+        use: [
+          {
+            loader: 'style-loader'
+          },
+          {
+            loader: 'css-loader'
+          }
+        ]
+      },
+      {
+        test: /\.(jpe?g|png|gif|svg)$/i,
+        loader: 'url-loader',
+        options: {
+          limit: 20000, // 20KB
+          name: '[path][name].[ext]',
+          // publicPath: `${LOCAL_HOST}/assets/`
+          publicPath: `/assets/`
+        }
+      }
+    ]
   },
   externals: {
     'd3': 'd3'
@@ -29,7 +49,13 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: 'liyang/template.html',
+      filename: '[name].html',
       inject: 'head'
     })
-  ]
+  ],
+  devServer: {
+    contentBase: path.join(__dirname, 'liyang'),
+    compress: false,
+    port: 9000
+  }
 };
