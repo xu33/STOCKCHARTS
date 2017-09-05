@@ -1,19 +1,41 @@
-// var data = require('./fake_data/normalizeData');
-// var moment = require('moment');
+var data = require('./fake_data/normalizeData');
+var moment = require('moment');
 
-// import StockChart from './StockChart';
-// let candleData = data.map(item => ({
-//   ...item,
-//   time: moment(new Date(item.time)).format('YYYY-MM-DD')
-// }));
+import StockChart from './StockChart';
+data = data.map(item => ({
+  ...item,
+  time: moment(new Date(item.time)).format('YYYY-MM-DD')
+}));
 
-// new StockChart(document.querySelector('#container'), {
-//   candleData: [...candleData],
-//   width: 600,
-//   height: 300,
-//   volume: true,
-//   interactive: true
-// });
+let candleData = new Array(data.length);
+let startIndex = 50;
+for (let i = startIndex; i < data.length; i++) {
+  candleData[i] = data[i];
+}
+
+new StockChart(document.querySelector('#container'), {
+  candleData: candleData,
+  width: 600,
+  height: 400,
+  volume: true,
+  interactive: true,
+  loadingPreviousData: function(length) {
+    console.log(`loadingPreviousData length: ${length}`);
+    return new Promise(resolve => {
+      setTimeout(() => {
+        let newData = new Array(data.length);
+
+        startIndex = Math.max(startIndex - length, 0);
+
+        for (let i = startIndex; i < data.length; i++) {
+          newData[i] = data[i];
+        }
+
+        resolve(newData);
+      }, 500);
+    });
+  }
+});
 
 // let d3 = require('d3');
 // let svg = d3.select('body').append('svg');
@@ -38,6 +60,6 @@
 
 // rect.call(zoomBehavior);
 
-const d3 = require('d3');
+// const d3 = require('d3');
 
-console.log(d3.range(0, 300, 30));
+// console.log(d3.ticks(0, 300, 10));

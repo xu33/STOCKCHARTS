@@ -15,32 +15,32 @@
 <svg width="960" height="500"></svg>
 <script src="/d3.js"></script>
 <script>
-    // var brushed = function () {
-    //     console.log('brushed fire, sourceEvent', d3.event.sourceEvent);
-    //     if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
+    var brushed = function () {
+        console.log('brushed fire, sourceEvent', d3.event.sourceEvent);
+        if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
 
-    //     // 当前的brush左右范围值，如果没有设置，默认为底部x轴的range
-    //     var s = d3.event.selection || x2.range();
+        // 当前的brush左右范围值，如果没有设置，默认为底部x轴的range
+        var s = d3.event.selection || x2.range();
 
-    //     // 根据当前的范围计算出X新的Domain值域
-    //     var newDomain = s.map(function (value) {
-    //         return x2.invert(value)
-    //     }, x2)
+        // 根据当前的范围计算出X新的Domain值域
+        var newDomain = s.map(function (value) {
+            return x2.invert(value)
+        }, x2)
 
-    //     // 设置新的值域
-    //     x.domain(newDomain)
-    //     // 重绘大图
-    //     focus.select(".area").attr("d", area);
-    //     // 重绘X轴
-    //     focus.select(".axis--x").call(xAxis);
+        // 设置新的值域
+        x.domain(newDomain)
+        // 重绘大图
+        focus.select(".area").attr("d", area);
+        // 重绘X轴
+        focus.select(".axis--x").call(xAxis);
 
-    //     svg.select(".zoom").call(
-    //         zoom.transform,
-    //         d3.zoomIdentity
-    //             .scale(width / (s[1] - s[0]))
-    //             .translate(-s[0], 0)
-    //     );
-    // };
+        svg.select(".zoom").call(
+            zoom.transform,
+            d3.zoomIdentity
+                .scale(width / (s[1] - s[0]))
+                .translate(-s[0], 0)
+        );
+    };
 
     var zoomed = function () {
         console.log('zoomed fire', d3.event.transform);
