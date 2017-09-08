@@ -1,14 +1,15 @@
 /**
- * Created by shinan on 2017/1/22.
+ * K线类
+ * StockChart
  */
 const d3 = require('d3');
+
 import { WIN_COLOR, LOSS_COLOR, EQUAL_COLOR } from './libs/config';
 import './css/stock-chart.css';
 import Crosshair from './Crosshair';
+import Axises from './Axises';
 
-const EventEmitter = require('events');
-
-class StockChart extends EventEmitter {
+class StockChart {
   isFetching = false;
   loadingThrottleTimer = null;
   maTypes = ['ma5', 'ma10', 'ma20', 'ma30'];
@@ -16,18 +17,16 @@ class StockChart extends EventEmitter {
 
   static defaultOptions = {
     VOLUME_PERCENT: 0.15,
-    BRUSH_PERCENT: 0.15,
+    BRUSH_PERCENT: 0.1,
     margin: {
-      left: 10,
-      bottom: 10,
-      right: 0,
+      left: 50,
+      bottom: 20,
+      right: 20,
       top: 0
     }
   };
 
   constructor(selector, options) {
-    super(selector, options);
-
     this.selector = selector;
     this.options = options;
     this.element = d3.select(selector);
@@ -59,21 +58,49 @@ class StockChart extends EventEmitter {
     this.options.candleData = this.options.candleData.map(str2number);
 
     this.initialBrushSelection = [
-      this.options.width - StockChart.defaultOptions.margin.left - 100,
-      this.options.width - StockChart.defaultOptions.margin.left
+      this.options.width -
+        StockChart.defaultOptions.margin.left -
+        StockChart.defaultOptions.margin.right -
+        300,
+      this.options.width -
+        StockChart.defaultOptions.margin.left -
+        StockChart.defaultOptions.margin.right
     ];
 
     this.currentBrushSelection = this.initialBrushSelection;
 
+    // 初始化比例尺
+    this.initScales();
+    // 初始化数轴
+    this.initAxises();
+    // 初次绘制
     this.render();
+    // 初始化十字线交互
+    this.initCrosshair();
+  }
 
-    // 十字线交互开始
+  initAxises() {
+    const { margin } = StockChart.defaultOptions;
+
+    this.axises = new Axises(this.svg, this.scaleX, this.scaleY, {
+      x: margin.left,
+      y: this.candleStickAreaHeight,
+      width: this.options.width - margin.left - margin.right
+    });
+  }
+
+  initCrosshair() {
     let that = this;
-    let width = that.options.width;
-    let height =
-      that.options.height -
-      that.brushAreaHeight -
-      StockChart.defaultOptions.margin.bottom * 2;
+    let width =
+      that.options.width -
+      StockChart.defaultOptions.margin.left -
+      StockChart.defaultOptions.margin.right;
+    // let height =
+    //   that.options.height -
+    //   that.brushAreaHeight -
+    //   StockChart.defaultOptions.margin.bottom * 2;
+
+    let height = this.candleStickAreaHeight;
 
     this.crosshair = new Crosshair(
       this.svg,
@@ -103,6 +130,8 @@ class StockChart extends EventEmitter {
       let x = scaleX(index) + scaleX.bandwidth() / 2;
       let y = scaleY(d.close);
 
+      that.crosshair.setCurrentDataItem(d);
+
       return [
         {
           x1: 0,
@@ -120,6 +149,25 @@ class StockChart extends EventEmitter {
     });
   }
 
+  initScales() {
+    let { width } = this.options;
+    let rangeX = [
+      0,
+      width -
+        StockChart.defaultOptions.margin.left -
+        StockChart.defaultOptions.margin.right
+    ];
+
+    this.scaleBandX = d3
+      .scaleBand()
+      .range(rangeX)
+      // .paddingOuter(0)
+      .padding(0.2);
+
+    this.scaleX = d3.scaleTime().range(rangeX);
+    this.scaleY = d3.scaleLinear().range([this.candleStickAreaHeight, 0]);
+  }
+
   renderBrushArea() {
     let brushGroup = this.svg.append('g').attr('class', 'chart-brush');
     let translateY =
@@ -135,6 +183,7 @@ class StockChart extends EventEmitter {
       `translate(${StockChart.defaultOptions.margin.left}, ${translateY})`
     );
     this.brushGroup = brushGroup;
+
     this.initBrushBehavior();
   }
 
@@ -145,11 +194,22 @@ class StockChart extends EventEmitter {
 
     brush.extent([
       [0, 0],
-      [width - StockChart.defaultOptions.margin.left, this.brushAreaHeight]
+      [
+        width -
+          StockChart.defaultOptions.margin.left -
+          StockChart.defaultOptions.margin.right,
+        this.brushAreaHeight
+      ]
     ]);
 
     brush.on('brush', brushed);
     this.brushGroup.call(brush).call(brush.move, this.initialBrushSelection);
+
+    this.brushGroup
+      .selectAll('.overlay')
+      .attr('stroke', '#ccc')
+      .attr('stroke-width', 1)
+      .attr('opacity', 0.2);
 
     function brushed(d, i) {
       // 下面两种写法作用相同
@@ -192,7 +252,12 @@ class StockChart extends EventEmitter {
     let indexScale = d3
       .scaleLinear()
       .domain([0, lastIndex])
-      .range([0, width - StockChart.defaultOptions.margin.left]);
+      .range([
+        0,
+        width -
+          StockChart.defaultOptions.margin.left -
+          StockChart.defaultOptions.margin.right
+      ]);
 
     let domain = brushSelection.map(value => indexScale.invert(value));
     let [startIndex, endIndex] = domain;
@@ -249,24 +314,16 @@ class StockChart extends EventEmitter {
 
     this.getCurrentCandleData(candleData => {
       let { svg } = this;
-      let { width } = this.options;
+
       let { min, max } = this.calculateMinAndMax(candleData);
+      let { scaleBandX, scaleX, scaleY } = this;
 
-      let scaleBandX = d3
-        .scaleBand()
-        .domain(candleData.map((o, i) => i))
-        .range([0, width - StockChart.defaultOptions.margin.left])
-        .paddingOuter(0)
-        .paddingInner(0.2);
+      scaleBandX.domain(candleData.map((o, i) => i));
+      scaleY.domain([min, max]);
+      scaleX.domain(d3.extent(candleData, d => new Date(d.time)));
 
-      let scaleY = d3
-        .scaleLinear()
-        .domain([min, max])
-        .range([this.candleStickAreaHeight, 0]);
-
-      this.scaleBandX = scaleBandX;
-
-      this.scaleY = scaleY;
+      // 渲染数轴
+      this.axises.render();
 
       let selection = this.candleGroup
         .selectAll('.bar')
@@ -328,7 +385,12 @@ class StockChart extends EventEmitter {
     let scaleX = d3
       .scaleLinear()
       .domain([0, candleData.length - 1])
-      .range([0, width]);
+      .range([
+        0,
+        width -
+          StockChart.defaultOptions.margin.left -
+          StockChart.defaultOptions.margin.right
+      ]);
 
     let lineGenFn = key =>
       d3
@@ -370,6 +432,19 @@ class StockChart extends EventEmitter {
             ${translateY}
           )`
         );
+
+      this.volumeGroup
+        .append('rect')
+        .attr('class', 'volume-bg')
+        .attr(
+          'width',
+          this.options.width -
+            StockChart.defaultOptions.margin.left -
+            StockChart.defaultOptions.margin.right
+        )
+        .attr('height', this.volumeAreaHeight)
+        .attr('x', 0)
+        .attr('y', 0);
 
       this.volumeScaleY = d3.scaleLinear().range([this.volumeAreaHeight, 0]);
     }

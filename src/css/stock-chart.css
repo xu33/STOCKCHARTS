@@ -19,12 +19,14 @@ svg line {
 
 /* 数字文字颜色 */
 .axis text {
-  fill: #999999;
+  fill: #ccc;
+  font-size: 12px;
 }
 
 /* 数轴颜色 */
 .axis path {
   stroke: #ccc;
+  opacity: 0.2;
 }
 
 .shadow {
@@ -32,8 +34,10 @@ svg line {
   fill: none;
 }
 
+/* 数轴刻度线颜色 */
 .tick line {
   stroke: #ccc;
+  opacity: 0.1;
 }
 
 .predict {
@@ -138,12 +142,31 @@ svg line {
   fill: #999999;
 }
 
+/*事件响应层*/
 .event-overlay {
   fill: none;
   pointer-events: all;
 }
 
+/*十字线*/
 .crossline {
   stroke: #fff;
   opacity: 0.3;
+}
+
+/*游标*/
+.indicator-text {
+  fill: #ffffff;
+  font-size: 12px;
+}
+
+.indicator-box {
+  fill: #525a68;
+}
+
+/* 量图边框 */
+.volume-bg {
+  fill: none;
+  stroke: #ccc;
+  opacity: 0.2;
 }

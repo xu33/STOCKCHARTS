@@ -2,9 +2,11 @@ var data = require('./fake_data/normalizeData');
 var moment = require('moment');
 
 import StockChart from './StockChart';
+
 data = data.map(item => ({
   ...item,
-  time: moment(new Date(item.time)).format('YYYY-MM-DD')
+  time: moment(new Date(item.time)).format('YYYY-MM-DD'),
+  close: Number(item.close).toFixed(2)
 }));
 
 let candleData = new Array(data.length);
@@ -15,8 +17,8 @@ for (let i = startIndex; i < data.length; i++) {
 
 new StockChart(document.querySelector('#container'), {
   candleData: candleData,
-  width: 600,
-  height: 400,
+  width: 1000,
+  height: 600,
   volume: true,
   interactive: true,
   loadingPreviousData: function(length) {
