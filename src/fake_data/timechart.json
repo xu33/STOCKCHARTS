@@ -1,0 +1,1942 @@
+{
+  "stock": { "symbol": "SH601015" },
+  "success": "true",
+  "chartlist": [
+    {
+      "volume": 5909420,
+      "avg_price": 12.63,
+      "lot_volume": 59094,
+      "timestamp": 1505179800000,
+      "current": 12.74,
+      "time": "Tue Sep 12 09:30:00 +0800 2017"
+    },
+    {
+      "volume": 1880000,
+      "avg_price": 12.64,
+      "lot_volume": 18800,
+      "timestamp": 1505179860000,
+      "current": 12.68,
+      "time": "Tue Sep 12 09:31:00 +0800 2017"
+    },
+    {
+      "volume": 3036450,
+      "avg_price": 12.65,
+      "lot_volume": 30364,
+      "timestamp": 1505179920000,
+      "current": 12.66,
+      "time": "Tue Sep 12 09:32:00 +0800 2017"
+    },
+    {
+      "volume": 2039330,
+      "avg_price": 12.65,
+      "lot_volume": 20393,
+      "timestamp": 1505179980000,
+      "current": 12.58,
+      "time": "Tue Sep 12 09:33:00 +0800 2017"
+    },
+    {
+      "volume": 1427270,
+      "avg_price": 12.64,
+      "lot_volume": 14272,
+      "timestamp": 1505180040000,
+      "current": 12.65,
+      "time": "Tue Sep 12 09:34:00 +0800 2017"
+    },
+    {
+      "volume": 2572900,
+      "avg_price": 12.67,
+      "lot_volume": 25729,
+      "timestamp": 1505180100000,
+      "current": 12.91,
+      "time": "Tue Sep 12 09:35:00 +0800 2017"
+    },
+    {
+      "volume": 1651350,
+      "avg_price": 12.69,
+      "lot_volume": 16513,
+      "timestamp": 1505180160000,
+      "current": 12.88,
+      "time": "Tue Sep 12 09:36:00 +0800 2017"
+    },
+    {
+      "volume": 923150,
+      "avg_price": 12.69,
+      "lot_volume": 9231,
+      "timestamp": 1505180220000,
+      "current": 12.79,
+      "time": "Tue Sep 12 09:37:00 +0800 2017"
+    },
+    {
+      "volume": 1127900,
+      "avg_price": 12.7,
+      "lot_volume": 11279,
+      "timestamp": 1505180280000,
+      "current": 12.82,
+      "time": "Tue Sep 12 09:38:00 +0800 2017"
+    },
+    {
+      "volume": 1218000,
+      "avg_price": 12.71,
+      "lot_volume": 12180,
+      "timestamp": 1505180340000,
+      "current": 12.9,
+      "time": "Tue Sep 12 09:39:00 +0800 2017"
+    },
+    {
+      "volume": 962000,
+      "avg_price": 12.72,
+      "lot_volume": 9620,
+      "timestamp": 1505180400000,
+      "current": 12.86,
+      "time": "Tue Sep 12 09:40:00 +0800 2017"
+    },
+    {
+      "volume": 5385743,
+      "avg_price": 12.79,
+      "lot_volume": 53857,
+      "timestamp": 1505180460000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:41:00 +0800 2017"
+    },
+    {
+      "volume": 775750,
+      "avg_price": 12.8,
+      "lot_volume": 7757,
+      "timestamp": 1505180520000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:42:00 +0800 2017"
+    },
+    {
+      "volume": 548597,
+      "avg_price": 12.81,
+      "lot_volume": 5485,
+      "timestamp": 1505180580000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:43:00 +0800 2017"
+    },
+    {
+      "volume": 374100,
+      "avg_price": 12.81,
+      "lot_volume": 3741,
+      "timestamp": 1505180640000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:44:00 +0800 2017"
+    },
+    {
+      "volume": 156500,
+      "avg_price": 12.82,
+      "lot_volume": 1565,
+      "timestamp": 1505180700000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:45:00 +0800 2017"
+    },
+    {
+      "volume": 471200,
+      "avg_price": 12.82,
+      "lot_volume": 4712,
+      "timestamp": 1505180760000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:46:00 +0800 2017"
+    },
+    {
+      "volume": 134298,
+      "avg_price": 12.82,
+      "lot_volume": 1342,
+      "timestamp": 1505180820000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:47:00 +0800 2017"
+    },
+    {
+      "volume": 425050,
+      "avg_price": 12.83,
+      "lot_volume": 4250,
+      "timestamp": 1505180880000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:48:00 +0800 2017"
+    },
+    {
+      "volume": 67800,
+      "avg_price": 12.83,
+      "lot_volume": 678,
+      "timestamp": 1505180940000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:49:00 +0800 2017"
+    },
+    {
+      "volume": 65600,
+      "avg_price": 12.83,
+      "lot_volume": 656,
+      "timestamp": 1505181000000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:50:00 +0800 2017"
+    },
+    {
+      "volume": 40150,
+      "avg_price": 12.83,
+      "lot_volume": 401,
+      "timestamp": 1505181060000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:51:00 +0800 2017"
+    },
+    {
+      "volume": 139400,
+      "avg_price": 12.83,
+      "lot_volume": 1394,
+      "timestamp": 1505181120000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:52:00 +0800 2017"
+    },
+    {
+      "volume": 80000,
+      "avg_price": 12.83,
+      "lot_volume": 800,
+      "timestamp": 1505181180000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:53:00 +0800 2017"
+    },
+    {
+      "volume": 135089,
+      "avg_price": 12.83,
+      "lot_volume": 1350,
+      "timestamp": 1505181240000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:54:00 +0800 2017"
+    },
+    {
+      "volume": 133700,
+      "avg_price": 12.83,
+      "lot_volume": 1337,
+      "timestamp": 1505181300000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:55:00 +0800 2017"
+    },
+    {
+      "volume": 33300,
+      "avg_price": 12.83,
+      "lot_volume": 333,
+      "timestamp": 1505181360000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:56:00 +0800 2017"
+    },
+    {
+      "volume": 50600,
+      "avg_price": 12.83,
+      "lot_volume": 506,
+      "timestamp": 1505181420000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:57:00 +0800 2017"
+    },
+    {
+      "volume": 237200,
+      "avg_price": 12.84,
+      "lot_volume": 2372,
+      "timestamp": 1505181480000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:58:00 +0800 2017"
+    },
+    {
+      "volume": 2735510,
+      "avg_price": 12.86,
+      "lot_volume": 27355,
+      "timestamp": 1505181540000,
+      "current": 13.15,
+      "time": "Tue Sep 12 09:59:00 +0800 2017"
+    },
+    {
+      "volume": 456050,
+      "avg_price": 12.86,
+      "lot_volume": 4560,
+      "timestamp": 1505181600000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:00:00 +0800 2017"
+    },
+    {
+      "volume": 132250,
+      "avg_price": 12.87,
+      "lot_volume": 1322,
+      "timestamp": 1505181660000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:01:00 +0800 2017"
+    },
+    {
+      "volume": 36400,
+      "avg_price": 12.87,
+      "lot_volume": 364,
+      "timestamp": 1505181720000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:02:00 +0800 2017"
+    },
+    {
+      "volume": 1073850,
+      "avg_price": 12.87,
+      "lot_volume": 10738,
+      "timestamp": 1505181780000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:03:00 +0800 2017"
+    },
+    {
+      "volume": 4491836,
+      "avg_price": 12.9,
+      "lot_volume": 44918,
+      "timestamp": 1505181840000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:04:00 +0800 2017"
+    },
+    {
+      "volume": 920700,
+      "avg_price": 12.91,
+      "lot_volume": 9207,
+      "timestamp": 1505181900000,
+      "current": 13.03,
+      "time": "Tue Sep 12 10:05:00 +0800 2017"
+    },
+    {
+      "volume": 1445850,
+      "avg_price": 12.91,
+      "lot_volume": 14458,
+      "timestamp": 1505181960000,
+      "current": 13.0,
+      "time": "Tue Sep 12 10:06:00 +0800 2017"
+    },
+    {
+      "volume": 938473,
+      "avg_price": 12.91,
+      "lot_volume": 9384,
+      "timestamp": 1505182020000,
+      "current": 13.1,
+      "time": "Tue Sep 12 10:07:00 +0800 2017"
+    },
+    {
+      "volume": 625000,
+      "avg_price": 12.92,
+      "lot_volume": 6250,
+      "timestamp": 1505182080000,
+      "current": 13.03,
+      "time": "Tue Sep 12 10:08:00 +0800 2017"
+    },
+    {
+      "volume": 571400,
+      "avg_price": 12.92,
+      "lot_volume": 5714,
+      "timestamp": 1505182140000,
+      "current": 13.02,
+      "time": "Tue Sep 12 10:09:00 +0800 2017"
+    },
+    {
+      "volume": 434000,
+      "avg_price": 12.92,
+      "lot_volume": 4340,
+      "timestamp": 1505182200000,
+      "current": 13.06,
+      "time": "Tue Sep 12 10:10:00 +0800 2017"
+    },
+    {
+      "volume": 853127,
+      "avg_price": 12.92,
+      "lot_volume": 8531,
+      "timestamp": 1505182260000,
+      "current": 12.99,
+      "time": "Tue Sep 12 10:11:00 +0800 2017"
+    },
+    {
+      "volume": 504211,
+      "avg_price": 12.92,
+      "lot_volume": 5042,
+      "timestamp": 1505182320000,
+      "current": 12.93,
+      "time": "Tue Sep 12 10:12:00 +0800 2017"
+    },
+    {
+      "volume": 723950,
+      "avg_price": 12.92,
+      "lot_volume": 7239,
+      "timestamp": 1505182380000,
+      "current": 12.81,
+      "time": "Tue Sep 12 10:13:00 +0800 2017"
+    },
+    {
+      "volume": 782389,
+      "avg_price": 12.92,
+      "lot_volume": 7823,
+      "timestamp": 1505182440000,
+      "current": 12.73,
+      "time": "Tue Sep 12 10:14:00 +0800 2017"
+    },
+    {
+      "volume": 764283,
+      "avg_price": 12.91,
+      "lot_volume": 7642,
+      "timestamp": 1505182500000,
+      "current": 12.8,
+      "time": "Tue Sep 12 10:15:00 +0800 2017"
+    },
+    {
+      "volume": 348900,
+      "avg_price": 12.91,
+      "lot_volume": 3489,
+      "timestamp": 1505182560000,
+      "current": 12.92,
+      "time": "Tue Sep 12 10:16:00 +0800 2017"
+    },
+    {
+      "volume": 352950,
+      "avg_price": 12.91,
+      "lot_volume": 3529,
+      "timestamp": 1505182620000,
+      "current": 12.98,
+      "time": "Tue Sep 12 10:17:00 +0800 2017"
+    },
+    {
+      "volume": 227350,
+      "avg_price": 12.91,
+      "lot_volume": 2273,
+      "timestamp": 1505182680000,
+      "current": 12.93,
+      "time": "Tue Sep 12 10:18:00 +0800 2017"
+    },
+    {
+      "volume": 278500,
+      "avg_price": 12.91,
+      "lot_volume": 2785,
+      "timestamp": 1505182740000,
+      "current": 12.83,
+      "time": "Tue Sep 12 10:19:00 +0800 2017"
+    },
+    {
+      "volume": 308550,
+      "avg_price": 12.91,
+      "lot_volume": 3085,
+      "timestamp": 1505182800000,
+      "current": 12.83,
+      "time": "Tue Sep 12 10:20:00 +0800 2017"
+    },
+    {
+      "volume": 259250,
+      "avg_price": 12.91,
+      "lot_volume": 2592,
+      "timestamp": 1505182860000,
+      "current": 12.82,
+      "time": "Tue Sep 12 10:21:00 +0800 2017"
+    },
+    {
+      "volume": 315700,
+      "avg_price": 12.91,
+      "lot_volume": 3157,
+      "timestamp": 1505182920000,
+      "current": 12.87,
+      "time": "Tue Sep 12 10:22:00 +0800 2017"
+    },
+    {
+      "volume": 131313,
+      "avg_price": 12.91,
+      "lot_volume": 1313,
+      "timestamp": 1505182980000,
+      "current": 12.92,
+      "time": "Tue Sep 12 10:23:00 +0800 2017"
+    },
+    {
+      "volume": 207387,
+      "avg_price": 12.91,
+      "lot_volume": 2073,
+      "timestamp": 1505183040000,
+      "current": 12.91,
+      "time": "Tue Sep 12 10:24:00 +0800 2017"
+    },
+    {
+      "volume": 229100,
+      "avg_price": 12.91,
+      "lot_volume": 2291,
+      "timestamp": 1505183100000,
+      "current": 12.9,
+      "time": "Tue Sep 12 10:25:00 +0800 2017"
+    },
+    {
+      "volume": 129000,
+      "avg_price": 12.91,
+      "lot_volume": 1290,
+      "timestamp": 1505183160000,
+      "current": 12.87,
+      "time": "Tue Sep 12 10:26:00 +0800 2017"
+    },
+    {
+      "volume": 112700,
+      "avg_price": 12.91,
+      "lot_volume": 1127,
+      "timestamp": 1505183220000,
+      "current": 12.86,
+      "time": "Tue Sep 12 10:27:00 +0800 2017"
+    },
+    {
+      "volume": 114100,
+      "avg_price": 12.91,
+      "lot_volume": 1141,
+      "timestamp": 1505183280000,
+      "current": 12.86,
+      "time": "Tue Sep 12 10:28:00 +0800 2017"
+    },
+    {
+      "volume": 101900,
+      "avg_price": 12.91,
+      "lot_volume": 1019,
+      "timestamp": 1505183340000,
+      "current": 12.87,
+      "time": "Tue Sep 12 10:29:00 +0800 2017"
+    },
+    {
+      "volume": 131400,
+      "avg_price": 12.91,
+      "lot_volume": 1314,
+      "timestamp": 1505183400000,
+      "current": 12.87,
+      "time": "Tue Sep 12 10:30:00 +0800 2017"
+    },
+    {
+      "volume": 148200,
+      "avg_price": 12.91,
+      "lot_volume": 1482,
+      "timestamp": 1505183460000,
+      "current": 12.85,
+      "time": "Tue Sep 12 10:31:00 +0800 2017"
+    },
+    {
+      "volume": 87900,
+      "avg_price": 12.91,
+      "lot_volume": 879,
+      "timestamp": 1505183520000,
+      "current": 12.84,
+      "time": "Tue Sep 12 10:32:00 +0800 2017"
+    },
+    {
+      "volume": 223800,
+      "avg_price": 12.91,
+      "lot_volume": 2238,
+      "timestamp": 1505183580000,
+      "current": 12.81,
+      "time": "Tue Sep 12 10:33:00 +0800 2017"
+    },
+    {
+      "volume": 464400,
+      "avg_price": 12.91,
+      "lot_volume": 4644,
+      "timestamp": 1505183640000,
+      "current": 12.77,
+      "time": "Tue Sep 12 10:34:00 +0800 2017"
+    },
+    {
+      "volume": 195600,
+      "avg_price": 12.91,
+      "lot_volume": 1956,
+      "timestamp": 1505183700000,
+      "current": 12.77,
+      "time": "Tue Sep 12 10:35:00 +0800 2017"
+    },
+    {
+      "volume": 209573,
+      "avg_price": 12.91,
+      "lot_volume": 2095,
+      "timestamp": 1505183760000,
+      "current": 12.79,
+      "time": "Tue Sep 12 10:36:00 +0800 2017"
+    },
+    {
+      "volume": 292500,
+      "avg_price": 12.91,
+      "lot_volume": 2925,
+      "timestamp": 1505183820000,
+      "current": 12.81,
+      "time": "Tue Sep 12 10:37:00 +0800 2017"
+    },
+    {
+      "volume": 110900,
+      "avg_price": 12.91,
+      "lot_volume": 1109,
+      "timestamp": 1505183880000,
+      "current": 12.82,
+      "time": "Tue Sep 12 10:38:00 +0800 2017"
+    },
+    {
+      "volume": 151350,
+      "avg_price": 12.91,
+      "lot_volume": 1513,
+      "timestamp": 1505183940000,
+      "current": 12.85,
+      "time": "Tue Sep 12 10:39:00 +0800 2017"
+    },
+    {
+      "volume": 87050,
+      "avg_price": 12.91,
+      "lot_volume": 870,
+      "timestamp": 1505184000000,
+      "current": 12.86,
+      "time": "Tue Sep 12 10:40:00 +0800 2017"
+    },
+    {
+      "volume": 213050,
+      "avg_price": 12.91,
+      "lot_volume": 2130,
+      "timestamp": 1505184060000,
+      "current": 12.94,
+      "time": "Tue Sep 12 10:41:00 +0800 2017"
+    },
+    {
+      "volume": 96600,
+      "avg_price": 12.91,
+      "lot_volume": 966,
+      "timestamp": 1505184120000,
+      "current": 12.94,
+      "time": "Tue Sep 12 10:42:00 +0800 2017"
+    },
+    {
+      "volume": 112800,
+      "avg_price": 12.91,
+      "lot_volume": 1128,
+      "timestamp": 1505184180000,
+      "current": 12.92,
+      "time": "Tue Sep 12 10:43:00 +0800 2017"
+    },
+    {
+      "volume": 67600,
+      "avg_price": 12.91,
+      "lot_volume": 676,
+      "timestamp": 1505184240000,
+      "current": 12.92,
+      "time": "Tue Sep 12 10:44:00 +0800 2017"
+    },
+    {
+      "volume": 62100,
+      "avg_price": 12.91,
+      "lot_volume": 621,
+      "timestamp": 1505184300000,
+      "current": 12.93,
+      "time": "Tue Sep 12 10:45:00 +0800 2017"
+    },
+    {
+      "volume": 99713,
+      "avg_price": 12.91,
+      "lot_volume": 997,
+      "timestamp": 1505184360000,
+      "current": 12.95,
+      "time": "Tue Sep 12 10:46:00 +0800 2017"
+    },
+    {
+      "volume": 92450,
+      "avg_price": 12.91,
+      "lot_volume": 924,
+      "timestamp": 1505184420000,
+      "current": 13.0,
+      "time": "Tue Sep 12 10:47:00 +0800 2017"
+    },
+    {
+      "volume": 167650,
+      "avg_price": 12.91,
+      "lot_volume": 1676,
+      "timestamp": 1505184480000,
+      "current": 13.05,
+      "time": "Tue Sep 12 10:48:00 +0800 2017"
+    },
+    {
+      "volume": 205350,
+      "avg_price": 12.91,
+      "lot_volume": 2053,
+      "timestamp": 1505184540000,
+      "current": 13.05,
+      "time": "Tue Sep 12 10:49:00 +0800 2017"
+    },
+    {
+      "volume": 3308748,
+      "avg_price": 12.92,
+      "lot_volume": 33087,
+      "timestamp": 1505184600000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:50:00 +0800 2017"
+    },
+    {
+      "volume": 354650,
+      "avg_price": 12.92,
+      "lot_volume": 3546,
+      "timestamp": 1505184660000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:51:00 +0800 2017"
+    },
+    {
+      "volume": 262300,
+      "avg_price": 12.92,
+      "lot_volume": 2623,
+      "timestamp": 1505184720000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:52:00 +0800 2017"
+    },
+    {
+      "volume": 191584,
+      "avg_price": 12.92,
+      "lot_volume": 1915,
+      "timestamp": 1505184780000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:53:00 +0800 2017"
+    },
+    {
+      "volume": 131700,
+      "avg_price": 12.92,
+      "lot_volume": 1317,
+      "timestamp": 1505184840000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:54:00 +0800 2017"
+    },
+    {
+      "volume": 133650,
+      "avg_price": 12.93,
+      "lot_volume": 1336,
+      "timestamp": 1505184900000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:55:00 +0800 2017"
+    },
+    {
+      "volume": 137350,
+      "avg_price": 12.93,
+      "lot_volume": 1373,
+      "timestamp": 1505184960000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:56:00 +0800 2017"
+    },
+    {
+      "volume": 96050,
+      "avg_price": 12.93,
+      "lot_volume": 960,
+      "timestamp": 1505185020000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:57:00 +0800 2017"
+    },
+    {
+      "volume": 99200,
+      "avg_price": 12.93,
+      "lot_volume": 992,
+      "timestamp": 1505185080000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:58:00 +0800 2017"
+    },
+    {
+      "volume": 68650,
+      "avg_price": 12.93,
+      "lot_volume": 686,
+      "timestamp": 1505185140000,
+      "current": 13.15,
+      "time": "Tue Sep 12 10:59:00 +0800 2017"
+    },
+    {
+      "volume": 105450,
+      "avg_price": 12.93,
+      "lot_volume": 1054,
+      "timestamp": 1505185200000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:00:00 +0800 2017"
+    },
+    {
+      "volume": 47950,
+      "avg_price": 12.93,
+      "lot_volume": 479,
+      "timestamp": 1505185260000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:01:00 +0800 2017"
+    },
+    {
+      "volume": 47500,
+      "avg_price": 12.93,
+      "lot_volume": 475,
+      "timestamp": 1505185320000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:02:00 +0800 2017"
+    },
+    {
+      "volume": 19850,
+      "avg_price": 12.93,
+      "lot_volume": 198,
+      "timestamp": 1505185380000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:03:00 +0800 2017"
+    },
+    {
+      "volume": 67750,
+      "avg_price": 12.93,
+      "lot_volume": 677,
+      "timestamp": 1505185440000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:04:00 +0800 2017"
+    },
+    {
+      "volume": 34450,
+      "avg_price": 12.93,
+      "lot_volume": 344,
+      "timestamp": 1505185500000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:05:00 +0800 2017"
+    },
+    {
+      "volume": 37500,
+      "avg_price": 12.93,
+      "lot_volume": 375,
+      "timestamp": 1505185560000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:06:00 +0800 2017"
+    },
+    {
+      "volume": 11600,
+      "avg_price": 12.93,
+      "lot_volume": 116,
+      "timestamp": 1505185620000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:07:00 +0800 2017"
+    },
+    {
+      "volume": 95469,
+      "avg_price": 12.93,
+      "lot_volume": 954,
+      "timestamp": 1505185680000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:08:00 +0800 2017"
+    },
+    {
+      "volume": 79950,
+      "avg_price": 12.93,
+      "lot_volume": 799,
+      "timestamp": 1505185740000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:09:00 +0800 2017"
+    },
+    {
+      "volume": 114850,
+      "avg_price": 12.93,
+      "lot_volume": 1148,
+      "timestamp": 1505185800000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:10:00 +0800 2017"
+    },
+    {
+      "volume": 65950,
+      "avg_price": 12.93,
+      "lot_volume": 659,
+      "timestamp": 1505185860000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:11:00 +0800 2017"
+    },
+    {
+      "volume": 9100,
+      "avg_price": 12.93,
+      "lot_volume": 91,
+      "timestamp": 1505185920000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:12:00 +0800 2017"
+    },
+    {
+      "volume": 29400,
+      "avg_price": 12.93,
+      "lot_volume": 294,
+      "timestamp": 1505185980000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:13:00 +0800 2017"
+    },
+    {
+      "volume": 172400,
+      "avg_price": 12.93,
+      "lot_volume": 1724,
+      "timestamp": 1505186040000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:14:00 +0800 2017"
+    },
+    {
+      "volume": 38350,
+      "avg_price": 12.93,
+      "lot_volume": 383,
+      "timestamp": 1505186100000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:15:00 +0800 2017"
+    },
+    {
+      "volume": 106750,
+      "avg_price": 12.93,
+      "lot_volume": 1067,
+      "timestamp": 1505186160000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:16:00 +0800 2017"
+    },
+    {
+      "volume": 30950,
+      "avg_price": 12.93,
+      "lot_volume": 309,
+      "timestamp": 1505186220000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:17:00 +0800 2017"
+    },
+    {
+      "volume": 33850,
+      "avg_price": 12.93,
+      "lot_volume": 338,
+      "timestamp": 1505186280000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:18:00 +0800 2017"
+    },
+    {
+      "volume": 16900,
+      "avg_price": 12.93,
+      "lot_volume": 169,
+      "timestamp": 1505186340000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:19:00 +0800 2017"
+    },
+    {
+      "volume": 11800,
+      "avg_price": 12.93,
+      "lot_volume": 118,
+      "timestamp": 1505186400000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:20:00 +0800 2017"
+    },
+    {
+      "volume": 84600,
+      "avg_price": 12.93,
+      "lot_volume": 846,
+      "timestamp": 1505186460000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:21:00 +0800 2017"
+    },
+    {
+      "volume": 22700,
+      "avg_price": 12.93,
+      "lot_volume": 227,
+      "timestamp": 1505186520000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:22:00 +0800 2017"
+    },
+    {
+      "volume": 25800,
+      "avg_price": 12.93,
+      "lot_volume": 258,
+      "timestamp": 1505186580000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:23:00 +0800 2017"
+    },
+    {
+      "volume": 22850,
+      "avg_price": 12.93,
+      "lot_volume": 228,
+      "timestamp": 1505186640000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:24:00 +0800 2017"
+    },
+    {
+      "volume": 63150,
+      "avg_price": 12.93,
+      "lot_volume": 631,
+      "timestamp": 1505186700000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:25:00 +0800 2017"
+    },
+    {
+      "volume": 6200,
+      "avg_price": 12.93,
+      "lot_volume": 62,
+      "timestamp": 1505186760000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:26:00 +0800 2017"
+    },
+    {
+      "volume": 21900,
+      "avg_price": 12.93,
+      "lot_volume": 219,
+      "timestamp": 1505186820000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:27:00 +0800 2017"
+    },
+    {
+      "volume": 9400,
+      "avg_price": 12.93,
+      "lot_volume": 94,
+      "timestamp": 1505186880000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:28:00 +0800 2017"
+    },
+    {
+      "volume": 4000,
+      "avg_price": 12.93,
+      "lot_volume": 40,
+      "timestamp": 1505186940000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:29:00 +0800 2017"
+    },
+    {
+      "volume": 0,
+      "avg_price": 12.93,
+      "lot_volume": 0,
+      "timestamp": 1505187000000,
+      "current": 13.15,
+      "time": "Tue Sep 12 11:30:00 +0800 2017"
+    },
+    {
+      "volume": 304800,
+      "avg_price": 12.93,
+      "lot_volume": 3048,
+      "timestamp": 1505192400000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:00:00 +0800 2017"
+    },
+    {
+      "volume": 33000,
+      "avg_price": 12.93,
+      "lot_volume": 330,
+      "timestamp": 1505192460000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:01:00 +0800 2017"
+    },
+    {
+      "volume": 28300,
+      "avg_price": 12.93,
+      "lot_volume": 283,
+      "timestamp": 1505192520000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:02:00 +0800 2017"
+    },
+    {
+      "volume": 15100,
+      "avg_price": 12.93,
+      "lot_volume": 151,
+      "timestamp": 1505192580000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:03:00 +0800 2017"
+    },
+    {
+      "volume": 13550,
+      "avg_price": 12.93,
+      "lot_volume": 135,
+      "timestamp": 1505192640000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:04:00 +0800 2017"
+    },
+    {
+      "volume": 35500,
+      "avg_price": 12.93,
+      "lot_volume": 355,
+      "timestamp": 1505192700000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:05:00 +0800 2017"
+    },
+    {
+      "volume": 35500,
+      "avg_price": 12.93,
+      "lot_volume": 355,
+      "timestamp": 1505192760000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:06:00 +0800 2017"
+    },
+    {
+      "volume": 2150,
+      "avg_price": 12.93,
+      "lot_volume": 21,
+      "timestamp": 1505192820000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:07:00 +0800 2017"
+    },
+    {
+      "volume": 25800,
+      "avg_price": 12.93,
+      "lot_volume": 258,
+      "timestamp": 1505192880000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:08:00 +0800 2017"
+    },
+    {
+      "volume": 2100,
+      "avg_price": 12.93,
+      "lot_volume": 21,
+      "timestamp": 1505192940000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:09:00 +0800 2017"
+    },
+    {
+      "volume": 4000,
+      "avg_price": 12.93,
+      "lot_volume": 40,
+      "timestamp": 1505193000000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:10:00 +0800 2017"
+    },
+    {
+      "volume": 18300,
+      "avg_price": 12.93,
+      "lot_volume": 183,
+      "timestamp": 1505193060000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:11:00 +0800 2017"
+    },
+    {
+      "volume": 2350,
+      "avg_price": 12.93,
+      "lot_volume": 23,
+      "timestamp": 1505193120000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:12:00 +0800 2017"
+    },
+    {
+      "volume": 10300,
+      "avg_price": 12.93,
+      "lot_volume": 103,
+      "timestamp": 1505193180000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:13:00 +0800 2017"
+    },
+    {
+      "volume": 28900,
+      "avg_price": 12.93,
+      "lot_volume": 289,
+      "timestamp": 1505193240000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:14:00 +0800 2017"
+    },
+    {
+      "volume": 12950,
+      "avg_price": 12.93,
+      "lot_volume": 129,
+      "timestamp": 1505193300000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:15:00 +0800 2017"
+    },
+    {
+      "volume": 30250,
+      "avg_price": 12.93,
+      "lot_volume": 302,
+      "timestamp": 1505193360000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:16:00 +0800 2017"
+    },
+    {
+      "volume": 28900,
+      "avg_price": 12.93,
+      "lot_volume": 289,
+      "timestamp": 1505193420000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:17:00 +0800 2017"
+    },
+    {
+      "volume": 33300,
+      "avg_price": 12.93,
+      "lot_volume": 333,
+      "timestamp": 1505193480000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:18:00 +0800 2017"
+    },
+    {
+      "volume": 28300,
+      "avg_price": 12.93,
+      "lot_volume": 283,
+      "timestamp": 1505193540000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:19:00 +0800 2017"
+    },
+    {
+      "volume": 4800,
+      "avg_price": 12.93,
+      "lot_volume": 48,
+      "timestamp": 1505193600000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:20:00 +0800 2017"
+    },
+    {
+      "volume": 19100,
+      "avg_price": 12.93,
+      "lot_volume": 191,
+      "timestamp": 1505193660000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:21:00 +0800 2017"
+    },
+    {
+      "volume": 16900,
+      "avg_price": 12.93,
+      "lot_volume": 169,
+      "timestamp": 1505193720000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:22:00 +0800 2017"
+    },
+    {
+      "volume": 1850,
+      "avg_price": 12.93,
+      "lot_volume": 18,
+      "timestamp": 1505193780000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:23:00 +0800 2017"
+    },
+    {
+      "volume": 2200,
+      "avg_price": 12.93,
+      "lot_volume": 22,
+      "timestamp": 1505193840000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:24:00 +0800 2017"
+    },
+    {
+      "volume": 8950,
+      "avg_price": 12.93,
+      "lot_volume": 89,
+      "timestamp": 1505193900000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:25:00 +0800 2017"
+    },
+    {
+      "volume": 6150,
+      "avg_price": 12.93,
+      "lot_volume": 61,
+      "timestamp": 1505193960000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:26:00 +0800 2017"
+    },
+    {
+      "volume": 2700,
+      "avg_price": 12.93,
+      "lot_volume": 27,
+      "timestamp": 1505194020000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:27:00 +0800 2017"
+    },
+    {
+      "volume": 1400,
+      "avg_price": 12.93,
+      "lot_volume": 14,
+      "timestamp": 1505194080000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:28:00 +0800 2017"
+    },
+    {
+      "volume": 300,
+      "avg_price": 12.93,
+      "lot_volume": 3,
+      "timestamp": 1505194140000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:29:00 +0800 2017"
+    },
+    {
+      "volume": 7500,
+      "avg_price": 12.93,
+      "lot_volume": 75,
+      "timestamp": 1505194200000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:30:00 +0800 2017"
+    },
+    {
+      "volume": 12900,
+      "avg_price": 12.93,
+      "lot_volume": 129,
+      "timestamp": 1505194260000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:31:00 +0800 2017"
+    },
+    {
+      "volume": 8400,
+      "avg_price": 12.93,
+      "lot_volume": 84,
+      "timestamp": 1505194320000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:32:00 +0800 2017"
+    },
+    {
+      "volume": 16100,
+      "avg_price": 12.93,
+      "lot_volume": 161,
+      "timestamp": 1505194380000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:33:00 +0800 2017"
+    },
+    {
+      "volume": 63100,
+      "avg_price": 12.94,
+      "lot_volume": 631,
+      "timestamp": 1505194440000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:34:00 +0800 2017"
+    },
+    {
+      "volume": 24800,
+      "avg_price": 12.94,
+      "lot_volume": 248,
+      "timestamp": 1505194500000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:35:00 +0800 2017"
+    },
+    {
+      "volume": 16000,
+      "avg_price": 12.94,
+      "lot_volume": 160,
+      "timestamp": 1505194560000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:36:00 +0800 2017"
+    },
+    {
+      "volume": 13100,
+      "avg_price": 12.94,
+      "lot_volume": 131,
+      "timestamp": 1505194620000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:37:00 +0800 2017"
+    },
+    {
+      "volume": 21400,
+      "avg_price": 12.94,
+      "lot_volume": 214,
+      "timestamp": 1505194680000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:38:00 +0800 2017"
+    },
+    {
+      "volume": 6700,
+      "avg_price": 12.94,
+      "lot_volume": 67,
+      "timestamp": 1505194740000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:39:00 +0800 2017"
+    },
+    {
+      "volume": 3700,
+      "avg_price": 12.94,
+      "lot_volume": 37,
+      "timestamp": 1505194800000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:40:00 +0800 2017"
+    },
+    {
+      "volume": 47500,
+      "avg_price": 12.94,
+      "lot_volume": 475,
+      "timestamp": 1505194860000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:41:00 +0800 2017"
+    },
+    {
+      "volume": 3600,
+      "avg_price": 12.94,
+      "lot_volume": 36,
+      "timestamp": 1505194920000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:42:00 +0800 2017"
+    },
+    {
+      "volume": 9600,
+      "avg_price": 12.94,
+      "lot_volume": 96,
+      "timestamp": 1505194980000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:43:00 +0800 2017"
+    },
+    {
+      "volume": 7000,
+      "avg_price": 12.94,
+      "lot_volume": 70,
+      "timestamp": 1505195040000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:44:00 +0800 2017"
+    },
+    {
+      "volume": 19000,
+      "avg_price": 12.94,
+      "lot_volume": 190,
+      "timestamp": 1505195100000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:45:00 +0800 2017"
+    },
+    {
+      "volume": 7000,
+      "avg_price": 12.94,
+      "lot_volume": 70,
+      "timestamp": 1505195160000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:46:00 +0800 2017"
+    },
+    {
+      "volume": 400,
+      "avg_price": 12.94,
+      "lot_volume": 4,
+      "timestamp": 1505195220000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:47:00 +0800 2017"
+    },
+    {
+      "volume": 50500,
+      "avg_price": 12.94,
+      "lot_volume": 505,
+      "timestamp": 1505195280000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:48:00 +0800 2017"
+    },
+    {
+      "volume": 6600,
+      "avg_price": 12.94,
+      "lot_volume": 66,
+      "timestamp": 1505195340000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:49:00 +0800 2017"
+    },
+    {
+      "volume": 18800,
+      "avg_price": 12.94,
+      "lot_volume": 188,
+      "timestamp": 1505195400000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:50:00 +0800 2017"
+    },
+    {
+      "volume": 30800,
+      "avg_price": 12.94,
+      "lot_volume": 308,
+      "timestamp": 1505195460000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:51:00 +0800 2017"
+    },
+    {
+      "volume": 14400,
+      "avg_price": 12.94,
+      "lot_volume": 144,
+      "timestamp": 1505195520000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:52:00 +0800 2017"
+    },
+    {
+      "volume": 120500,
+      "avg_price": 12.94,
+      "lot_volume": 1205,
+      "timestamp": 1505195580000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:53:00 +0800 2017"
+    },
+    {
+      "volume": 114450,
+      "avg_price": 12.94,
+      "lot_volume": 1144,
+      "timestamp": 1505195640000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:54:00 +0800 2017"
+    },
+    {
+      "volume": 28000,
+      "avg_price": 12.94,
+      "lot_volume": 280,
+      "timestamp": 1505195700000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:55:00 +0800 2017"
+    },
+    {
+      "volume": 33950,
+      "avg_price": 12.94,
+      "lot_volume": 339,
+      "timestamp": 1505195760000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:56:00 +0800 2017"
+    },
+    {
+      "volume": 36550,
+      "avg_price": 12.94,
+      "lot_volume": 365,
+      "timestamp": 1505195820000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:57:00 +0800 2017"
+    },
+    {
+      "volume": 3100,
+      "avg_price": 12.94,
+      "lot_volume": 31,
+      "timestamp": 1505195880000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:58:00 +0800 2017"
+    },
+    {
+      "volume": 22350,
+      "avg_price": 12.94,
+      "lot_volume": 223,
+      "timestamp": 1505195940000,
+      "current": 13.15,
+      "time": "Tue Sep 12 13:59:00 +0800 2017"
+    },
+    {
+      "volume": 6300,
+      "avg_price": 12.94,
+      "lot_volume": 63,
+      "timestamp": 1505196000000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:00:00 +0800 2017"
+    },
+    {
+      "volume": 44800,
+      "avg_price": 12.94,
+      "lot_volume": 448,
+      "timestamp": 1505196060000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:01:00 +0800 2017"
+    },
+    {
+      "volume": 394950,
+      "avg_price": 12.94,
+      "lot_volume": 3949,
+      "timestamp": 1505196120000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:02:00 +0800 2017"
+    },
+    {
+      "volume": 602600,
+      "avg_price": 12.94,
+      "lot_volume": 6026,
+      "timestamp": 1505196180000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:03:00 +0800 2017"
+    },
+    {
+      "volume": 2081500,
+      "avg_price": 12.95,
+      "lot_volume": 20815,
+      "timestamp": 1505196240000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:04:00 +0800 2017"
+    },
+    {
+      "volume": 324200,
+      "avg_price": 12.95,
+      "lot_volume": 3242,
+      "timestamp": 1505196300000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:05:00 +0800 2017"
+    },
+    {
+      "volume": 8600,
+      "avg_price": 12.95,
+      "lot_volume": 86,
+      "timestamp": 1505196360000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:06:00 +0800 2017"
+    },
+    {
+      "volume": 17900,
+      "avg_price": 12.95,
+      "lot_volume": 179,
+      "timestamp": 1505196420000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:07:00 +0800 2017"
+    },
+    {
+      "volume": 87500,
+      "avg_price": 12.95,
+      "lot_volume": 875,
+      "timestamp": 1505196480000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:08:00 +0800 2017"
+    },
+    {
+      "volume": 5200,
+      "avg_price": 12.95,
+      "lot_volume": 52,
+      "timestamp": 1505196540000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:09:00 +0800 2017"
+    },
+    {
+      "volume": 1600,
+      "avg_price": 12.95,
+      "lot_volume": 16,
+      "timestamp": 1505196600000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:10:00 +0800 2017"
+    },
+    {
+      "volume": 3900,
+      "avg_price": 12.95,
+      "lot_volume": 39,
+      "timestamp": 1505196660000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:11:00 +0800 2017"
+    },
+    {
+      "volume": 6300,
+      "avg_price": 12.95,
+      "lot_volume": 63,
+      "timestamp": 1505196720000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:12:00 +0800 2017"
+    },
+    {
+      "volume": 10400,
+      "avg_price": 12.95,
+      "lot_volume": 104,
+      "timestamp": 1505196780000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:13:00 +0800 2017"
+    },
+    {
+      "volume": 31300,
+      "avg_price": 12.95,
+      "lot_volume": 313,
+      "timestamp": 1505196840000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:14:00 +0800 2017"
+    },
+    {
+      "volume": 1600,
+      "avg_price": 12.95,
+      "lot_volume": 16,
+      "timestamp": 1505196900000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:15:00 +0800 2017"
+    },
+    {
+      "volume": 5300,
+      "avg_price": 12.95,
+      "lot_volume": 53,
+      "timestamp": 1505196960000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:16:00 +0800 2017"
+    },
+    {
+      "volume": 2200,
+      "avg_price": 12.95,
+      "lot_volume": 22,
+      "timestamp": 1505197020000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:17:00 +0800 2017"
+    },
+    {
+      "volume": 4900,
+      "avg_price": 12.95,
+      "lot_volume": 49,
+      "timestamp": 1505197080000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:18:00 +0800 2017"
+    },
+    {
+      "volume": 34900,
+      "avg_price": 12.95,
+      "lot_volume": 349,
+      "timestamp": 1505197140000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:19:00 +0800 2017"
+    },
+    {
+      "volume": 6300,
+      "avg_price": 12.95,
+      "lot_volume": 63,
+      "timestamp": 1505197200000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:20:00 +0800 2017"
+    },
+    {
+      "volume": 31350,
+      "avg_price": 12.95,
+      "lot_volume": 313,
+      "timestamp": 1505197260000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:21:00 +0800 2017"
+    },
+    {
+      "volume": 1600,
+      "avg_price": 12.95,
+      "lot_volume": 16,
+      "timestamp": 1505197320000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:22:00 +0800 2017"
+    },
+    {
+      "volume": 700,
+      "avg_price": 12.95,
+      "lot_volume": 7,
+      "timestamp": 1505197380000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:23:00 +0800 2017"
+    },
+    {
+      "volume": 20050,
+      "avg_price": 12.95,
+      "lot_volume": 200,
+      "timestamp": 1505197440000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:24:00 +0800 2017"
+    },
+    {
+      "volume": 39100,
+      "avg_price": 12.95,
+      "lot_volume": 391,
+      "timestamp": 1505197500000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:25:00 +0800 2017"
+    },
+    {
+      "volume": 7800,
+      "avg_price": 12.95,
+      "lot_volume": 78,
+      "timestamp": 1505197560000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:26:00 +0800 2017"
+    },
+    {
+      "volume": 11300,
+      "avg_price": 12.95,
+      "lot_volume": 113,
+      "timestamp": 1505197620000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:27:00 +0800 2017"
+    },
+    {
+      "volume": 22200,
+      "avg_price": 12.95,
+      "lot_volume": 222,
+      "timestamp": 1505197680000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:28:00 +0800 2017"
+    },
+    {
+      "volume": 17750,
+      "avg_price": 12.95,
+      "lot_volume": 177,
+      "timestamp": 1505197740000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:29:00 +0800 2017"
+    },
+    {
+      "volume": 9800,
+      "avg_price": 12.95,
+      "lot_volume": 98,
+      "timestamp": 1505197800000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:30:00 +0800 2017"
+    },
+    {
+      "volume": 25400,
+      "avg_price": 12.95,
+      "lot_volume": 254,
+      "timestamp": 1505197860000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:31:00 +0800 2017"
+    },
+    {
+      "volume": 3800,
+      "avg_price": 12.95,
+      "lot_volume": 38,
+      "timestamp": 1505197920000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:32:00 +0800 2017"
+    },
+    {
+      "volume": 2900,
+      "avg_price": 12.95,
+      "lot_volume": 29,
+      "timestamp": 1505197980000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:33:00 +0800 2017"
+    },
+    {
+      "volume": 70600,
+      "avg_price": 12.95,
+      "lot_volume": 706,
+      "timestamp": 1505198040000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:34:00 +0800 2017"
+    },
+    {
+      "volume": 35800,
+      "avg_price": 12.95,
+      "lot_volume": 358,
+      "timestamp": 1505198100000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:35:00 +0800 2017"
+    },
+    {
+      "volume": 102100,
+      "avg_price": 12.95,
+      "lot_volume": 1021,
+      "timestamp": 1505198160000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:36:00 +0800 2017"
+    },
+    {
+      "volume": 97500,
+      "avg_price": 12.95,
+      "lot_volume": 975,
+      "timestamp": 1505198220000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:37:00 +0800 2017"
+    },
+    {
+      "volume": 69600,
+      "avg_price": 12.95,
+      "lot_volume": 696,
+      "timestamp": 1505198280000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:38:00 +0800 2017"
+    },
+    {
+      "volume": 64150,
+      "avg_price": 12.95,
+      "lot_volume": 641,
+      "timestamp": 1505198340000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:39:00 +0800 2017"
+    },
+    {
+      "volume": 10600,
+      "avg_price": 12.95,
+      "lot_volume": 106,
+      "timestamp": 1505198400000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:40:00 +0800 2017"
+    },
+    {
+      "volume": 14300,
+      "avg_price": 12.95,
+      "lot_volume": 143,
+      "timestamp": 1505198460000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:41:00 +0800 2017"
+    },
+    {
+      "volume": 83700,
+      "avg_price": 12.95,
+      "lot_volume": 837,
+      "timestamp": 1505198520000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:42:00 +0800 2017"
+    },
+    {
+      "volume": 63400,
+      "avg_price": 12.95,
+      "lot_volume": 634,
+      "timestamp": 1505198580000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:43:00 +0800 2017"
+    },
+    {
+      "volume": 23000,
+      "avg_price": 12.95,
+      "lot_volume": 230,
+      "timestamp": 1505198640000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:44:00 +0800 2017"
+    },
+    {
+      "volume": 24200,
+      "avg_price": 12.95,
+      "lot_volume": 242,
+      "timestamp": 1505198700000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:45:00 +0800 2017"
+    },
+    {
+      "volume": 11800,
+      "avg_price": 12.95,
+      "lot_volume": 118,
+      "timestamp": 1505198760000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:46:00 +0800 2017"
+    },
+    {
+      "volume": 39700,
+      "avg_price": 12.95,
+      "lot_volume": 397,
+      "timestamp": 1505198820000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:47:00 +0800 2017"
+    },
+    {
+      "volume": 38650,
+      "avg_price": 12.95,
+      "lot_volume": 386,
+      "timestamp": 1505198880000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:48:00 +0800 2017"
+    },
+    {
+      "volume": 10000,
+      "avg_price": 12.95,
+      "lot_volume": 100,
+      "timestamp": 1505198940000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:49:00 +0800 2017"
+    },
+    {
+      "volume": 34700,
+      "avg_price": 12.95,
+      "lot_volume": 347,
+      "timestamp": 1505199000000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:50:00 +0800 2017"
+    },
+    {
+      "volume": 51550,
+      "avg_price": 12.95,
+      "lot_volume": 515,
+      "timestamp": 1505199060000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:51:00 +0800 2017"
+    },
+    {
+      "volume": 40500,
+      "avg_price": 12.95,
+      "lot_volume": 405,
+      "timestamp": 1505199120000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:52:00 +0800 2017"
+    },
+    {
+      "volume": 14950,
+      "avg_price": 12.95,
+      "lot_volume": 149,
+      "timestamp": 1505199180000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:53:00 +0800 2017"
+    },
+    {
+      "volume": 26300,
+      "avg_price": 12.95,
+      "lot_volume": 263,
+      "timestamp": 1505199240000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:54:00 +0800 2017"
+    },
+    {
+      "volume": 15900,
+      "avg_price": 12.95,
+      "lot_volume": 159,
+      "timestamp": 1505199300000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:55:00 +0800 2017"
+    },
+    {
+      "volume": 8600,
+      "avg_price": 12.95,
+      "lot_volume": 86,
+      "timestamp": 1505199360000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:56:00 +0800 2017"
+    },
+    {
+      "volume": 40600,
+      "avg_price": 12.95,
+      "lot_volume": 406,
+      "timestamp": 1505199420000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:57:00 +0800 2017"
+    },
+    {
+      "volume": 17000,
+      "avg_price": 12.95,
+      "lot_volume": 170,
+      "timestamp": 1505199480000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:58:00 +0800 2017"
+    },
+    {
+      "volume": 35200,
+      "avg_price": 12.95,
+      "lot_volume": 352,
+      "timestamp": 1505199540000,
+      "current": 13.15,
+      "time": "Tue Sep 12 14:59:00 +0800 2017"
+    },
+    {
+      "volume": 0,
+      "avg_price": 12.95,
+      "lot_volume": 0,
+      "timestamp": 1505199600000,
+      "current": 13.15,
+      "time": "Tue Sep 12 15:00:00 +0800 2017"
+    }
+  ]
+}
