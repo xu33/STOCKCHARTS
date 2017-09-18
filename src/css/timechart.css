@@ -20,7 +20,7 @@
 
 .axis .tick text {
   font-size: 10px;
-  fill: #999;
+  fill: #555;
 }
 
 .grid line {
@@ -29,6 +29,19 @@
   shape-rendering: crispEdges;
 }
 
+.axis path,
 .grid path {
   stroke-width: 0;
+}
+
+.up {
+  fill: #c10 !important;
+}
+
+.down {
+  fill: #383 !important;
+}
+
+.eq {
+  fill: #555 !important;
 }

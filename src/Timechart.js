@@ -15,49 +15,6 @@ function linspace(a, b, n) {
   return ret;
 }
 
-class Axis {
-  constructor({ parentNode, type, bound, afterRender }) {
-    this.group = parentNode.append('g');
-
-    var axis;
-    switch (type) {
-      case 'left':
-        axis = d3.axisLeft();
-        break;
-      case 'right':
-        axis = d3.axisRight();
-        break;
-      case 'bottom':
-        axis = d3.axisBottom();
-        break;
-      case 'top':
-        axis = d3.axisTop();
-        break;
-      default:
-        throw '数轴类型无效';
-    }
-
-    this.axis = axis.tickSize(0);
-    this.group
-      .attr('transform', `translate(${bound.x}, ${bound.y})`)
-      .attr('class', 'axis');
-
-    this.afterRender = afterRender;
-  }
-
-  setScale(scale) {
-    this.axis.scale(scale);
-  }
-
-  render() {
-    this.group.call(this.axis);
-
-    if (this.afterRender) {
-      this.afterRender();
-    }
-  }
-}
-
 class Timechart {
   static START_INDEX = 0;
   static END_INDEX = 241;
@@ -84,9 +41,64 @@ class Timechart {
 
     this.initScales();
     this.initLines();
-    this.initAxises();
+    this.initAxisGroups();
   }
 
+  // 初始化放置数轴的容器
+  initAxisGroups() {
+    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { width, height } = this.options;
+
+    this.leftAxisGroup = this.svg
+      .append('g')
+      .attr('class', 'axis left_axis_group')
+      .attr('transform', `translate(${left}, ${top})`);
+
+    this.rightAxisGroup = this.svg
+      .append('g')
+      .attr('class', 'axis right_axis_group')
+      .attr('transform', `translate(${width - right - 1}, ${top})`);
+
+    this.bottomAxisGroup = this.svg
+      .append('g')
+      .attr('class', 'axis bottom_axis_group')
+      .attr('transform', `translate(${left}, ${height - bottom})`);
+
+    // 初始化辅助线
+    let range = linspace(height - top - bottom - 1, 0, 5);
+    let scale = d3
+      .scaleOrdinal()
+      .range(range)
+      .domain([1, 2, 3, 4, 5]);
+
+    let grid_x = this.svg
+      .append('g')
+      .attr('class', 'grid grid_x')
+      .attr('transform', `translate(${left}, ${top})`);
+    let axis = d3
+      .axisLeft(scale)
+      .tickSize(-(width - right))
+      .tickFormat('');
+
+    grid_x.call(axis);
+
+    let range_y = linspace(0, width - right - left - 1, 3);
+    let scale_y = d3
+      .scaleOrdinal()
+      .range(range_y)
+      .domain([1, 2, 3]);
+    let grid_y = this.svg
+      .append('g')
+      .attr('class', 'grid grid_y')
+      .attr('transform', `translate(${left}, ${top})`);
+    let axis_y = d3
+      .axisTop(scale_y)
+      .tickSize(-(height - top - bottom))
+      .tickFormat('');
+    grid_y.call(axis_y);
+  }
+
+  // 绘制图形区域需要的比例尺
   initScales() {
     let { top, left, right, bottom } = Timechart.defaultOptions.margin;
     let { width, height } = this.options;
@@ -103,131 +115,111 @@ class Timechart {
     this.svg.append('path').attr('class', 'area_stroke');
   }
 
-  makeBottomAxisScale() {
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
-    let { width, height } = this.options;
-    let x1 = 0;
-    let x2 = width - left - right;
-    let mid = (x2 - x1) / 2;
-    let domain = ['09:30', '13:00', '15:00'];
+  renderAxises() {
+    this.renderLeftAndRightAxis();
+    this.renderBottomAxis();
+  }
 
+  renderLeftAndRightAxis() {
+    let { width, height } = this.options;
+    let { left, right, bottom, top } = Timechart.defaultOptions.margin;
+    let range = linspace(height - top - bottom, 0, 3);
+
+    // 左数轴
+    let priceDomain = linspace(this.priceDomain[0], this.priceDomain[1], 3);
+    let scaleLeft = d3
+      .scaleOrdinal()
+      .range(range)
+      .domain(priceDomain);
+    let axisLeft = d3
+      .axisRight(scaleLeft)
+      .tickFormat(d3.format('.2f'))
+      .tickSize(0);
+
+    this.leftAxisGroup.call(axisLeft);
+
+    // 右数轴
+    let ratioDomain = linspace(this.ratioDomain[0], this.ratioDomain[1], 3);
+
+    ratioDomain[1] = 0;
+
+    let scaleRight = d3
+      .scaleOrdinal()
+      .range(range)
+      .domain(ratioDomain);
+    let axisRight = d3
+      .axisLeft(scaleRight)
+      .tickFormat(d3.format('.2%'))
+      .tickSize(0);
+
+    this.rightAxisGroup.call(axisRight);
+
+    // 调整刻度文字位置
+    this.leftAxisGroup.selectAll('.tick text').each(function(d, i) {
+      let selection = d3.select(this);
+      if (i <= 1) {
+        selection.attr('transform', 'translate(0, -10)');
+      } else {
+        selection.attr('transform', 'translate(0, 10)');
+      }
+
+      if (i > 1) {
+        selection.attr('class', 'up');
+      } else if (i < 1) {
+        selection.attr('class', 'down');
+      } else {
+        selection.attr('class', 'eq');
+      }
+    });
+
+    this.rightAxisGroup.selectAll('.tick text').each(function(d, i) {
+      let selection = d3.select(this);
+      if (i <= 1) {
+        selection.attr('transform', 'translate(0, -10)');
+      } else {
+        selection.attr('transform', 'translate(0, 10)');
+      }
+
+      if (d > 0) {
+        selection.attr('class', 'up');
+      } else if (d < 0) {
+        selection.attr('class', 'down');
+      } else {
+        selection.attr('class', 'eq');
+      }
+    });
+  }
+
+  renderBottomAxis() {
+    let { width, height } = this.options;
+    let { left, right, bottom, top } = Timechart.defaultOptions.margin;
+    let range = linspace(0, width - left - right, 3);
+    let domain = ['09:30', '13:00', '15:00'];
     let scale = d3
       .scaleOrdinal()
-      .domain(['09:30', '13:00', '15:00'])
-      .range([x1, mid, x2]);
+      .domain(domain)
+      .range(range);
+    let axis = d3
+      .axisBottom(scale)
+      .tickSize(0)
+      .tickPadding(5);
 
-    return scale;
-  }
+    this.bottomAxisGroup.call(axis);
 
-  makeLeftAxisScale() {
-    let xrange = this.scaleX.range();
-    let range = linspace(xrange[0], xrange[1], 3);
-
-    return d3.scaleOrdinal().range(range);
-  }
-
-  // getRightAxisScale() {
-  //   let yrange = this.scaleY.range();
-  //   let range = linspace(yrange[0], yrange[1], 3);
-
-  //   return d3.scaleOrdinal().range(range);
-  // }
-
-  // make_x_gridlines() {
-  //   return d3.axisBottom(this.scaleX).ticks(2);
-  // }
-
-  // make_y_gridlines() {
-  //   return d3.axisLeft(this.scaleY).ticks(5);
-  // }
-
-  addGridLines() {
-    let { width, height } = this.options;
-    let { margin } = Timechart.defaultOptions;
-    // this.svg
-    //   .append('g')
-    //   .attr('class', 'grid')
-    //   .attr('transform', `translate(0, ${height})`)
-    //   .attr('class', 'grid')
-    //   .call(
-    //     this.make_x_gridlines()
-    //       .tickSize(-height)
-    //       .tickFormat('')
-    //   );
-
-    this.svg
-      .append('g')
-      .attr('class', 'grid')
-      .attr('transform', `translate(${margin.left}, ${margin.top})`)
-      .attr('class', 'grid')
-      .call(
-        this.make_y_gridlines()
-          .tickSize(-width)
-          .tickFormat('')
-      );
-  }
-
-  initAxises() {
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
-    let { width, height } = this.options;
-
-    // 底部数轴
-    this.bottomAxis = new Axis({
-      parentNode: this.svg,
-      type: 'bottom',
-      afterRender: function() {
-        let g = this.group;
-        g.selectAll('.tick text').each(function(d, i) {
-          if (i == 0) d3.select(this).attr('text-anchor', 'start');
-          if (i == 2) d3.select(this).attr('text-anchor', 'end');
-        });
-      },
-      bound: {
-        x: left,
-        y: height - bottom
+    // 调整刻度文字位置
+    this.bottomAxisGroup.selectAll('.tick text').each(function(d, i) {
+      if (i === 0) {
+        d3.select(this).attr('transform', 'translate(15, 0)');
+      } else if (i === 2) {
+        d3.select(this).attr('transform', 'translate(-15, 0)');
       }
     });
-
-    this.bottomAxis.setScale(this.makeBottomAxisScale());
-    this.bottomAxis.render();
-
-    // 左侧数轴
-    this.leftAxis = new Axis({
-      parentNode: this.svg,
-      type: 'right',
-      bound: {
-        x: left,
-        y: top
-      }
-    });
-
-    this.leftAxis.setScale(this.scaleY);
-    this.leftAxis.render();
-
-    // // 右侧数轴
-    // this.rightAxis = new Axis({
-    //   parentNode: this.svg,
-    //   type: 'left',
-    //   bound: {
-    //     x: width - right,
-    //     y: top
-    //   }
-    // });
-
-    // this.rightAxis.setScale(this.getRightAxisScale());
-    // this.rightAxis.axis.tickFormat(d3.format('.2%'));
-    // this.rightAxis.render();
   }
 
   render() {
+    if (this.options.data.length < 1) return;
     this.renderChartArea();
-
-    // this.leftAxis.setScale(this.scaleY);
-    // this.leftAxis.render();
-
-    // this.scaleYCopy.domain(this.ratioDomain);
-    // this.rightAxis.setScale(this.scaleYCopy);
-    // this.rightAxis.render();
+    this.renderAxises();
   }
 
   renderChartArea() {
@@ -269,10 +261,20 @@ class Timechart {
       .y(d => scaleY(d.avg_price));
 
     this.svg.select('.area_fill').attr('d', area(data));
-
     this.svg.select('.area_stroke').attr('d', line(data));
-
     this.svg.select('.avg_line').attr('d', lineAvg(data));
+  }
+
+  update(item) {
+    if (!Array.isArray(item)) {
+      item = [item];
+    }
+
+    for (var i = 0; i < item.length; i++) {
+      this.options.data.push(item[i]);
+    }
+
+    this.render();
   }
 }
 

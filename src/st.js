@@ -42,9 +42,21 @@ for (let i = startIndex; i < data.length; i++) {
 
 const { chartlist } = require('./fake_data/stocklist.json');
 let tc = new Timechart(document.querySelector('#timechart'), {
-  width: 400,
-  height: 200,
-  data: chartlist
+  width: 500,
+  height: 300,
+  data: []
 });
 
-tc.render();
+function update() {
+  function _update() {
+    if (chartlist.length > 0) {
+      tc.update(chartlist.shift());
+    }
+
+    setTimeout(_update, 1000);
+  }
+
+  _update();
+}
+
+update();
