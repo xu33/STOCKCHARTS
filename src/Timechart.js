@@ -60,6 +60,8 @@ class Timechart {
       width: width - left - right,
       height: height - top - bottom
     });
+
+    this.crosshair.on('mousemove', mousePosition => {});
   }
 
   // 初始化放置数轴的容器
