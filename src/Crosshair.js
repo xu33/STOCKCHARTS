@@ -86,8 +86,6 @@ class Crosshair {
         this.element.style('display', 'none');
       });
   }
-
-  createTextLabels() {}
 }
 
 export default Crosshair;

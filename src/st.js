@@ -40,20 +40,24 @@ for (let i = startIndex; i < data.length; i++) {
 //   }
 // });
 
-const { chartlist } = require('./fake_data/stocklist.json');
+let { chartlist } = require('./fake_data/stocklist.json');
+let quote = require('./fake_data/quote.json');
 let tc = new Timechart(document.querySelector('#timechart'), {
   width: 500,
   height: 300,
+  lastClose: quote.last_close,
   data: []
 });
 
 function update() {
   function _update() {
     if (chartlist.length > 0) {
+      // tc.update([...chartlist]);
+      // chartlist = [];
       tc.update(chartlist.shift());
     }
 
-    setTimeout(_update, 1000);
+    requestAnimationFrame(_update);
   }
 
   _update();

@@ -45,3 +45,14 @@
 .eq {
   fill: #555 !important;
 }
+
+.event_layer {
+  fill: none;
+  pointer-events: all;
+}
+
+.crossline {
+  stroke: #000;
+  opacity: 0.3;
+  stroke-dasharray: 15 10 5 10;
+}

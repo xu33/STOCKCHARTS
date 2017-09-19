@@ -1,6 +1,8 @@
 const d3 = require('d3');
 require('./css/timechart.css');
 
+import Crosshair from './timecharts/Crosshair';
+
 function linspace(a, b, n) {
   if (typeof n === 'undefined') n = Math.max(Math.round(b - a) + 1, 1);
   if (n < 2) {
@@ -14,6 +16,8 @@ function linspace(a, b, n) {
   }
   return ret;
 }
+
+const OVERFLOW_RATIO = 1.2;
 
 class Timechart {
   static START_INDEX = 0;
@@ -42,10 +46,25 @@ class Timechart {
     this.initScales();
     this.initLines();
     this.initAxisGroups();
+    this.initCrosshair();
+  }
+
+  // 初始化十字线交互
+  initCrosshair() {
+    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { width, height } = this.options;
+
+    this.crosshair = new Crosshair(this.svg, {
+      x: left,
+      y: top,
+      width: width - left - right,
+      height: height - top - bottom
+    });
   }
 
   // 初始化放置数轴的容器
   initAxisGroups() {
+    // 初始化数轴容器
     let { top, left, right, bottom } = Timechart.defaultOptions.margin;
     let { width, height } = this.options;
 
@@ -95,6 +114,7 @@ class Timechart {
       .axisTop(scale_y)
       .tickSize(-(height - top - bottom))
       .tickFormat('');
+
     grid_y.call(axis_y);
   }
 
@@ -228,7 +248,7 @@ class Timechart {
     scaleX.domain([0, 241]);
 
     // 可能要改为根据前一天收盘价计算涨跌幅
-    let start = data[0].current;
+    let start = this.options.lastClose;
     let extent = d3.extent(data, d => d.current);
 
     let ratioExtent = Math.max(
@@ -236,7 +256,11 @@ class Timechart {
       Math.abs(extent[1] - start) / start
     );
 
-    let ratioDomain = [1 - ratioExtent * 1.5, 1 + ratioExtent * 1.5];
+    let ratioDomain = [
+      1 - ratioExtent * OVERFLOW_RATIO,
+      1 + ratioExtent * OVERFLOW_RATIO
+    ];
+
     this.ratioDomain = ratioDomain.map(n => n - 1);
 
     let priceDomain = [start * ratioDomain[0], start * ratioDomain[1]];
