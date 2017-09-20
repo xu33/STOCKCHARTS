@@ -2,6 +2,8 @@ const d3 = require('d3');
 require('./css/timechart.css');
 
 import Crosshair from './timecharts/Crosshair';
+import Indicator from './timecharts/Indicator';
+import Volume from './timecharts/Volume';
 
 function linspace(a, b, n) {
   if (typeof n === 'undefined') n = Math.max(Math.round(b - a) + 1, 1);
@@ -17,7 +19,7 @@ function linspace(a, b, n) {
   return ret;
 }
 
-const OVERFLOW_RATIO = 1.2;
+const OVERFLOW_RATIO = 1.1;
 
 class Timechart {
   static START_INDEX = 0;
@@ -47,12 +49,28 @@ class Timechart {
     this.initLines();
     this.initAxisGroups();
     this.initCrosshair();
+    this.initIndicators();
+    this.initVolume();
+  }
+
+  // 初始化量图
+  initVolume() {
+    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { width, height, data } = this.options;
+
+    this.volume = new Volume(this.svg, {
+      x: left,
+      y: 150,
+      width: width - left - right,
+      height: 60,
+      data: this.options.data.map(d => d.volume)
+    });
   }
 
   // 初始化十字线交互
   initCrosshair() {
     let { top, left, right, bottom } = Timechart.defaultOptions.margin;
-    let { width, height } = this.options;
+    let { width, height, data } = this.options;
 
     this.crosshair = new Crosshair(this.svg, {
       x: left,
@@ -61,7 +79,64 @@ class Timechart {
       height: height - top - bottom
     });
 
-    this.crosshair.on('mousemove', mousePosition => {});
+    this.crosshair.on('move', mousePosition => {
+      let currentIndex = this.scaleX.invert(mousePosition[0]);
+
+      currentIndex = Math.ceil(currentIndex);
+
+      if (currentIndex < 0) currentIndex = 0;
+      if (currentIndex > data.length - 1) currentIndex = data.length - 1;
+      let currentDataItem = data[currentIndex];
+
+      // 计算十字线变化的坐标
+      let x = this.scaleX(currentIndex);
+      let y = this.scaleY(currentDataItem.current);
+
+      // 更新十字线坐标
+      this.crosshair.setHorizontalCrosslinePosition(y);
+      this.crosshair.setVerticalCrosslinePosition(x);
+
+      // 更新指示器内容和位置
+      this.updateTimeIndicator(x, currentDataItem);
+      this.updatePriceIndicator(y, currentDataItem);
+      this.updateIncreaseIndicator(y, currentDataItem);
+    });
+  }
+
+  // 渲染时间指示器
+  updateTimeIndicator(x, currentDataItem) {
+    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { width, height } = this.options;
+    let y = height - top - bottom;
+
+    this.timeIndicator.setText(
+      d3.timeFormat('%H:%M')(currentDataItem.timestamp)
+    );
+    this.timeIndicator.setPosition(x, y, 'vertical');
+  }
+
+  // 渲染价格指示器
+  updatePriceIndicator(y, currentDataItem) {
+    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { width, height } = this.options;
+
+    let x = 0;
+    let price = d3.format('.2f')(currentDataItem.current);
+
+    this.priceIndicator.setText(price);
+    this.priceIndicator.setPosition(x, y, 'horizontal');
+  }
+
+  // 渲染涨幅指示器
+  updateIncreaseIndicator(y, currentDataItem) {
+    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { width, height, lastClose } = this.options;
+    let x = width - right - left - Indicator.WIDTH;
+    let price = currentDataItem.current;
+    let increase = (price - lastClose) / lastClose;
+
+    this.increaseIndicator.setText(d3.format('.2%')(increase));
+    this.increaseIndicator.setPosition(x, y, 'horizontal');
   }
 
   // 初始化放置数轴的容器
@@ -124,17 +199,32 @@ class Timechart {
   initScales() {
     let { top, left, right, bottom } = Timechart.defaultOptions.margin;
     let { width, height } = this.options;
-    this.scaleX = d3.scaleLinear().range([0 + left, width - right]);
-    this.scaleY = d3.scaleLinear().range([height - top - bottom, 0 + top]);
+    this.scaleX = d3.scaleLinear().range([0, width - left - right]);
+    this.scaleY = d3.scaleLinear().range([height - top - bottom, 0]);
   }
 
+  // 初始化分时线
   initLines() {
+    const { left, top } = Timechart.defaultOptions.margin;
+    this.chartGroup = this.svg
+      .append('g')
+      .attr('transform', `translate(${left}, ${top})`);
     // 现价分时线描边
-    this.svg.append('path').attr('class', 'avg_line');
+    this.chartGroup.append('path').attr('class', 'avg_line');
     // 现价分时线填充
-    this.svg.append('path').attr('class', 'area_fill');
+    this.chartGroup.append('path').attr('class', 'area_fill');
     // 均价线
-    this.svg.append('path').attr('class', 'area_stroke');
+    this.chartGroup.append('path').attr('class', 'area_stroke');
+  }
+
+  // 初始化文字指示器
+  initIndicators() {
+    // 价格指示器
+    this.priceIndicator = new Indicator(this.crosshair.element);
+    // 涨幅指示器
+    this.increaseIndicator = new Indicator(this.crosshair.element);
+    // 时间指示器
+    this.timeIndicator = new Indicator(this.crosshair.element);
   }
 
   renderAxises() {
@@ -142,6 +232,7 @@ class Timechart {
     this.renderBottomAxis();
   }
 
+  // 渲染左右数轴
   renderLeftAndRightAxis() {
     let { width, height } = this.options;
     let { left, right, bottom, top } = Timechart.defaultOptions.margin;
@@ -176,7 +267,7 @@ class Timechart {
 
     this.rightAxisGroup.call(axisRight);
 
-    // 调整刻度文字位置
+    // 调整刻度文字位置和颜色(红涨绿跌)
     this.leftAxisGroup.selectAll('.tick text').each(function(d, i) {
       let selection = d3.select(this);
       if (i <= 1) {
@@ -212,6 +303,7 @@ class Timechart {
     });
   }
 
+  // 渲染底部数轴
   renderBottomAxis() {
     let { width, height } = this.options;
     let { left, right, bottom, top } = Timechart.defaultOptions.margin;
@@ -242,6 +334,11 @@ class Timechart {
     if (this.options.data.length < 1) return;
     this.renderChartArea();
     this.renderAxises();
+    this.renderVolume();
+  }
+
+  renderVolume() {
+    this.volume.render();
   }
 
   renderChartArea() {

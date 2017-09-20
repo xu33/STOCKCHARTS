@@ -43,11 +43,14 @@ for (let i = startIndex; i < data.length; i++) {
 let { chartlist } = require('./fake_data/stocklist.json');
 let quote = require('./fake_data/quote.json');
 let tc = new Timechart(document.querySelector('#timechart'), {
-  width: 500,
-  height: 300,
+  width: 420,
+  height: 240,
   lastClose: quote.last_close,
-  data: []
+  // data: []
+  data: chartlist
 });
+
+tc.render();
 
 function update() {
   function _update() {
@@ -57,10 +60,10 @@ function update() {
       tc.update(chartlist.shift());
     }
 
-    requestAnimationFrame(_update);
+    setTimeout(_update, 1000);
   }
 
   _update();
 }
 
-update();
+// update();

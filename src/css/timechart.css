@@ -1,3 +1,7 @@
+svg line {
+  shape-rendering: crispEdges;
+}
+
 .area_fill {
   fill: #2f84cc;
   opacity: 0.2;
@@ -53,6 +57,27 @@
 
 .crossline {
   stroke: #000;
-  opacity: 0.3;
-  stroke-dasharray: 15 10 5 10;
+  opacity: 0.2;
+  /* stroke-dasharray: 15 10 5 10; */
+}
+
+/*游标*/
+.indicator-text {
+  fill: #525a68;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.indicator-box {
+  /* fill: #525a68; */
+  fill: #f0f0f0;
+  /* opacity: 0.5; */
+  stroke: #cccccc;
+  pointer-events: none;
+}
+
+/* 量线 */
+.volume {
+  stroke: #2f84cc;
+  fill: none;
 }
