@@ -22,6 +22,54 @@ function linspace(a, b, n) {
 const OVERFLOW_RATIO = 1.1;
 
 class Timechart {
+  static defaultOptions = {
+    margin: {
+      top: 0,
+      left: 5,
+      right: 0,
+      bottom: 20
+    }
+  };
+
+  constructor(selector, options) {
+    this.element = d3.select(selector).append('svg');
+
+    this.options = options;
+
+    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { width, height, data } = this.options;
+
+    this.element.attr('height', height).attr('width', width);
+
+    const volumeHeight = Volume.PERCENT * options.height;
+    const chartHeight = options.height - volumeHeight;
+
+    this.main = new Mainchart(this.element, {
+      ...options,
+      height: chartHeight
+    });
+
+    this.volume = new Volume(this.element, {
+      x: left,
+      y: chartHeight,
+      width: width - left - right,
+      height: volumeHeight,
+      data: data.map(d => d.volume)
+    });
+  }
+
+  render() {
+    this.main.render();
+    this.volume.render();
+  }
+
+  update(item) {
+    this.main.update(item);
+    this.volume.update(item.volume);
+  }
+}
+
+class Mainchart {
   static START_INDEX = 0;
   static END_INDEX = 241;
 
@@ -34,45 +82,59 @@ class Timechart {
     }
   };
 
-  constructor(selector, options) {
-    this.element = d3.select(selector);
+  constructor(parentNode, options) {
     this.options = {
       ...Timechart.defaultOptions,
       ...options
     };
 
-    this.svg = this.element.append('svg');
-    this.svg.attr('height', this.options.height);
-    this.svg.attr('width', this.options.width);
+    this.element = parentNode.append('g');
+
+    this.initialize();
+  }
+
+  initialize() {
+    this.element.attr('height', this.options.height);
+    this.element.attr('width', this.options.width);
 
     this.initScales();
     this.initLines();
     this.initAxisGroups();
     this.initCrosshair();
     this.initIndicators();
-    this.initVolume();
+    // this.initVolume();
+  }
+
+  resize(width, height) {
+    this.options.width = width;
+    this.options.height = height;
+    this.element.remove();
+    this.element = this.element.append('svg');
+
+    this.initialize();
+    this.render();
   }
 
   // 初始化量图
-  initVolume() {
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
-    let { width, height, data } = this.options;
+  // initVolume() {
+  //   let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+  //   let { width, height, data } = this.options;
 
-    this.volume = new Volume(this.svg, {
-      x: left,
-      y: 150,
-      width: width - left - right,
-      height: 60,
-      data: this.options.data.map(d => d.volume)
-    });
-  }
+  //   this.volume = new Volume(this.element, {
+  //     x: left,
+  //     y: height,
+  //     width: width - left - right,
+  //     height: height * Volume.PERCENT,
+  //     data: this.options.data.map(d => d.volume)
+  //   });
+  // }
 
   // 初始化十字线交互
   initCrosshair() {
     let { top, left, right, bottom } = Timechart.defaultOptions.margin;
     let { width, height, data } = this.options;
 
-    this.crosshair = new Crosshair(this.svg, {
+    this.crosshair = new Crosshair(this.element, {
       x: left,
       y: top,
       width: width - left - right,
@@ -145,17 +207,17 @@ class Timechart {
     let { top, left, right, bottom } = Timechart.defaultOptions.margin;
     let { width, height } = this.options;
 
-    this.leftAxisGroup = this.svg
+    this.leftAxisGroup = this.element
       .append('g')
       .attr('class', 'axis left_axis_group')
       .attr('transform', `translate(${left}, ${top})`);
 
-    this.rightAxisGroup = this.svg
+    this.rightAxisGroup = this.element
       .append('g')
       .attr('class', 'axis right_axis_group')
       .attr('transform', `translate(${width - right - 1}, ${top})`);
 
-    this.bottomAxisGroup = this.svg
+    this.bottomAxisGroup = this.element
       .append('g')
       .attr('class', 'axis bottom_axis_group')
       .attr('transform', `translate(${left}, ${height - bottom})`);
@@ -167,7 +229,7 @@ class Timechart {
       .range(range)
       .domain([1, 2, 3, 4, 5]);
 
-    let grid_x = this.svg
+    let grid_x = this.element
       .append('g')
       .attr('class', 'grid grid_x')
       .attr('transform', `translate(${left}, ${top})`);
@@ -183,7 +245,7 @@ class Timechart {
       .scaleOrdinal()
       .range(range_y)
       .domain([1, 2, 3]);
-    let grid_y = this.svg
+    let grid_y = this.element
       .append('g')
       .attr('class', 'grid grid_y')
       .attr('transform', `translate(${left}, ${top})`);
@@ -206,15 +268,15 @@ class Timechart {
   // 初始化分时线
   initLines() {
     const { left, top } = Timechart.defaultOptions.margin;
-    this.chartGroup = this.svg
+    this.chartGroup = this.element
       .append('g')
       .attr('transform', `translate(${left}, ${top})`);
+    // 均价线
+    this.chartGroup.append('path').attr('class', 'area_stroke');
     // 现价分时线描边
     this.chartGroup.append('path').attr('class', 'avg_line');
     // 现价分时线填充
     this.chartGroup.append('path').attr('class', 'area_fill');
-    // 均价线
-    this.chartGroup.append('path').attr('class', 'area_stroke');
   }
 
   // 初始化文字指示器
@@ -334,12 +396,12 @@ class Timechart {
     if (this.options.data.length < 1) return;
     this.renderChartArea();
     this.renderAxises();
-    this.renderVolume();
+    // this.renderVolume();
   }
 
-  renderVolume() {
-    this.volume.render();
-  }
+  // renderVolume() {
+  //   this.volume.render();
+  // }
 
   renderChartArea() {
     let { scaleX, scaleY, options: { data } } = this;
@@ -383,9 +445,9 @@ class Timechart {
       .x((d, i) => scaleX(i))
       .y(d => scaleY(d.avg_price));
 
-    this.svg.select('.area_fill').attr('d', area(data));
-    this.svg.select('.area_stroke').attr('d', line(data));
-    this.svg.select('.avg_line').attr('d', lineAvg(data));
+    this.element.select('.area_fill').attr('d', area(data));
+    this.element.select('.area_stroke').attr('d', line(data));
+    this.element.select('.avg_line').attr('d', lineAvg(data));
   }
 
   update(item) {

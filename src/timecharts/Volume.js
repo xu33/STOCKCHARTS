@@ -43,6 +43,16 @@ class Volume {
   }
 
   renderGrids() {}
+
+  update(item) {
+    if (!Array.isArray(item)) {
+      item = [item];
+    }
+    for (var i = 0; i < item.length; i++) {
+      this.data.push(item[i]);
+    }
+    this.render();
+  }
 }
 
 export default Volume;
