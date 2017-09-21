@@ -2,18 +2,26 @@ class Dragbar {
   static margin = {
     left: 0,
     right: 0,
-    top: 5,
+    top: 10,
     bottom: 0
   };
 
   constructor(parentNode, { x, y, width, height }) {
     this.element = parentNode.append('g');
-    this.options = { x, y, width, height: height - Dragbar.margin.top };
 
-    this.element.attr(
-      'transform',
-      `translate(${x}, ${y + Dragbar.margin.top})`
-    );
+    const { left, right, top, bottom } = Dragbar.margin;
+
+    this.options = {
+      x,
+      y,
+      width: width - left - right,
+      height: height - top - bottom
+    };
+
+    let translateX = x;
+    let translateY = y + top;
+
+    this.element.attr('transform', `translate(${translateX}, ${translateY})`);
   }
 
   render() {

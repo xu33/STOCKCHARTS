@@ -6,7 +6,7 @@ import Dragbar from './Dragbar';
 
 class CandleStickChart {
   // 每个子图形占比
-  static DIV = [0.6, 0.2, 0.2];
+  static DIV = [0.6, 0.22, 0.18];
 
   constructor(selector, { width, height, data }) {
     this.element = d3.select(selector).append('svg');
@@ -39,15 +39,8 @@ class CandleStickChart {
       let x = 0;
       let y = lastHeight;
 
-      // 下一个图形的y坐标等于上一个子图形的高度，外边距由每个图块自己处理
+      // 下一个图形的y坐标等于上面图形高度的和，外边距由每个图形自己处理
       lastHeight += height;
-
-      // console.log({
-      //   x,
-      //   y,
-      //   width,
-      //   height
-      // });
 
       let chart = new type(this.element, {
         x,
