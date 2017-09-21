@@ -1,25 +1,9 @@
-const d3 = require('d3');
-require('./css/timechart.css');
-
+import './css/timechart.css';
+import * as d3 from 'd3';
 import Crosshair from './timecharts/Crosshair';
 import Indicator from './timecharts/Indicator';
 import Volume from './timecharts/Volume';
-
-function linspace(a, b, n) {
-  if (typeof n === 'undefined') n = Math.max(Math.round(b - a) + 1, 1);
-  if (n < 2) {
-    return n === 1 ? [a] : [];
-  }
-  var i,
-    ret = Array(n);
-  n--;
-  for (i = n; i >= 0; i--) {
-    ret[i] = (i * b + (n - i) * a) / n;
-  }
-  return ret;
-}
-
-const OVERFLOW_RATIO = 1.1;
+import { linspace } from './utils/linspace';
 
 class Timechart {
   static defaultOptions = {
@@ -46,7 +30,8 @@ class Timechart {
 
     this.main = new Mainchart(this.element, {
       ...options,
-      height: chartHeight
+      height: chartHeight,
+      data: [...data]
     });
 
     this.volume = new Volume(this.element, {
@@ -54,7 +39,7 @@ class Timechart {
       y: chartHeight,
       width: width - left - right,
       height: volumeHeight,
-      data: data.map(d => d.volume)
+      data: [...data]
     });
   }
 
@@ -65,10 +50,11 @@ class Timechart {
 
   update(item) {
     this.main.update(item);
-    this.volume.update(item.volume);
+    this.volume.update(item);
   }
 }
 
+const OVERFLOW_RATIO = 1;
 class Mainchart {
   static START_INDEX = 0;
   static END_INDEX = 241;
@@ -102,7 +88,6 @@ class Mainchart {
     this.initAxisGroups();
     this.initCrosshair();
     this.initIndicators();
-    // this.initVolume();
   }
 
   resize(width, height) {
@@ -114,20 +99,6 @@ class Mainchart {
     this.initialize();
     this.render();
   }
-
-  // 初始化量图
-  // initVolume() {
-  //   let { top, left, right, bottom } = Timechart.defaultOptions.margin;
-  //   let { width, height, data } = this.options;
-
-  //   this.volume = new Volume(this.element, {
-  //     x: left,
-  //     y: height,
-  //     width: width - left - right,
-  //     height: height * Volume.PERCENT,
-  //     data: this.options.data.map(d => d.volume)
-  //   });
-  // }
 
   // 初始化十字线交互
   initCrosshair() {
@@ -396,19 +367,14 @@ class Mainchart {
     if (this.options.data.length < 1) return;
     this.renderChartArea();
     this.renderAxises();
-    // this.renderVolume();
   }
-
-  // renderVolume() {
-  //   this.volume.render();
-  // }
 
   renderChartArea() {
     let { scaleX, scaleY, options: { data } } = this;
 
     scaleX.domain([0, 241]);
 
-    // 可能要改为根据前一天收盘价计算涨跌幅
+    // 根据前一天收盘价计算涨跌幅
     let start = this.options.lastClose;
     let extent = d3.extent(data, d => d.current);
 

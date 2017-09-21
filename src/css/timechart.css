@@ -76,6 +76,11 @@ svg line {
   pointer-events: none;
 }
 
+/* 量图容器 */
+.volume_chart .axis line {
+  stroke: #000;
+}
+
 /* 量线 */
 .volume {
   stroke: #2f84cc;

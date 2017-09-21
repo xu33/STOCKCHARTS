@@ -2,9 +2,7 @@
  * K线类
  * StockChart
  */
-const d3 = require('d3');
-
-import { WIN_COLOR, LOSS_COLOR, EQUAL_COLOR } from './libs/config';
+import * as d3 from 'd3';
 import './css/stock-chart.css';
 import Crosshair from './Crosshair';
 import Axises from './Axises';
@@ -16,12 +14,15 @@ class StockChart {
   maLineInited = false;
 
   static defaultOptions = {
+    WIN_COLOR: '#ff3d3d',
+    LOSS_COLOR: '#0fc351',
+    EQUAL_COLOR: '#999999',
     VOLUME_PERCENT: 0.15,
     BRUSH_PERCENT: 0.1,
     margin: {
       left: 50,
       bottom: 20,
-      right: 20,
+      right: 10,
       top: 0
     }
   };
@@ -485,11 +486,11 @@ function str2number(stock) {
 
 function calColor(d) {
   if (d.close > d.open) {
-    return WIN_COLOR;
+    return StockChart.defaultOptions.WIN_COLOR;
   } else if (d.close < d.open) {
-    return LOSS_COLOR;
+    return StockChart.defaultOptions.LOSS_COLOR;
   } else {
-    return EQUAL_COLOR;
+    return StockChart.defaultOptions.EQUAL_COLOR;
   }
 }
 
