@@ -9,7 +9,6 @@ class CandleStickMain {
   };
 
   constructor(parentNode, { x, y, width, height }) {
-    this.element = parentNode.append('g');
     const { left, right, top, bottom } = CandleStickMain.margin;
 
     this.options = {
@@ -22,6 +21,7 @@ class CandleStickMain {
     let translateX = x;
     let translateY = y + top;
 
+    this.element = parentNode.append('g');
     this.element.attr('transform', `translate(${translateX}, ${translateY})`);
   }
 
