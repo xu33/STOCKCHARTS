@@ -5,12 +5,10 @@ class Volumes {
     left: 0,
     right: 0,
     top: 0,
-    bottom: 0
+    bottom: 10
   };
 
   constructor(parentNode, { x, y, width, height }) {
-    this.element = parentNode.append('g');
-
     const { left, right, top, bottom } = Volumes.margin;
 
     this.options = {
@@ -22,7 +20,7 @@ class Volumes {
 
     let translateX = x;
     let translateY = y + top;
-
+    this.element = parentNode.append('g');
     this.element.attr('transform', `translate(${translateX}, ${translateY})`);
   }
 

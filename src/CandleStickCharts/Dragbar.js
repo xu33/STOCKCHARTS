@@ -1,14 +1,14 @@
+import * as d3 from 'd3';
+
 class Dragbar {
   static margin = {
     left: 0,
     right: 0,
-    top: 10,
+    top: 0,
     bottom: 0
   };
 
   constructor(parentNode, { x, y, width, height }) {
-    this.element = parentNode.append('g');
-
     const { left, right, top, bottom } = Dragbar.margin;
 
     this.options = {
@@ -20,7 +20,7 @@ class Dragbar {
 
     let translateX = x;
     let translateY = y + top;
-
+    this.element = parentNode.append('g');
     this.element.attr('transform', `translate(${translateX}, ${translateY})`);
   }
 
