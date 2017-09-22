@@ -77,7 +77,7 @@ function update() {
 let csc = new CandleStickChart('#refactor', {
   width: 500,
   height: 300,
-  data: []
+  data: data.slice(150)
 });
 
 csc.render();
