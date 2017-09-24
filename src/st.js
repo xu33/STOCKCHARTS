@@ -2,7 +2,7 @@ var data = require('./fake_data/normalizeData');
 var moment = require('moment');
 
 import StockChart from './StockChart';
-import Timechart from './Timechart';
+import Timechart from './timecharts/Timechart';
 import CandleStickChart from './CandleStickCharts/CandleStickChart';
 
 data = data.map(item => ({

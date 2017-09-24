@@ -1,60 +1,10 @@
-import './css/timechart.css';
-import * as d3 from 'd3';
-import Crosshair from './timecharts/Crosshair';
-import Indicator from './timecharts/Indicator';
-import Volume from './timecharts/Volume';
-import { linspace } from './utils/linspace';
-
-class Timechart {
-  static defaultOptions = {
-    margin: {
-      top: 0,
-      left: 5,
-      right: 0,
-      bottom: 20
-    }
-  };
-
-  constructor(selector, options) {
-    this.element = d3.select(selector).append('svg');
-
-    this.options = options;
-
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
-    let { width, height, data } = this.options;
-
-    this.element.attr('height', height).attr('width', width);
-
-    const volumeHeight = Volume.PERCENT * options.height;
-    const chartHeight = options.height - volumeHeight;
-
-    this.main = new Mainchart(this.element, {
-      ...options,
-      height: chartHeight,
-      data: [...data]
-    });
-
-    this.volume = new Volume(this.element, {
-      x: left,
-      y: chartHeight,
-      width: width - left - right,
-      height: volumeHeight,
-      data: [...data]
-    });
-  }
-
-  render() {
-    this.main.render();
-    this.volume.render();
-  }
-
-  update(item) {
-    this.main.update(item);
-    this.volume.update(item);
-  }
-}
-
 const OVERFLOW_RATIO = 1;
+import { linspace } from '../utils/linspace';
+import * as d3 from 'd3';
+
+import Crosshair from './Crosshair';
+import Indicator from './Indicator';
+
 class Mainchart {
   static START_INDEX = 0;
   static END_INDEX = 241;
@@ -70,7 +20,7 @@ class Mainchart {
 
   constructor(parentNode, options) {
     this.options = {
-      ...Timechart.defaultOptions,
+      ...Mainchart.defaultOptions,
       ...options
     };
 
@@ -102,8 +52,8 @@ class Mainchart {
 
   // 初始化十字线交互
   initCrosshair() {
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
-    let { width, height, data } = this.options;
+    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
+    let { width, height } = this.options;
 
     this.crosshair = new Crosshair(this.element, {
       x: left,
@@ -113,6 +63,7 @@ class Mainchart {
     });
 
     this.crosshair.on('move', mousePosition => {
+      let data = this.data;
       let currentIndex = this.scaleX.invert(mousePosition[0]);
 
       currentIndex = Math.ceil(currentIndex);
@@ -138,7 +89,7 @@ class Mainchart {
 
   // 渲染时间指示器
   updateTimeIndicator(x, currentDataItem) {
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
     let { width, height } = this.options;
     let y = height - top - bottom;
 
@@ -150,7 +101,7 @@ class Mainchart {
 
   // 渲染价格指示器
   updatePriceIndicator(y, currentDataItem) {
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
     let { width, height } = this.options;
 
     let x = 0;
@@ -162,7 +113,7 @@ class Mainchart {
 
   // 渲染涨幅指示器
   updateIncreaseIndicator(y, currentDataItem) {
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
     let { width, height, lastClose } = this.options;
     let x = width - right - left - Indicator.WIDTH;
     let price = currentDataItem.current;
@@ -175,7 +126,7 @@ class Mainchart {
   // 初始化放置数轴的容器
   initAxisGroups() {
     // 初始化数轴容器
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
     let { width, height } = this.options;
 
     this.leftAxisGroup = this.element
@@ -230,7 +181,7 @@ class Mainchart {
 
   // 绘制图形区域需要的比例尺
   initScales() {
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
+    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
     let { width, height } = this.options;
     this.scaleX = d3.scaleLinear().range([0, width - left - right]);
     this.scaleY = d3.scaleLinear().range([height - top - bottom, 0]);
@@ -238,7 +189,7 @@ class Mainchart {
 
   // 初始化分时线
   initLines() {
-    const { left, top } = Timechart.defaultOptions.margin;
+    const { left, top } = Mainchart.defaultOptions.margin;
     this.chartGroup = this.element
       .append('g')
       .attr('transform', `translate(${left}, ${top})`);
@@ -268,7 +219,7 @@ class Mainchart {
   // 渲染左右数轴
   renderLeftAndRightAxis() {
     let { width, height } = this.options;
-    let { left, right, bottom, top } = Timechart.defaultOptions.margin;
+    let { left, right, bottom, top } = Mainchart.defaultOptions.margin;
     let range = linspace(height - top - bottom, 0, 3);
 
     // 左数轴
@@ -339,7 +290,7 @@ class Mainchart {
   // 渲染底部数轴
   renderBottomAxis() {
     let { width, height } = this.options;
-    let { left, right, bottom, top } = Timechart.defaultOptions.margin;
+    let { left, right, bottom, top } = Mainchart.defaultOptions.margin;
     let range = linspace(0, width - left - right, 3);
     let domain = ['09:30', '13:00', '15:00'];
     let scale = d3
@@ -363,14 +314,15 @@ class Mainchart {
     });
   }
 
-  render() {
-    if (this.options.data.length < 1) return;
+  render(data) {
+    this.data = data;
+    if (this.data.length < 1) return;
     this.renderChartArea();
     this.renderAxises();
   }
 
   renderChartArea() {
-    let { scaleX, scaleY, options: { data } } = this;
+    let { scaleX, scaleY, data } = this;
 
     scaleX.domain([0, 241]);
 
@@ -415,18 +367,6 @@ class Mainchart {
     this.element.select('.area_stroke').attr('d', line(data));
     this.element.select('.avg_line').attr('d', lineAvg(data));
   }
-
-  update(item) {
-    if (!Array.isArray(item)) {
-      item = [item];
-    }
-
-    for (var i = 0; i < item.length; i++) {
-      this.options.data.push(item[i]);
-    }
-
-    this.render();
-  }
 }
 
-export default Timechart;
+export default Mainchart;

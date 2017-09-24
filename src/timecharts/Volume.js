@@ -7,7 +7,7 @@ class Volume {
   static END_INDEX = 241;
   static PERCENT = 0.24;
 
-  constructor(parentNode, { x, y, width, height, data }) {
+  constructor(parentNode, { x, y, width, height }) {
     this.element = parentNode.append('g').attr('class', 'volume_chart');
     this.element.attr('transform', `translate(${x}, ${y})`);
     this.scaleX = d3
@@ -15,16 +15,14 @@ class Volume {
       .range([1, width])
       .domain([Volume.START_INDEX, Volume.END_INDEX]);
     this.scaleY = d3.scaleLinear().range([height, 0]);
-
-    this.data = data;
     this.width = width;
     this.height = height;
 
     this.renderGrids();
   }
 
-  render() {
-    let { scaleX, scaleY, width, height, data } = this;
+  render(data) {
+    let { scaleX, scaleY, width, height } = this;
     let extent = d3.extent(data, d => d.volume);
 
     extent[1] = extent[1] * 1.2;
@@ -33,7 +31,7 @@ class Volume {
 
     let selection = this.element
       .selectAll('.volume')
-      .data(this.data, d => d.timestamp);
+      .data(data, d => d.timestamp);
 
     selection.exit().remove();
 
@@ -81,16 +79,6 @@ class Volume {
       .tickFormat('');
 
     gridGroupBottom.call(axisBottom);
-  }
-
-  update(item) {
-    if (!Array.isArray(item)) {
-      item = [item];
-    }
-    for (var i = 0; i < item.length; i++) {
-      this.data.push(item[i]);
-    }
-    this.render();
   }
 }
 
