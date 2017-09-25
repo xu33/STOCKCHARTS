@@ -11,35 +11,35 @@ data = data.map(item => ({
   close: Number(item.close).toFixed(2)
 }));
 
-let candleData = new Array(data.length);
-let startIndex = 50;
-for (let i = startIndex; i < data.length; i++) {
-  candleData[i] = data[i];
-}
+// let candleData = new Array(data.length);
+// let startIndex = 50;
+// for (let i = startIndex; i < data.length; i++) {
+//   candleData[i] = data[i];
+// }
 
-let sc = new StockChart(document.querySelector('#container'), {
-  candleData: candleData,
-  width: 500,
-  height: 300,
-  volume: true,
-  interactive: true,
-  loadingPreviousData: function(length) {
-    console.log(`loadingPreviousData length: ${length}`);
-    return new Promise(resolve => {
-      setTimeout(() => {
-        let newData = new Array(data.length);
+// let sc = new StockChart(document.querySelector('#container'), {
+//   candleData: candleData,
+//   width: 500,
+//   height: 300,
+//   volume: true,
+//   interactive: true,
+//   loadingPreviousData: function(length) {
+//     console.log(`loadingPreviousData length: ${length}`);
+//     return new Promise(resolve => {
+//       setTimeout(() => {
+//         let newData = new Array(data.length);
 
-        startIndex = Math.max(startIndex - length, 0);
+//         startIndex = Math.max(startIndex - length, 0);
 
-        for (let i = startIndex; i < data.length; i++) {
-          newData[i] = data[i];
-        }
+//         for (let i = startIndex; i < data.length; i++) {
+//           newData[i] = data[i];
+//         }
 
-        resolve(newData);
-      }, 500);
-    });
-  }
-});
+//         resolve(newData);
+//       }, 500);
+//     });
+//   }
+// });
 
 let { chartlist } = require('./fake_data/stocklist.json');
 let quote = require('./fake_data/quote.json');
@@ -47,11 +47,11 @@ let tc = new Timechart(document.querySelector('#timechart'), {
   width: 500,
   height: 300,
   lastClose: quote.last_close,
-  // data: []
-  data: chartlist
+  data: []
+  // data: chartlist
 });
 
-tc.render();
+// tc.render();
 
 // setTimeout(() => {
 //   tc.resize(600, 400);
@@ -71,13 +71,13 @@ function update() {
   _update();
 }
 
-// update();
+update();
 
 // 重构K线图
 let csc = new CandleStickChart('#refactor', {
   width: 500,
   height: 300,
-  data: data.slice(150)
+  data: data
 });
 
 csc.render();

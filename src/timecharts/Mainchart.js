@@ -1,13 +1,13 @@
-const OVERFLOW_RATIO = 1;
+const OVERFLOW_RATIO = 1.2;
 import { linspace } from '../utils/linspace';
 import * as d3 from 'd3';
-
 import Crosshair from './Crosshair';
 import Indicator from './Indicator';
 
 class Mainchart {
   static START_INDEX = 0;
   static END_INDEX = 241;
+  static TEXT_HEIGHT = 0;
 
   static defaultOptions = {
     margin: {
@@ -19,20 +19,17 @@ class Mainchart {
   };
 
   constructor(parentNode, options) {
-    this.options = {
-      ...Mainchart.defaultOptions,
-      ...options
-    };
-
-    this.element = parentNode.append('g');
+    let { x, y } = options;
+    this.options = options;
+    this.element = parentNode
+      .append('g')
+      .attr('transform', `translate(${x}, ${y})`);
 
     this.initialize();
   }
 
   initialize() {
-    this.element.attr('height', this.options.height);
-    this.element.attr('width', this.options.width);
-
+    this.initText();
     this.initScales();
     this.initLines();
     this.initAxisGroups();
@@ -40,14 +37,17 @@ class Mainchart {
     this.initIndicators();
   }
 
-  resize(width, height) {
-    this.options.width = width;
-    this.options.height = height;
-    this.element.remove();
-    this.element = this.element.append('svg');
+  // 顶部文字
+  initText() {
+    let line = function() {};
 
-    this.initialize();
-    this.render();
+    this.element
+      .append('text')
+      .attr('class', 'tip_text')
+      .attr('x', 10)
+      .attr('y', 15);
+
+    // this.element.append('path').attr('d', line);
   }
 
   // 初始化十字线交互
@@ -84,7 +84,17 @@ class Mainchart {
       this.updateTimeIndicator(x, currentDataItem);
       this.updatePriceIndicator(y, currentDataItem);
       this.updateIncreaseIndicator(y, currentDataItem);
+
+      // 更新顶部文字
+      this.updateText(currentDataItem);
     });
+  }
+
+  // 更新顶部文字
+  updateText(currentDataItem) {
+    let { avg_price, current, volume } = currentDataItem;
+    let text = `分时价：${current} 均价：${avg_price} 成交量：${volume}手`;
+    this.element.select('.tip_text').text(text);
   }
 
   // 渲染时间指示器
@@ -101,9 +111,6 @@ class Mainchart {
 
   // 渲染价格指示器
   updatePriceIndicator(y, currentDataItem) {
-    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
-    let { width, height } = this.options;
-
     let x = 0;
     let price = d3.format('.2f')(currentDataItem.current);
 
@@ -145,7 +152,7 @@ class Mainchart {
       .attr('transform', `translate(${left}, ${height - bottom})`);
 
     // 初始化辅助线
-    let range = linspace(height - top - bottom - 1, 0, 5);
+    let range = linspace(height - top - bottom, 0, 5);
     let scale = d3
       .scaleOrdinal()
       .range(range)
@@ -324,7 +331,7 @@ class Mainchart {
   renderChartArea() {
     let { scaleX, scaleY, data } = this;
 
-    scaleX.domain([0, 241]);
+    scaleX.domain([Mainchart.START_INDEX, Mainchart.END_INDEX]);
 
     // 根据前一天收盘价计算涨跌幅
     let start = this.options.lastClose;

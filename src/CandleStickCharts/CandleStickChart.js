@@ -1,12 +1,11 @@
 import * as d3 from 'd3';
-
-import CandleStickMain from './CandleStickMain';
+import CandleSticks from './CandleSticks';
 import Volumes from './Volumes';
 import Dragbar from './Dragbar';
 
 class CandleStickChart {
   // 每个子图形占比
-  static DIV = [0.6, 0.22, 0.18];
+  static DIV = [0.7, 0.2, 0.1];
 
   constructor(selector, { width, height, data }) {
     this.element = d3.select(selector).append('svg');
@@ -16,18 +15,18 @@ class CandleStickChart {
       data
     };
 
-    this.element.attr('width', width).attr('height', height);
+    this.selectedData = [];
 
+    this.element.attr('width', width).attr('height', height);
+    this.children = [];
     this.initChildren();
+    this.bindEvents();
   }
 
   initChildren() {
-    this.children = [];
-
-    let data = this.options.data;
     let totalHeight = this.options.height;
     let totalWidth = this.options.width;
-    let types = [CandleStickMain, Volumes, Dragbar];
+    let types = [CandleSticks, Volumes, Dragbar];
 
     // 前一个图形的高度
     let lastHeight = 0;
@@ -46,22 +45,55 @@ class CandleStickChart {
         x,
         y,
         width,
-        height,
-        data
+        height
       });
 
       this.children.push(chart);
     }
   }
 
-  render() {
-    this.children.forEach(child => child.render());
+  bindEvents() {
+    // change brush selection need to rerender all charts
+    const brush = this.children[this.children.length - 1];
+
+    brush.on('brush', ({ brushSelection, range }) => {
+      let startIndex = 0;
+      let endIndex = this.options.data.length - 1;
+      let indexScale = d3
+        .scaleLinear()
+        .domain([startIndex, endIndex])
+        .range(range);
+
+      let domain = brushSelection.map(value => indexScale.invert(value));
+      let [selectedStartIndex, selectedEndIndex] = domain;
+      if (selectedStartIndex < startIndex || selectedEndIndex > endIndex) {
+        throw new Error('索引错误');
+      }
+
+      selectedStartIndex = Math.round(selectedStartIndex);
+      selectedEndIndex = Math.round(selectedEndIndex);
+
+      console.log(`当前数据范围:${selectedStartIndex} - ${selectedEndIndex}`);
+
+      // 至少显示30根K线
+      if (selectedEndIndex - selectedStartIndex < 30) {
+        return;
+      }
+
+      let selectedData = this.options.data.slice(
+        selectedStartIndex,
+        selectedEndIndex
+      );
+
+      this.selectedData = selectedData;
+      this.render();
+    });
+
+    brush.initBrushBehavior();
   }
 
-  update(items) {
-    this.children.forEach(child => {
-      child.update(items);
-    });
+  render() {
+    this.children.forEach(child => child.render(this.selectedData));
   }
 }
 

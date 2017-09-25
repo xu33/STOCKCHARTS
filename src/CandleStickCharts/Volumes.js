@@ -1,31 +1,26 @@
 import * as d3 from 'd3';
+import colors from './colors';
+import { linspace } from '../utils/linspace';
 
 class Volumes {
-  static colors = {
-    WIN_COLOR: '#ff3d3d',
-    LOSS_COLOR: '#0fc351',
-    EQUAL_COLOR: '#999999'
-  };
-
   static margin = {
-    left: 0,
-    right: 0,
+    left: 10,
+    right: 3,
     top: 0,
     bottom: 10
   };
 
-  constructor(parentNode, { x, y, width, height, data }) {
+  constructor(parentNode, { x, y, width, height }) {
     const { left, right, top, bottom } = Volumes.margin;
 
     this.options = {
       x,
       y,
       width: width - left - right,
-      height: height - top - bottom,
-      data
+      height: height - top - bottom
     };
 
-    let translateX = x;
+    let translateX = x + left;
     let translateY = y + top;
     this.element = parentNode.append('g');
     this.element.attr('transform', `translate(${translateX}, ${translateY})`);
@@ -38,15 +33,58 @@ class Volumes {
     let range_volume = [height, 0];
     this.scale_volume = d3.scaleLinear().range(range_volume);
 
-    let range_x = [left, width - left - right];
+    let range_x = [0, width];
     this.scale_band = d3
       .scaleBand()
       .range(range_x)
       .padding(0.2);
+
+    // 边框&辅助线
+    this.render_grids();
   }
 
-  render() {
-    let { width, height, data } = this.options;
+  render_grids() {
+    this.render_grids_x();
+    this.render_grids_y();
+  }
+
+  render_grids_x() {
+    let { width, height } = this.options;
+    let group = this.element
+      .append('g')
+      .attr('class', 'axis')
+      .attr('transform', `translate(0, ${height})`);
+    let scale = d3
+      .scaleOrdinal()
+      .range(linspace(0, width - 1, 3))
+      .domain([1, 2, 3]);
+    let axis = d3
+      .axisBottom(scale)
+      .tickSize(-height)
+      .tickFormat('');
+
+    group.call(axis);
+  }
+
+  render_grids_y() {
+    let { width, height } = this.options;
+    let group = this.element.append('g').attr('class', 'axis');
+
+    let scale = d3
+      .scaleOrdinal()
+      .range(linspace(0, height, 3))
+      .domain([1, 2, 3]);
+
+    let axis = d3
+      .axisLeft(scale)
+      .tickSize(-width)
+      .tickFormat('');
+
+    group.call(axis);
+  }
+
+  render(data) {
+    let { width, height } = this.options;
     let { scale_band, scale_volume } = this;
 
     let domain_x = data.map((o, i) => i);
@@ -74,11 +112,11 @@ class Volumes {
 
 function calColor(d) {
   if (d.close > d.open) {
-    return Volumes.colors.WIN_COLOR;
+    return colors.WIN_COLOR;
   } else if (d.close < d.open) {
-    return Volumes.colors.LOSS_COLOR;
+    return colors.LOSS_COLOR;
   } else {
-    return Volumes.colors.EQUAL_COLOR;
+    return colors.EQUAL_COLOR;
   }
 }
 

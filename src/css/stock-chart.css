@@ -19,7 +19,7 @@ svg line {
 
 /* 数字文字颜色 */
 .axis text {
-  fill: #ccc;
+  fill: #888888;
   font-size: 12px;
 }
 
@@ -37,7 +37,7 @@ svg line {
 /* 数轴刻度线颜色 */
 .tick line {
   stroke: #ccc;
-  opacity: 0.1;
+  opacity: 1;
 }
 
 .predict {
@@ -142,6 +142,12 @@ svg line {
   fill: #999999;
 }
 
+/* 辅助线边框 */
+.axis_border {
+  fill: none;
+  stroke: #ccc;
+}
+
 /*事件响应层*/
 .event-overlay {
   fill: none;
@@ -169,4 +175,19 @@ svg line {
   fill: none;
   stroke: #ccc;
   opacity: 0.2;
+}
+
+/* brush bar */
+.overlay {
+  stroke: #cccccc;
+  stroke-width: 1;
+}
+
+.selection {
+  stroke-width: 0;
+}
+
+.handle--e,
+.handle--w {
+  fill: #cccccc;
 }

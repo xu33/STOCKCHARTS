@@ -1,48 +1,50 @@
 import './timechart.css';
 import * as d3 from 'd3';
-
-import Volume from './Volume';
 import Mainchart from './Mainchart';
+import Volume from './Volume';
+
+const DIV = [0.8, 0.2];
 
 class Timechart {
-  static defaultOptions = {
-    margin: {
-      top: 0,
-      left: 5,
-      right: 0,
-      bottom: 20
-    }
-  };
-
   constructor(selector, options) {
+    let { width, height } = options;
+
     this.element = d3.select(selector).append('svg');
-
     this.options = options;
-
-    let { top, left, right, bottom } = Timechart.defaultOptions.margin;
-    let { width, height, data } = this.options;
-
     this.element.attr('height', height).attr('width', width);
 
-    const volumeHeight = Volume.PERCENT * options.height;
-    const chartHeight = options.height - volumeHeight;
+    this.children = [];
+    this.initChildren();
+  }
 
-    this.main = new Mainchart(this.element, {
-      ...options,
-      height: chartHeight
-    });
+  initChildren() {
+    let { height: totalHeight, width: totalWidth, lastClose } = this.options;
+    let types = [Mainchart, Volume];
+    let lastHeight = 0;
 
-    this.volume = new Volume(this.element, {
-      x: left,
-      y: chartHeight,
-      width: width - left - right,
-      height: volumeHeight
+    types.forEach((type, i) => {
+      let height = DIV[i] * totalHeight;
+      let width = totalWidth;
+      let x = 0;
+      let y = lastHeight;
+
+      lastHeight += height;
+
+      let chart = new type(this.element, {
+        x,
+        y,
+        width,
+        height,
+        lastClose
+      });
+
+      this.children.push(chart);
     });
   }
 
   render() {
-    this.main.render(this.options.data);
-    this.volume.render(this.options.data);
+    if (!this.options.data || this.options.data.length < 1) return;
+    this.children.forEach(chart => chart.render(this.options.data));
   }
 
   update(item) {
@@ -50,7 +52,7 @@ class Timechart {
       item = [item];
     }
 
-    this.options.data = [...this.options.data, ...item];
+    this.options.data = this.options.data.concat(item);
 
     this.render();
   }

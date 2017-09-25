@@ -11,8 +11,10 @@ class Indicator {
   static HEIGHT = 16;
   static PADDING = 5;
 
-  constructor(parentNode) {
+  constructor(parentNode, width, height) {
     this.element = parentNode.append('g');
+    this.width = width || Indicator.WIDTH;
+    this.height = height || Indicator.HEIGHT;
 
     this.createRect();
     this.createText();
@@ -40,8 +42,8 @@ class Indicator {
     this.box = this.element
       .append('rect')
       .attr('class', Indicator.INDICATOR_BOX_CLASS)
-      .attr('width', Indicator.WIDTH)
-      .attr('height', Indicator.HEIGHT)
+      .attr('width', this.width)
+      .attr('height', this.height)
       .attr('x', 0)
       .attr('y', 0);
   }
@@ -55,7 +57,7 @@ class Indicator {
     let { width, height } = textBoundingBox;
     // let tx = (Indicator.WIDTH - width) / 2;
     let tx = 0;
-    let ty = (Indicator.HEIGHT - height) / 2;
+    let ty = (this.height - height) / 2;
 
     this.text.attr('x', tx).attr('y', ty);
 
@@ -65,11 +67,11 @@ class Indicator {
 
     if (type === 'horizontal') {
       // 水平的指示器
-      y = y - Indicator.HEIGHT / 2;
+      y = y - this.height / 2;
     } else {
       // 垂直的指示器
-      x = x - Indicator.WIDTH / 2;
-      y = y + 2;
+      x = x - this.width / 2;
+      y = y + 3;
     }
 
     this.element.attr('transform', `translate(${x}, ${y})`);

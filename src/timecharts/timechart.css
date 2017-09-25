@@ -28,7 +28,7 @@ svg line {
 }
 
 .grid line {
-  stroke: #000;
+  stroke: #ccc;
   /* stroke-opacity: 0.7; */
   shape-rendering: crispEdges;
 }
@@ -78,11 +78,17 @@ svg line {
 
 /* 量图容器 */
 .volume_chart .axis line {
-  stroke: #000;
+  stroke: #ccc;
 }
 
 /* 量线 */
 .volume {
   stroke: #2f84cc;
   fill: none;
+}
+
+/* 顶部文字 */
+.tip_text {
+  font-size: 10px;
+  white-space: nowrap;
 }

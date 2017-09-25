@@ -5,18 +5,27 @@ import { linspace } from '../utils/linspace';
 class Volume {
   static START_INDEX = 0;
   static END_INDEX = 241;
-  static PERCENT = 0.24;
+
+  static defaultOptions = {
+    margin: {
+      top: 0,
+      left: 5,
+      right: 0,
+      bottom: 0
+    }
+  };
 
   constructor(parentNode, { x, y, width, height }) {
+    let { top, left, right, bottom } = Volume.defaultOptions.margin;
     this.element = parentNode.append('g').attr('class', 'volume_chart');
-    this.element.attr('transform', `translate(${x}, ${y})`);
+    this.element.attr('transform', `translate(${x + left}, ${y + top})`);
     this.scaleX = d3
       .scaleLinear()
       .range([1, width])
       .domain([Volume.START_INDEX, Volume.END_INDEX]);
     this.scaleY = d3.scaleLinear().range([height, 0]);
-    this.width = width;
-    this.height = height;
+    this.width = width - left - right;
+    this.height = height - top - bottom;
 
     this.renderGrids();
   }
