@@ -7,11 +7,10 @@ import Indicator from './Indicator';
 class Mainchart {
   static START_INDEX = 0;
   static END_INDEX = 241;
-  static TEXT_HEIGHT = 0;
 
   static defaultOptions = {
     margin: {
-      top: 0,
+      top: 20,
       left: 5,
       right: 0,
       bottom: 20
@@ -39,15 +38,46 @@ class Mainchart {
 
   // 顶部文字
   initText() {
-    let line = function() {};
+    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
+    let { width, height } = this.options;
+
+    let line = d3
+      .line()
+      .x(d => d.x)
+      .y(d => d.y);
+
+    let data = [
+      {
+        x: left + 1,
+        y: top
+      },
+      {
+        x: left + 1,
+        y: 1
+      },
+      {
+        x: width,
+        y: 1
+      },
+      {
+        x: width,
+        y: top
+      }
+    ];
 
     this.element
       .append('text')
       .attr('class', 'tip_text')
-      .attr('x', 10)
+      .attr('x', 8)
       .attr('y', 15);
 
-    // this.element.append('path').attr('d', line);
+    this.element
+      .append('path')
+      .datum(data)
+      .attr('d', line)
+      .attr('class', 'text_box')
+      .attr('fill', 'none')
+      .attr('stroke', '#ccc');
   }
 
   // 初始化十字线交互
@@ -88,6 +118,11 @@ class Mainchart {
       // 更新顶部文字
       this.updateText(currentDataItem);
     });
+
+    this.crosshair.on('end', () => {
+      // 更新顶部文字
+      this.updateText(this.data[this.data.length - 1]);
+    });
   }
 
   // 更新顶部文字
@@ -101,7 +136,7 @@ class Mainchart {
   updateTimeIndicator(x, currentDataItem) {
     let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
     let { width, height } = this.options;
-    let y = height - top - bottom;
+    let y = height - top - bottom + 1;
 
     this.timeIndicator.setText(
       d3.timeFormat('%H:%M')(currentDataItem.timestamp)
@@ -326,6 +361,7 @@ class Mainchart {
     if (this.data.length < 1) return;
     this.renderChartArea();
     this.renderAxises();
+    this.updateText(this.data[this.data.length - 1]);
   }
 
   renderChartArea() {

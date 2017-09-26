@@ -2,12 +2,14 @@ import * as d3 from 'd3';
 import colors from './colors';
 import Crosshair from './Crosshair';
 import Indicator from './Indicator';
+import { linspace } from '../utils/linspace';
+import thunkArray from '../utils/chunkarray';
 
 class CandleSticks {
   static margin = {
     left: 10,
     right: 3,
-    top: 0,
+    top: 20,
     bottom: 20
   };
 
@@ -15,14 +17,15 @@ class CandleSticks {
   static y_tick_num = 3;
   static offset_ratio = 0.01;
 
-  constructor(parentNode, { x, y, width, height }) {
+  constructor(parentNode, { x, y, width, height, type }) {
     const { left, right, top, bottom } = CandleSticks.margin;
 
     this.options = {
       x,
       y,
       width: width - left - right,
-      height: height - top - bottom
+      height: height - top - bottom,
+      type: type
     };
 
     let translateX = x + left;
@@ -40,6 +43,51 @@ class CandleSticks {
     this.initScales(); // 比例尺
     this.initCrosshair(); // 辅助线
     this.initIndicators(); // 指示器
+    this.initText(); // 顶部文字
+  }
+
+  // 顶部文字
+  initText() {
+    let { top, left, right, bottom } = CandleSticks.margin;
+    let { width, height } = this.options;
+
+    let line = d3
+      .line()
+      .x(d => d.x)
+      .y(d => d.y);
+
+    let data = [
+      {
+        x: 0,
+        y: top
+      },
+      {
+        x: 0,
+        y: 1
+      },
+      {
+        x: width,
+        y: 1
+      },
+      {
+        x: width,
+        y: top
+      }
+    ];
+
+    this.element
+      .append('text')
+      .attr('class', 'tip_text')
+      .attr('x', 8)
+      .attr('y', 15);
+
+    this.element
+      .append('path')
+      .datum(data)
+      .attr('d', line)
+      .attr('class', 'text_box')
+      .attr('fill', 'none')
+      .attr('stroke', '#ccc');
   }
 
   extent() {
@@ -107,7 +155,10 @@ class CandleSticks {
   updateTimeIndicator(x, currentDataItem) {
     let y = this.options.height;
 
-    this.timeIndicator.setText(currentDataItem.time);
+    this.timeIndicator.setText(
+      d3.timeFormat('%Y-%m-%d')(new Date(currentDataItem.time))
+    );
+
     this.timeIndicator.setPosition(x, y, 'vertical');
   }
 
@@ -289,28 +340,89 @@ class CandleSticks {
     this.element.select('.grid_x').call(axis);
   }
 
+  // _renderBottomAxis() {
+  //   let scale = d3
+  //     .scaleTime()
+  //     .range(this.range_x)
+  //     .domain(d3.extent(this.data, d => new Date(d.time)));
+
+  //   let bottomAxis = d3
+  //     .axisBottom(scale)
+  //     .ticks(CandleSticks.x_tick_num)
+  //     .tickSize(0)
+  //     .tickPadding(8)
+  //     .tickFormat(d3.timeFormat('%Y-%m-%d'));
+
+  //   this.element.select('.bottom_axis').call(bottomAxis);
+
+  //   this.render_grids_y(scale);
+  // }
+
+  getBottomAxisTickFormatter() {
+    let type = this.options.type;
+    switch (type) {
+      case '1':
+      case '5':
+        return d3.timeFormat('%M:%S');
+      case '15':
+      case '30':
+      case '60':
+        return d3.timeFormat('%m-%d');
+      case 'D':
+      case 'W':
+      case 'M':
+      case 'Y':
+        return d3.timeFormat('%Y-%m-%d');
+      default:
+        return d3.timeFormat('%Y-%m-%d');
+    }
+  }
+
   renderBottomAxis() {
+    let { left, right, bottom, top } = CandleSticks.margin;
+    let { width, height } = this.options;
+    let lengthNeed = 4;
+    let chunks = thunkArray([...this.data], lengthNeed);
+    let domain = chunks.map(chunk => new Date(chunk[0].timestamp));
+    let range = linspace(0, width - width / lengthNeed, lengthNeed);
+
+    if (domain.length > lengthNeed) domain.pop();
+
     let scale = d3
-      .scaleTime()
-      .range(this.range_x)
-      .domain(d3.extent(this.data, d => new Date(d.time)));
+      .scaleOrdinal()
+      .domain(domain)
+      .range(range);
+
+    let formatter = this.getBottomAxisTickFormatter();
 
     let bottomAxis = d3
       .axisBottom(scale)
-      .ticks(CandleSticks.x_tick_num)
       .tickSize(0)
-      .tickPadding(8)
-      .tickFormat(d3.timeFormat('%Y-%m-%d'));
+      .tickPadding(5)
+      .tickFormat(formatter);
 
     this.element.select('.bottom_axis').call(bottomAxis);
+    this.element
+      .select('.bottom_axis')
+      .selectAll('.tick text')
+      .attr('text-anchor', 'start');
 
     this.render_grids_y(scale);
   }
 
+  // _render_grids_y(scale) {
+  //   let axis = d3
+  //     .axisBottom(scale)
+  //     .ticks(CandleSticks.x_tick_num)
+  //     .tickSize(-this.options.height)
+  //     .tickFormat('');
+
+  //   this.element.select('.grid_y').call(axis);
+  // }
+
   render_grids_y(scale) {
     let axis = d3
       .axisBottom(scale)
-      .ticks(CandleSticks.x_tick_num)
       .tickSize(-this.options.height)
       .tickFormat('');
 

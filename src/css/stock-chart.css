@@ -13,7 +13,8 @@ svg {
 }
 
 svg rect,
-svg line {
+svg line,
+.text_box {
   shape-rendering: crispEdges;
 }
 
