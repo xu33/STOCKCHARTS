@@ -1,64 +1,30 @@
 import CandleStickChart from './CandleStickCharts/CandleStickChart';
 import Timechart from './timecharts/Timechart';
-// let candleData = new Array(data.length);
-// let startIndex = 50;
-// for (let i = startIndex; i < data.length; i++) {
-//   candleData[i] = data[i];
-// }
 
-// let sc = new StockChart(document.querySelector('#container'), {
-//   candleData: candleData,
-//   width: 500,
-//   height: 300,
-//   volume: true,
-//   interactive: true,
-//   loadingPreviousData: function(length) {
-//     console.log(`loadingPreviousData length: ${length}`);
-//     return new Promise(resolve => {
-//       setTimeout(() => {
-//         let newData = new Array(data.length);
+let { chartlist } = require('./fake_data/stocklist.json');
+let quote = require('./fake_data/quote.json');
+let tc = new Timechart(document.querySelector('#timechart'), {
+  width: 500,
+  height: 300,
+  lastClose: quote.last_close,
+  data: chartlist
+});
 
-//         startIndex = Math.max(startIndex - length, 0);
+tc.render();
 
-//         for (let i = startIndex; i < data.length; i++) {
-//           newData[i] = data[i];
-//         }
+function update() {
+  function _update() {
+    if (chartlist.length > 0) {
+      // tc.update([...chartlist]);
+      // chartlist = [];
+      tc.update(chartlist.shift());
+    }
 
-//         resolve(newData);
-//       }, 500);
-//     });
-//   }
-// });
+    setTimeout(_update, 17);
+  }
 
-// let { chartlist } = require('./fake_data/stocklist.json');
-// let quote = require('./fake_data/quote.json');
-// let tc = new Timechart(document.querySelector('#timechart'), {
-//   width: 500,
-//   height: 300,
-//   lastClose: quote.last_close,
-//   data: []
-//   // data: chartlist
-// });
-
-// // tc.render();
-
-// // setTimeout(() => {
-// //   tc.resize(600, 400);
-// // }, 2000);
-
-// function update() {
-//   function _update() {
-//     if (chartlist.length > 0) {
-//       // tc.update([...chartlist]);
-//       // chartlist = [];
-//       tc.update(chartlist.shift());
-//     }
-
-//     setTimeout(_update, 17);
-//   }
-
-//   _update();
-// }
+  _update();
+}
 
 // update();
 
@@ -84,7 +50,7 @@ import $ from 'jquery';
 $('.tabs').on('click', 'li', function(e) {
   csc.destroy();
 
-  let type = String($(this).data('type'));
+  var type = String($(this).data('type'));
 
   if (type === 'D') {
     var data = require('./fake_data/stocklist_day.json');
