@@ -1,4 +1,4 @@
-import '../css/stock-chart.css';
+import './candle_stick_chart.css';
 import * as d3 from 'd3';
 import CandleSticks from './CandleSticks';
 import Volumes from './Volumes';
@@ -72,9 +72,9 @@ class CandleStickChart {
       let height = CandleStickChart.DIV[i] * totalHeight;
       let width = totalWidth;
       let x = 0;
+      // 下一个图形的y坐标等于上面图形高度的和，外边距由每个图形自己处理
       let y = lastHeight;
 
-      // 下一个图形的y坐标等于上面图形高度的和，外边距由每个图形自己处理
       lastHeight += height;
 
       let chart = new type(this.element, {

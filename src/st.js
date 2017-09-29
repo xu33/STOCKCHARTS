@@ -31,20 +31,36 @@ function update() {
 let data = require('./fake_data/stocklist_day.json');
 
 // 重构K线图
-let csc = new CandleStickChart('#refactor', {
-  width: 500,
-  height: 300,
-  data: data.chartlist.slice(0, data.chartlist.length - 1),
-  type: 'D'
-});
+// let csc = new CandleStickChart('#refactor', {
+//   width: 500,
+//   height: 300,
+//   data: data.chartlist.slice(0, data.chartlist.length - 1),
+//   type: 'D'
+// });
 
-csc.render();
+// csc.render();
 // 分钟K线更新例子
 // setTimeout(() => {
 //   csc.update(data.chartlist[data.chartlist.length - 1]);
 // }, 2000);
 
 import $ from 'jquery';
+var csc;
+$.ajax({
+  url: 'http://localhost:3000/hq/kline',
+  data: {
+    market: 0,
+    code: '000002',
+    wantNum: 500
+  }
+}).done(data => {
+  csc = new CandleStickChart('#refactor', {
+    width: 500,
+    height: 300,
+    data: data.vAnalyData,
+    type: 'D'
+  });
+});
 
 // 类型更新例子
 $('.tabs').on('click', 'li', function(e) {
@@ -52,28 +68,64 @@ $('.tabs').on('click', 'li', function(e) {
 
   var type = String($(this).data('type'));
 
+  // if (type === 'D') {
+  //   var data = require('./fake_data/stocklist_day.json');
+  // } else if (type === 'W') {
+  //   var data = require('./fake_data/stocklist_week.json');
+  // } else if (type === 'M') {
+  //   var data = require('./fake_data/stocklist_month.json');
+  // } else if (type === '1') {
+  //   var data = require('./fake_data/stocklist_one_minute.json');
+  // } else if (type === '5') {
+  //   var data = require('./fake_data/stocklist_five_minute.json');
+  // } else if (type === '15') {
+  //   var data = require('./fake_data/stocklist_fifteen_minute.json');
+  // } else if (type === '30') {
+  //   var data = require('./fake_data/stocklist_30_minute.json');
+  // } else if (type === '60') {
+  //   var data = require('./fake_data/stocklist_60_minute.json');
+  // }
+
+  // csc = new CandleStickChart('#refactor', {
+  //   width: 500,
+  //   height: 300,
+  //   data: data.chartlist,
+  //   type: type
+  // });
+
+  var klineType;
   if (type === 'D') {
-    var data = require('./fake_data/stocklist_day.json');
+    klineType = 0;
   } else if (type === 'W') {
-    var data = require('./fake_data/stocklist_week.json');
+    klineType = 7;
   } else if (type === 'M') {
-    var data = require('./fake_data/stocklist_month.json');
+    klineType = 8;
   } else if (type === '1') {
-    var data = require('./fake_data/stocklist_one_minute.json');
+    klineType = 1;
   } else if (type === '5') {
-    var data = require('./fake_data/stocklist_five_minute.json');
+    klineType = 2;
   } else if (type === '15') {
-    var data = require('./fake_data/stocklist_fifteen_minute.json');
+    klineType = 3;
   } else if (type === '30') {
-    var data = require('./fake_data/stocklist_30_minute.json');
+    klineType = 4;
   } else if (type === '60') {
-    var data = require('./fake_data/stocklist_60_minute.json');
+    klineType = 5;
   }
 
-  csc = new CandleStickChart('#refactor', {
-    width: 500,
-    height: 300,
-    data: data.chartlist,
-    type: type
+  $.ajax({
+    url: 'http://localhost:3000/hq/kline',
+    data: {
+      market: 0,
+      code: '000002',
+      wantNum: 300,
+      type: klineType
+    }
+  }).done(data => {
+    csc = new CandleStickChart('#refactor', {
+      width: 500,
+      height: 300,
+      data: data.vAnalyData,
+      type: type
+    });
   });
 });

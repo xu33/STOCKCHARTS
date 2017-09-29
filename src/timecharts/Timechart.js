@@ -15,6 +15,7 @@ class Timechart {
 
     this.children = [];
     this.initChildren();
+    this.render();
   }
 
   initChildren() {
@@ -45,6 +46,11 @@ class Timechart {
   render() {
     if (!this.options.data || this.options.data.length < 1) return;
     this.children.forEach(chart => chart.render(this.options.data));
+  }
+
+  destroy() {
+    this.children.forEach(child => child.element.remove());
+    this.element.remove();
   }
 
   update(item) {
