@@ -34,6 +34,9 @@ class Mainchart {
     this.initAxisGroups();
     this.initCrosshair();
     this.initIndicators();
+
+    // 创建渐变色填充
+    this.createGradientDef();
   }
 
   // 顶部文字
@@ -409,6 +412,28 @@ class Mainchart {
     this.element.select('.area_fill').attr('d', area(data));
     this.element.select('.area_stroke').attr('d', line(data));
     this.element.select('.avg_line').attr('d', lineAvg(data));
+  }
+
+  // 创建渐变色
+  createGradientDef() {
+    var defs = this.element.append('defs');
+    var gradient = defs
+      .append('linearGradient')
+      .attr('id', 'area_fill')
+      .attr('x1', 0)
+      .attr('x2', 0)
+      .attr('y1', 0)
+      .attr('y2', 1);
+    gradient
+      .append('stop')
+      .attr('stop-opacity', 1)
+      .attr('stop-color', '#2f84cc')
+      .attr('offset', 0);
+    gradient
+      .append('stop')
+      .attr('stop-opacity', 0)
+      .attr('stop-color', '#2f84cc')
+      .attr('offset', 1);
   }
 }
 

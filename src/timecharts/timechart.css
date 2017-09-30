@@ -3,7 +3,8 @@ svg line {
 }
 
 .area_fill {
-  fill: #2f84cc;
+  /* fill: #2f84cc; */
+  fill: url(#area_fill);
   opacity: 0.2;
 }
 
