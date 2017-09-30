@@ -68,7 +68,7 @@ class Mainchart {
     this.element
       .append('text')
       .attr('class', 'tip_text')
-      .attr('x', 8)
+      .attr('x', 8 + left)
       .attr('y', 15);
 
     this.element

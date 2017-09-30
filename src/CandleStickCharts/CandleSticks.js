@@ -43,7 +43,7 @@ class CandleSticks {
     this.initScales(); // 比例尺
     this.initCrosshair(); // 辅助线
     this.initIndicators(); // 指示器
-    this.initText(); // 顶部文字
+    // this.initText(); // 顶部文字
   }
 
   // 顶部文字
@@ -195,37 +195,38 @@ class CandleSticks {
 
   initAxis() {
     let { width, height } = this.options;
-    // y轴
+    // 左y轴
     this.element.append('g').attr('class', 'axis left_axis');
-    // y轴
+
+    // 右y轴
     this.element
       .append('g')
       .attr('class', 'axis right_axis')
       .attr('transform', `translate(${width}, ${0})`);
 
-    // x轴
+    // 底x轴
     this.element
       .append('g')
       .attr('class', 'axis bottom_axis')
       .attr('transform', `translate(0, ${height})`);
 
-    // 辅助线
+    // 水平辅助线
     this.element.append('g').attr('class', 'axis grid_x');
 
-    // 辅助线
+    // 垂直辅助线
     this.element
       .append('g')
       .attr('class', 'axis grid_y')
       .attr('transform', `translate(0, ${height})`);
 
     // 边框
-    this.element
-      .append('rect')
-      .attr('class', 'axis_border')
-      .attr('x', 0)
-      .attr('y', 1)
-      .attr('width', width)
-      .attr('height', height);
+    // this.element
+    //   .append('rect')
+    //   .attr('class', 'axis_border')
+    //   .attr('x', 0)
+    //   .attr('y', 1)
+    //   .attr('width', width)
+    //   .attr('height', height);
   }
 
   render(data) {
@@ -320,35 +321,35 @@ class CandleSticks {
     this.renderBottomAxis();
   }
 
-  _renderLeftAxis() {
-    let axis = d3
-      .axisRight(this.scale_price)
-      .ticks(CandleSticks.y_tick_num)
-      .tickSize(0)
-      .tickPadding(2)
-      .tickFormat(d3.format('.2f'));
+  // _renderLeftAxis() {
+  //   let axis = d3
+  //     .axisRight(this.scale_price)
+  //     .ticks(CandleSticks.y_tick_num)
+  //     .tickSize(0)
+  //     .tickPadding(2)
+  //     .tickFormat(d3.format('.2f'));
 
-    this.element.select('.left_axis').call(axis);
-    this.element
-      .select('.left_axis')
-      .selectAll('.tick text')
-      .attr('transform', `translate(0, -8)`);
+  //   this.element.select('.left_axis').call(axis);
+  //   this.element
+  //     .select('.left_axis')
+  //     .selectAll('.tick text')
+  //     .attr('transform', `translate(0, -8)`);
 
-    this.renderHorizontalGridLines();
-  }
+  //   this.renderHorizontalGridLines();
+  // }
 
   renderLeftAxis() {
     let formatter = d3.format('.2f');
 
     if (this.leftAxis === undefined) {
       this.leftAxis = d3
-        .axisRight(this.leftAndRightAxisScale)
+        .axisRight(this.leftAndRightAxisScale.copy())
         .tickSize(0)
         .tickPadding(5)
         .tickFormat(formatter);
     }
 
-    this.leftAxis.scale(this.leftAndRightAxisScale);
+    this.leftAxis.scale(this.leftAndRightAxisScale.copy());
 
     this.element.select('.left_axis').call(this.leftAxis);
 
@@ -391,6 +392,7 @@ class CandleSticks {
   // }
 
   renderRightAxis() {
+    console.log('renderRightAxis fired');
     let formatter = d3.format('.2f');
 
     if (this.rightAxis === undefined) {
@@ -416,15 +418,15 @@ class CandleSticks {
       });
   }
 
-  _renderHorizontalGridLines() {
-    let axis = d3
-      .axisLeft(this.scale_price)
-      .ticks(CandleSticks.y_tick_num)
-      .tickSize(-this.options.width)
-      .tickFormat('');
+  // _renderHorizontalGridLines() {
+  //   let axis = d3
+  //     .axisLeft(this.scale_price)
+  //     .ticks(CandleSticks.y_tick_num)
+  //     .tickSize(-this.options.width)
+  //     .tickFormat('');
 
-    this.element.select('.grid_x').call(axis);
-  }
+  //   this.element.select('.grid_x').call(axis);
+  // }
 
   // _renderBottomAxis() {
   //   let scale = d3
@@ -470,9 +472,13 @@ class CandleSticks {
     let lengthNeed = 4;
     let chunks = thunkArray([...this.data], lengthNeed);
     let domain = chunks.map(chunk => new Date(chunk[0].timestamp));
-    let range = linspace(0, width - width / lengthNeed, lengthNeed);
+    let range = linspace(0, width, lengthNeed + 1);
 
     if (domain.length > lengthNeed) domain.pop();
+
+    domain.push(new Date());
+
+    // console.log(domain, range);
 
     let scale = d3
       .scaleOrdinal()
@@ -484,14 +490,19 @@ class CandleSticks {
     let bottomAxis = d3
       .axisBottom(scale)
       .tickSize(0)
-      .tickPadding(5)
+      .tickPadding(8)
       .tickFormat(formatter);
 
-    this.element.select('.bottom_axis').call(bottomAxis);
-    this.element
-      .select('.bottom_axis')
+    let element = this.element.select('.bottom_axis');
+
+    element.call(bottomAxis);
+    element
       .selectAll('.tick text')
-      .attr('text-anchor', 'start');
+      .attr('text-anchor', 'start')
+      .style('display', (d, i) => {
+        if (i === range.length - 1) return 'none';
+        else return null;
+      });
 
     this.renderVerticalGridLines(scale);
   }
