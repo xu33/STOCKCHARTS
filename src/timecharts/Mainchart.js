@@ -364,6 +364,8 @@ class Mainchart {
     if (this.data.length < 1) return;
     this.renderChartArea();
     this.renderAxises();
+
+    // 顶部默认显示最后一条数据
     this.updateText(this.data[this.data.length - 1]);
   }
 

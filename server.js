@@ -33,7 +33,7 @@ app.get('/st', (req, res) => {
 });
 
 app.get('/brushexample', (req, res) => {
-  res.sendFile(path.join(__dirname, 'example/zoombrush.html'));
+  res.sendFile(path.join(__dirname, 'example/zoombrush_old.html'));
 });
 
 app.get('/test', (req, res) => {

@@ -47,12 +47,7 @@ let data = require('./fake_data/stocklist_day.json');
 import $ from 'jquery';
 var csc;
 $.ajax({
-  url: 'http://localhost:3000/hq/kline',
-  data: {
-    market: 0,
-    code: '000002',
-    wantNum: 500
-  }
+  url: `http://hq.test.whup.com/hq/kline/8/0/000001`
 }).done(data => {
   csc = new CandleStickChart('#refactor', {
     width: 500,
@@ -67,33 +62,8 @@ $('.tabs').on('click', 'li', function(e) {
   csc.destroy();
 
   var type = String($(this).data('type'));
-
-  // if (type === 'D') {
-  //   var data = require('./fake_data/stocklist_day.json');
-  // } else if (type === 'W') {
-  //   var data = require('./fake_data/stocklist_week.json');
-  // } else if (type === 'M') {
-  //   var data = require('./fake_data/stocklist_month.json');
-  // } else if (type === '1') {
-  //   var data = require('./fake_data/stocklist_one_minute.json');
-  // } else if (type === '5') {
-  //   var data = require('./fake_data/stocklist_five_minute.json');
-  // } else if (type === '15') {
-  //   var data = require('./fake_data/stocklist_fifteen_minute.json');
-  // } else if (type === '30') {
-  //   var data = require('./fake_data/stocklist_30_minute.json');
-  // } else if (type === '60') {
-  //   var data = require('./fake_data/stocklist_60_minute.json');
-  // }
-
-  // csc = new CandleStickChart('#refactor', {
-  //   width: 500,
-  //   height: 300,
-  //   data: data.chartlist,
-  //   type: type
-  // });
-
   var klineType;
+
   if (type === 'D') {
     klineType = 0;
   } else if (type === 'W') {
@@ -113,13 +83,7 @@ $('.tabs').on('click', 'li', function(e) {
   }
 
   $.ajax({
-    url: 'http://localhost:3000/hq/kline',
-    data: {
-      market: 0,
-      code: '000002',
-      wantNum: 300,
-      type: klineType
-    }
+    url: `http://hq.test.whup.com/hq/kline/${klineType}/0/000001`
   }).done(data => {
     csc = new CandleStickChart('#refactor', {
       width: 500,

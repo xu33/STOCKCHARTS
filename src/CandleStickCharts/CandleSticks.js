@@ -15,7 +15,7 @@ class CandleSticks {
 
   static x_tick_num = 3;
   static y_tick_num = 3;
-  static offset_ratio = 0.05;
+  static offset_ratio = 0.2;
 
   constructor(parentNode, { x, y, width, height, type }) {
     const { left, right, top, bottom } = CandleSticks.margin;
@@ -92,7 +92,7 @@ class CandleSticks {
 
   extent() {
     let data = this.data;
-
+    // 如果画均线 需要把均线的价格计算在内
     // let min = d3.min(data, d =>
     //   Math.min(d.low, d.high, d.ma5, d.ma10, d.ma20, d.ma30)
     // );
@@ -103,10 +103,17 @@ class CandleSticks {
     let min = d3.min(data, d => d.low);
     let max = d3.max(data, d => d.high);
 
-    return [
-      min * (1 - CandleSticks.offset_ratio),
-      max * (1 + CandleSticks.offset_ratio)
-    ];
+    max = max * (1 + CandleSticks.offset_ratio);
+    min = min - max * CandleSticks.offset_ratio;
+
+    if (min < 0) min = 0;
+
+    // return [
+    //   min * (1 - CandleSticks.offset_ratio),
+    //   max * (1 + CandleSticks.offset_ratio)
+    // ];
+
+    return [min, max];
   }
 
   // 初始化文字指示器
@@ -174,6 +181,8 @@ class CandleSticks {
   initGroups() {
     // 蜡烛图组
     this.element.append('g').attr('class', 'candle_sticks');
+    // 最高，最低组
+    this.element.append('g').attr('class', 'min_and_max');
   }
 
   initScales() {
@@ -274,6 +283,13 @@ class CandleSticks {
       .x(d => d.x)
       .y(d => d.y);
 
+    let maxPrice = data[0].high;
+    let minPrice = data[0].low;
+    let maxOneX;
+    let maxOneY;
+    let minOneX;
+    let minOneY;
+
     let wicks = group.selectAll('.shadow').data(data);
 
     wicks.exit().remove();
@@ -288,9 +304,36 @@ class CandleSticks {
         var y1 = scale_price(d.high);
         var y2 = scale_price(d.low);
 
-        return line([{ x: x, y: y1 }, { x: x, y: y2 }]);
+        if (d.high >= maxPrice) {
+          maxPrice = d.high;
+          maxOneX = x;
+          maxOneY = y1;
+        }
+
+        if (d.low <= minPrice) {
+          minPrice = d.low;
+          minOneX = x;
+          minOneY = y2;
+        }
+
+        // console.log('high:', d.high);
+
+        return line([{ x, y: y1 }, { x, y: y2 }]);
       })
       .attr('stroke', calColor);
+
+    this.renderMaxAndMin(
+      maxOneX,
+      maxOneY,
+      minOneX,
+      minOneY,
+      maxPrice,
+      minPrice
+    );
+
+    // console.log(scale_price.domain());
+
+    // console.log(maxOneX, maxOneY, minOneX, minOneY);
   }
 
   calculateLeftAndRightAxisScale() {
@@ -320,23 +363,6 @@ class CandleSticks {
     // 渲染底部数轴
     this.renderBottomAxis();
   }
-
-  // _renderLeftAxis() {
-  //   let axis = d3
-  //     .axisRight(this.scale_price)
-  //     .ticks(CandleSticks.y_tick_num)
-  //     .tickSize(0)
-  //     .tickPadding(2)
-  //     .tickFormat(d3.format('.2f'));
-
-  //   this.element.select('.left_axis').call(axis);
-  //   this.element
-  //     .select('.left_axis')
-  //     .selectAll('.tick text')
-  //     .attr('transform', `translate(0, -8)`);
-
-  //   this.renderHorizontalGridLines();
-  // }
 
   renderLeftAxis() {
     let formatter = d3.format('.2f');
@@ -376,23 +402,8 @@ class CandleSticks {
     this.element.select('.grid_x').call(axis);
   }
 
-  // _renderRightAxis() {
-  //   let axis = d3
-  //     .axisLeft(this.scale_price)
-  //     .ticks(CandleSticks.y_tick_num)
-  //     .tickSize(0)
-  //     .tickPadding(2)
-  //     .tickFormat(d3.format('.2f'));
-
-  //   this.element.select('.right_axis').call(axis);
-  //   this.element
-  //     .select('.right_axis')
-  //     .selectAll('.tick text')
-  //     .attr('transform', `translate(0, -8)`);
-  // }
-
   renderRightAxis() {
-    console.log('renderRightAxis fired');
+    // console.log('renderRightAxis fired');
     let formatter = d3.format('.2f');
 
     if (this.rightAxis === undefined) {
@@ -417,34 +428,6 @@ class CandleSticks {
         }
       });
   }
-
-  // _renderHorizontalGridLines() {
-  //   let axis = d3
-  //     .axisLeft(this.scale_price)
-  //     .ticks(CandleSticks.y_tick_num)
-  //     .tickSize(-this.options.width)
-  //     .tickFormat('');
-
-  //   this.element.select('.grid_x').call(axis);
-  // }
-
-  // _renderBottomAxis() {
-  //   let scale = d3
-  //     .scaleTime()
-  //     .range(this.range_x)
-  //     .domain(d3.extent(this.data, d => new Date(d.timestamp)));
-
-  //   let bottomAxis = d3
-  //     .axisBottom(scale)
-  //     .ticks(CandleSticks.x_tick_num)
-  //     .tickSize(0)
-  //     .tickPadding(8)
-  //     .tickFormat(d3.timeFormat('%Y-%m-%d'));
-
-  //   this.element.select('.bottom_axis').call(bottomAxis);
-
-  //   this.renderVerticalGridLines(scale);
-  // }
 
   getBottomAxisTickFormatter() {
     let type = this.options.type;
@@ -507,16 +490,6 @@ class CandleSticks {
     this.renderVerticalGridLines(scale);
   }
 
-  // _renderVerticalGridLines(scale) {
-  //   let axis = d3
-  //     .axisBottom(scale)
-  //     .ticks(CandleSticks.x_tick_num)
-  //     .tickSize(-this.options.height)
-  //     .tickFormat('');
-
-  //   this.element.select('.grid_y').call(axis);
-  // }
-
   renderVerticalGridLines(scale) {
     let axis = d3
       .axisBottom(scale)
@@ -524,6 +497,132 @@ class CandleSticks {
       .tickFormat('');
 
     this.element.select('.grid_y').call(axis);
+  }
+
+  renderMaxAndMin(maxOneX, maxOneY, minOneX, minOneY, maxPrice, minPrice) {
+    let { width } = this.options;
+    let group = this.element.select('.min_and_max');
+    let line = d3
+      .line()
+      .x(d => d.x)
+      .y(d => d.y);
+
+    if (group.select('.min_path').empty()) {
+      group.append('path').attr('class', 'min_path');
+      group.append('rect').attr('class', 'min_wrap indicator-box');
+      group
+        .append('text')
+        .attr('class', 'min_price')
+        .style('font-size', '10px');
+    }
+
+    if (group.select('.max_path').empty()) {
+      group.append('path').attr('class', 'max_path');
+      group.append('rect').attr('class', 'max_wrap indicator-box');
+      group
+        .append('text')
+        .attr('class', 'max_price')
+        .style('font-size', '10px');
+    }
+
+    var maxOneX2, minOneX2;
+    var maxTextX, minTextX;
+
+    if (maxOneX > 0 && maxOneX < width - 50) {
+      maxOneX2 = maxOneX + 10;
+      maxTextX = maxOneX2;
+    } else {
+      maxOneX2 = maxOneX - 10;
+      maxTextX = maxOneX2 - 20;
+    }
+
+    if (minOneX > 0 && minOneX < width - 50) {
+      minOneX2 = minOneX + 10;
+      minTextX = minOneX2;
+    } else {
+      minOneX2 = minOneX - 10;
+      minTextX = minOneX2 - 20;
+    }
+
+    group
+      .select('.max_path')
+      .attr('d', () => {
+        return line([
+          {
+            x: maxOneX,
+            y: maxOneY
+          },
+          {
+            x: maxOneX2,
+            y: maxOneY
+          }
+        ]);
+      })
+      .attr('stroke', '#000');
+
+    group
+      .select('.min_path')
+      .attr('d', () => {
+        return line([
+          {
+            x: minOneX,
+            y: minOneY
+          },
+          {
+            x: minOneX2,
+            y: minOneY
+          }
+        ]);
+      })
+      .attr('stroke', '#000');
+
+    // console.log(maxPrice, minPrice);
+
+    this.renderMaxText(group, maxTextX, maxOneY, maxPrice);
+    this.renderMinText(group, minTextX, minOneY + 10, minPrice);
+  }
+
+  renderMinText(group, x, y, text) {
+    let element = group.select('.min_price');
+
+    element
+      .attr('x', x)
+      .attr('y', y)
+      .text(d3.format('.2f')(text));
+
+    let boundingBox = element.node().getBBox();
+    let attrs = ['width', 'height', 'x', 'y'];
+    let rect = group.select('.min_wrap');
+    // attrs.forEach(attr => {
+    //   rect.attr(attr, boundingBox[attr]);
+    // });
+    rect
+      .attr('x', boundingBox.x - 2)
+      .attr('y', boundingBox.y)
+      .attr('width', boundingBox.width + 4)
+      .attr('height', boundingBox.height);
+  }
+
+  renderMaxText(group, x, y, text) {
+    let element = group.select('.max_price');
+
+    element
+      .attr('x', x)
+      .attr('y', y)
+      .text(d3.format('.2f')(text));
+
+    let boundingBox = element.node().getBBox();
+    // let attrs = ['width', 'height', 'x', 'y'];
+    let rect = group.select('.max_wrap');
+    // attrs.forEach(attr => {
+    //   rect.attr(attr, boundingBox[attr]);
+    // });
+
+    rect
+      .attr('x', boundingBox.x - 2)
+      .attr('y', boundingBox.y)
+      .attr('width', boundingBox.width + 4)
+      .attr('height', boundingBox.height);
   }
 }
 

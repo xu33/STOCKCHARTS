@@ -14,6 +14,8 @@ svg {
 
 svg rect,
 svg line,
+.min_path,
+.max_path,
 .text_box {
   shape-rendering: crispEdges;
 }
