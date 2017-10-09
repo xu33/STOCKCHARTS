@@ -43,7 +43,7 @@ class Crosshair extends EventEmitter {
         self.emit('move', mousePosition);
       })
       .on('mouseout', () => {
-        element.style('display', 'none');
+        // element.style('display', 'none');
         self.emit('end');
       });
   }

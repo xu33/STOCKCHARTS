@@ -160,12 +160,12 @@ class Mainchart {
   updateIncreaseIndicator(y, currentDataItem) {
     let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
     let { width, height, lastClose } = this.options;
-    let x = width - right - left - Indicator.WIDTH;
+    let x = width - right - left;
     let price = currentDataItem.current;
     let increase = (price - lastClose) / lastClose;
 
     this.increaseIndicator.setText(d3.format('.2%')(increase));
-    this.increaseIndicator.setPosition(x, y, 'horizontal');
+    this.increaseIndicator.setPosition(x, y, 'horizontal', 'right');
   }
 
   // 初始化放置数轴的容器
