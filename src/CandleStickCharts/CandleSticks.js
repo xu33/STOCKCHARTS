@@ -119,9 +119,9 @@ class CandleSticks {
   // 初始化文字指示器
   initIndicators() {
     // 价格指示器
-    this.priceIndicator = new Indicator(this.crosshair.element);
+    this.priceIndicator = new Indicator(this.crosshair);
     // 时间指示器
-    this.timeIndicator = new Indicator(this.crosshair.element, 70);
+    this.timeIndicator = new Indicator(this.crosshair);
   }
 
   initCrosshair() {

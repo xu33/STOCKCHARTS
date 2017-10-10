@@ -249,11 +249,11 @@ class Mainchart {
   // 初始化文字指示器
   initIndicators() {
     // 价格指示器
-    this.priceIndicator = new Indicator(this.crosshair.element);
+    this.priceIndicator = new Indicator(this.crosshair);
     // 涨幅指示器
-    this.increaseIndicator = new Indicator(this.crosshair.element);
+    this.increaseIndicator = new Indicator(this.crosshair);
     // 时间指示器
-    this.timeIndicator = new Indicator(this.crosshair.element);
+    this.timeIndicator = new Indicator(this.crosshair);
   }
 
   renderAxises() {

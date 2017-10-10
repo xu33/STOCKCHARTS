@@ -8,8 +8,9 @@ class Indicator {
   static INDICATOR_BOX_CLASS = 'indicator-box';
   static TEXT_PADDING = 2;
 
-  constructor(parentNode, width, height) {
-    this.element = parentNode.append('g');
+  constructor(parent, width, height) {
+    this.parent = parent;
+    this.element = parent.element.append('g');
     this.createRect();
     this.createText();
   }
@@ -75,6 +76,10 @@ class Indicator {
 
     if (x < 0) {
       x = 0;
+    }
+
+    if (x > this.parent.bound.width - boxWidth) {
+      x = this.parent.bound.width - boxWidth;
     }
 
     this.element.attr('transform', `translate(${x}, ${y})`);
