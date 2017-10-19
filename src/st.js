@@ -3,14 +3,14 @@ import Timechart from './timecharts/Timechart';
 
 let { chartlist } = require('./fake_data/stocklist.json');
 let quote = require('./fake_data/quote.json');
-let tc = new Timechart(document.querySelector('#timechart'), {
-  width: 500,
-  height: 300,
-  lastClose: quote.last_close,
-  data: chartlist
-});
+// let tc = new Timechart(document.querySelector('#timechart'), {
+//   width: 500,
+//   height: 300,
+//   lastClose: quote.last_close,
+//   data: chartlist
+// });
 
-tc.render();
+// tc.render();
 
 function update() {
   function _update() {
@@ -53,7 +53,7 @@ $.ajax({
     width: 500,
     height: 300,
     data: data.vAnalyData,
-    type: 'D'
+    type: 'M'
   });
 });
 

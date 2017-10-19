@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 
 /* bursh区域 */
 
-class Dragbar extends EventEmitter {
+class Brush extends EventEmitter {
   static margin = {
     left: 10,
     right: 3,
@@ -13,7 +13,7 @@ class Dragbar extends EventEmitter {
 
   constructor(parentNode, { x, y, width, height }) {
     super();
-    const { left, right, top, bottom } = Dragbar.margin;
+    const { left, right, top, bottom } = Brush.margin;
 
     this.options = {
       x,
@@ -60,4 +60,4 @@ class Dragbar extends EventEmitter {
   render() {}
 }
 
-export default Dragbar;
+export default Brush;
