@@ -378,9 +378,9 @@ var _Volumes = __webpack_require__(13);
 
 var _Volumes2 = _interopRequireDefault(_Volumes);
 
-var _Brush = __webpack_require__(14);
+var _Dragbar = __webpack_require__(14);
 
-var _Brush2 = _interopRequireDefault(_Brush);
+var _Dragbar2 = _interopRequireDefault(_Dragbar);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -390,7 +390,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var CandleStickChart = function () {
   // 每个子图形占比
-  // static DIV = [0.7, 0.2, 0.1];
   function CandleStickChart(selector, _ref) {
     var _this = this;
 
@@ -448,12 +447,9 @@ var CandleStickChart = function () {
     };
 
     this.element.attr('width', width).attr('height', height);
-    // this.selectedData = [];
-    this.selectedData = this.options.data.slice(data.length - 100);
-
+    this.selectedData = [];
     this.children = [];
     this.initChildren();
-    this.render();
     this.bindEvents();
   }
 
@@ -462,8 +458,7 @@ var CandleStickChart = function () {
     value: function initChildren() {
       var totalHeight = this.options.height;
       var totalWidth = this.options.width;
-      // let types = [CandleSticks, Volumes, Brush];
-      var types = [_CandleSticks2.default, _Volumes2.default];
+      var types = [_CandleSticks2.default, _Volumes2.default, _Dragbar2.default];
 
       // 前一个图形的高度
       var lastHeight = 0;
@@ -490,8 +485,8 @@ var CandleStickChart = function () {
       }
     }
   }, {
-    key: '__bindEvents',
-    value: function __bindEvents() {
+    key: 'bindEvents',
+    value: function bindEvents() {
       // change brush selection need to rerender all charts
       var brush = this.children[this.children.length - 1];
 
@@ -500,91 +495,31 @@ var CandleStickChart = function () {
       brush.initBrushBehavior();
     }
   }, {
-    key: 'bindEvents',
-    value: function bindEvents() {
-      var _this2 = this;
-
-      var percentWidth = 50;
-      var initial;
-      var _options = this.options,
-          width = _options.width,
-          height = _options.height;
-
-      var startIndex = 0;
-      var endIndex = this.options.data.length - 1;
-      var range = [0, this.options.width];
-      var indexScale = d3.scaleLinear().domain([startIndex, endIndex]).range(range);
-
-      var indexScaleCopy = indexScale.copy();
-
-      // console.log(indexScaleCopy.domain());
-
-      var zoomer = this.element.append('rect').attr('width', width).attr('height', height).style('fill', 'none').style('pointer-events', 'all');
-
-      var maxScale = this.options.width / percentWidth;
-      var initScale = maxScale;
-
-      console.log('initScale', initScale);
-
-      var zoomed = function zoomed() {
-        var transform = d3.event.transform;
-
-        console.log(transform);
-
-        var domain = transform.rescaleX(indexScaleCopy).domain();
-
-        var _domain2 = _slicedToArray(domain, 2),
-            selectedStartIndex = _domain2[0],
-            selectedEndIndex = _domain2[1];
-
-        console.log('\u5F53\u524D\u6570\u636E\u8303\u56F4:' + selectedStartIndex + ' - ' + selectedEndIndex);
-
-        if (selectedStartIndex < startIndex || selectedEndIndex > endIndex) {
-          // throw new Error('索引错误');
-          return;
-        }
-
-        selectedStartIndex = Math.round(selectedStartIndex);
-        selectedEndIndex = Math.round(selectedEndIndex);
-
-        var selectedData = _this2.options.data.slice(selectedStartIndex, selectedEndIndex);
-
-        _this2.selectedData = selectedData;
-        _this2.render();
-      };
-
-      var zoom = d3.zoom().translateExtent([[0, 0], [width, height]]).scaleExtent([1, maxScale]).on('zoom', zoomed);
-
-      var initTransform = d3.zoomIdentity.scale(initScale).translate(-(width - percentWidth), 0); // 一开始从最右侧，也就是最新的显示
-
-      zoomer.call(zoom).call(zoom.transform, initTransform);
-    }
-  }, {
     key: 'render',
     value: function render() {
-      var _this3 = this;
+      var _this2 = this;
 
       this.children.forEach(function (child) {
-        return child.render(_this3.selectedData);
+        return child.render(_this2.selectedData);
       });
     }
   }, {
     key: 'update',
     value: function update(items) {
-      var _this4 = this;
+      var _this3 = this;
 
       if (!Array.isArray(items)) {
         items = [items];
       }
 
       items.forEach(function (item) {
-        return _this4.options.data.push(item);
+        return _this3.options.data.push(item);
       });
 
       setTimeout(function () {
-        _this4.handleBrush({
-          brushSelection: _this4.currentBrushSelection,
-          range: _this4.currentRange
+        _this3.handleBrush({
+          brushSelection: _this3.currentBrushSelection,
+          range: _this3.currentRange
         });
       }, 17);
     }
@@ -613,7 +548,7 @@ var CandleStickChart = function () {
   return CandleStickChart;
 }();
 
-CandleStickChart.DIV = [0.7, 0.3];
+CandleStickChart.DIV = [0.7, 0.2, 0.1];
 exports.default = CandleStickChart;
 
 /***/ }),
@@ -2073,24 +2008,24 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 /* bursh区域 */
 
-var Brush = function (_EventEmitter) {
-  _inherits(Brush, _EventEmitter);
+var Dragbar = function (_EventEmitter) {
+  _inherits(Dragbar, _EventEmitter);
 
-  function Brush(parentNode, _ref) {
+  function Dragbar(parentNode, _ref) {
     var x = _ref.x,
         y = _ref.y,
         width = _ref.width,
         height = _ref.height;
 
-    _classCallCheck(this, Brush);
+    _classCallCheck(this, Dragbar);
 
-    var _this = _possibleConstructorReturn(this, (Brush.__proto__ || Object.getPrototypeOf(Brush)).call(this));
+    var _this = _possibleConstructorReturn(this, (Dragbar.__proto__ || Object.getPrototypeOf(Dragbar)).call(this));
 
-    var _Brush$margin = Brush.margin,
-        left = _Brush$margin.left,
-        right = _Brush$margin.right,
-        top = _Brush$margin.top,
-        bottom = _Brush$margin.bottom;
+    var _Dragbar$margin = Dragbar.margin,
+        left = _Dragbar$margin.left,
+        right = _Dragbar$margin.right,
+        top = _Dragbar$margin.top,
+        bottom = _Dragbar$margin.bottom;
 
 
     _this.options = {
@@ -2112,7 +2047,7 @@ var Brush = function (_EventEmitter) {
     return _this;
   }
 
-  _createClass(Brush, [{
+  _createClass(Dragbar, [{
     key: 'initBrushBehavior',
     value: function initBrushBehavior() {
       var width = this.options.width;
@@ -2141,16 +2076,16 @@ var Brush = function (_EventEmitter) {
     value: function render() {}
   }]);
 
-  return Brush;
+  return Dragbar;
 }(_events2.default);
 
-Brush.margin = {
+Dragbar.margin = {
   left: 10,
   right: 3,
   top: 0,
   bottom: 3
 };
-exports.default = Brush;
+exports.default = Dragbar;
 
 /***/ })
 ],[4]);
