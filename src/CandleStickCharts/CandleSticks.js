@@ -15,7 +15,7 @@ class CandleSticks {
 
   static x_tick_num = 3;
   static y_tick_num = 3;
-  static offset_ratio = 0.2;
+  static offset_ratio = 0.05;
 
   constructor(parentNode, { x, y, width, height, type }) {
     const { left, right, top, bottom } = CandleSticks.margin;

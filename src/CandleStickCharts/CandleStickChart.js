@@ -9,40 +9,40 @@ class CandleStickChart {
   // static DIV = [0.7, 0.2, 0.1];
   static DIV = [0.7, 0.3];
 
-  handleBrush = ({ brushSelection, range }) => {
-    let startIndex = 0;
-    let endIndex = this.options.data.length - 1;
-    let indexScale = d3
-      .scaleLinear()
-      .domain([startIndex, endIndex])
-      .range(range);
+  // handleBrush = ({ brushSelection, range }) => {
+  //   let startIndex = 0;
+  //   let endIndex = this.options.data.length - 1;
+  //   let indexScale = d3
+  //     .scaleLinear()
+  //     .domain([startIndex, endIndex])
+  //     .range(range);
 
-    let domain = brushSelection.map(value => indexScale.invert(value));
-    let [selectedStartIndex, selectedEndIndex] = domain;
-    if (selectedStartIndex < startIndex || selectedEndIndex > endIndex) {
-      throw new Error('索引错误');
-    }
+  //   let domain = brushSelection.map(value => indexScale.invert(value));
+  //   let [selectedStartIndex, selectedEndIndex] = domain;
+  //   if (selectedStartIndex < startIndex || selectedEndIndex > endIndex) {
+  //     throw new Error('索引错误');
+  //   }
 
-    selectedStartIndex = Math.round(selectedStartIndex);
-    selectedEndIndex = Math.round(selectedEndIndex);
+  //   selectedStartIndex = Math.round(selectedStartIndex);
+  //   selectedEndIndex = Math.round(selectedEndIndex);
 
-    console.log(`当前数据范围:${selectedStartIndex} - ${selectedEndIndex}`);
+  //   console.log(`当前数据范围:${selectedStartIndex} - ${selectedEndIndex}`);
 
-    // 至少显示30根K线
-    if (selectedEndIndex - selectedStartIndex < 30) {
-      return;
-    }
+  //   // 至少显示30根K线
+  //   if (selectedEndIndex - selectedStartIndex < 30) {
+  //     return;
+  //   }
 
-    let selectedData = this.options.data.slice(
-      selectedStartIndex,
-      selectedEndIndex
-    );
+  //   let selectedData = this.options.data.slice(
+  //     selectedStartIndex,
+  //     selectedEndIndex
+  //   );
 
-    this.currentBrushSelection = brushSelection;
-    this.currentRange = range;
-    this.selectedData = selectedData;
-    this.render();
-  };
+  //   this.currentBrushSelection = brushSelection;
+  //   this.currentRange = range;
+  //   this.selectedData = selectedData;
+  //   this.render();
+  // };
 
   constructor(selector, { width, height, type, data }) {
     this.element = d3.select(selector).append('svg');
@@ -94,19 +94,26 @@ class CandleStickChart {
     }
   }
 
-  __bindEvents() {
-    // change brush selection need to rerender all charts
-    const brush = this.children[this.children.length - 1];
+  // __bindEvents() {
+  //   // change brush selection need to rerender all charts
+  //   const brush = this.children[this.children.length - 1];
 
-    brush.on('brush', this.handleBrush);
+  //   brush.on('brush', this.handleBrush);
 
-    brush.initBrushBehavior();
-  }
+  //   brush.initBrushBehavior();
+  // }
 
   bindEvents() {
-    var percentWidth = 50;
-    var initial;
     var { width, height } = this.options;
+    var minStickLength = 30;
+    var percent = minStickLength / this.options.data.length;
+
+    console.log(percent);
+
+    var percentWidth = width * percent;
+
+    console.log(percentWidth);
+
     let startIndex = 0;
     let endIndex = this.options.data.length - 1;
     var range = [0, this.options.width];
@@ -139,7 +146,7 @@ class CandleStickChart {
       var domain = transform.rescaleX(indexScaleCopy).domain();
 
       let [selectedStartIndex, selectedEndIndex] = domain;
-      console.log(`当前数据范围:${selectedStartIndex} - ${selectedEndIndex}`);
+      console.log(`当前数据范围: ${selectedStartIndex} - ${selectedEndIndex}`);
 
       if (selectedStartIndex < startIndex || selectedEndIndex > endIndex) {
         // throw new Error('索引错误');
