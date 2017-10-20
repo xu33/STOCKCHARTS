@@ -50,7 +50,7 @@
         x.domain(t.rescaleX(x2).domain());
         focus.select(".area").attr("d", area);
         focus.select(".axis--x").call(xAxis);
-        // context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
+        context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
     };
 
     var type = function (d) {
