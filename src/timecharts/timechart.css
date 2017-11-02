@@ -82,12 +82,6 @@ svg line {
   stroke: #ccc;
 }
 
-/* 量线 */
-.volume {
-  stroke: #2f84cc;
-  fill: none;
-}
-
 /* 顶部文字 */
 .tip_text {
   font-size: 10px;

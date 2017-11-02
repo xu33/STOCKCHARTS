@@ -1,18 +1,18 @@
-const OVERFLOW_RATIO = 1.2;
 import { linspace } from '../utils/linspace';
 import * as d3 from 'd3';
 import Crosshair from './Crosshair';
 import Indicator from './Indicator';
 
-class Mainchart {
+class AreaAndLine {
+  static OVERFLOW_RATIO = 1.2;
   static START_INDEX = 0;
   static END_INDEX = 241;
 
   static defaultOptions = {
     margin: {
-      top: 20,
-      left: 5,
-      right: 0,
+      top: 0,
+      left: 50,
+      right: 50,
       bottom: 20
     }
   };
@@ -28,7 +28,7 @@ class Mainchart {
   }
 
   initialize() {
-    this.initText();
+    // this.initText();
     this.initScales();
     this.initLines();
     this.initAxisGroups();
@@ -41,7 +41,7 @@ class Mainchart {
 
   // 顶部文字
   initText() {
-    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
+    let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
     let { width, height } = this.options;
 
     let line = d3
@@ -85,7 +85,7 @@ class Mainchart {
 
   // 初始化十字线交互
   initCrosshair() {
-    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
+    let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
     let { width, height } = this.options;
 
     this.crosshair = new Crosshair(this.element, {
@@ -119,12 +119,12 @@ class Mainchart {
       this.updateIncreaseIndicator(y, currentDataItem);
 
       // 更新顶部文字
-      this.updateText(currentDataItem);
+      // this.updateText(currentDataItem);
     });
 
     this.crosshair.on('end', () => {
       // 更新顶部文字
-      this.updateText(this.data[this.data.length - 1]);
+      // this.updateText(this.data[this.data.length - 1]);
     });
   }
 
@@ -137,7 +137,7 @@ class Mainchart {
 
   // 渲染时间指示器
   updateTimeIndicator(x, currentDataItem) {
-    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
+    let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
     let { width, height } = this.options;
     let y = height - top - bottom + 1;
 
@@ -158,7 +158,7 @@ class Mainchart {
 
   // 渲染涨幅指示器
   updateIncreaseIndicator(y, currentDataItem) {
-    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
+    let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
     let { width, height, lastClose } = this.options;
     let x = width - right - left;
     let price = currentDataItem.current;
@@ -171,7 +171,7 @@ class Mainchart {
   // 初始化放置数轴的容器
   initAxisGroups() {
     // 初始化数轴容器
-    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
+    let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
     let { width, height } = this.options;
 
     this.leftAxisGroup = this.element
@@ -202,7 +202,7 @@ class Mainchart {
       .attr('transform', `translate(${left}, ${top})`);
     let axis = d3
       .axisLeft(scale)
-      .tickSize(-(width - right))
+      .tickSize(-(width - right - left))
       .tickFormat('');
 
     grid_x.call(axis);
@@ -226,7 +226,7 @@ class Mainchart {
 
   // 绘制图形区域需要的比例尺
   initScales() {
-    let { top, left, right, bottom } = Mainchart.defaultOptions.margin;
+    let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
     let { width, height } = this.options;
     this.scaleX = d3.scaleLinear().range([0, width - left - right]);
     this.scaleY = d3.scaleLinear().range([height - top - bottom, 0]);
@@ -234,7 +234,7 @@ class Mainchart {
 
   // 初始化分时线
   initLines() {
-    const { left, top } = Mainchart.defaultOptions.margin;
+    const { left, top } = AreaAndLine.defaultOptions.margin;
     this.chartGroup = this.element
       .append('g')
       .attr('transform', `translate(${left}, ${top})`);
@@ -264,7 +264,7 @@ class Mainchart {
   // 渲染左右数轴
   renderLeftAndRightAxis() {
     let { width, height } = this.options;
-    let { left, right, bottom, top } = Mainchart.defaultOptions.margin;
+    let { left, right, bottom, top } = AreaAndLine.defaultOptions.margin;
     let range = linspace(height - top - bottom, 0, 3);
 
     // 左数轴
@@ -274,7 +274,8 @@ class Mainchart {
       .range(range)
       .domain(priceDomain);
     let axisLeft = d3
-      .axisRight(scaleLeft)
+      // .axisRight(scaleLeft)
+      .axisLeft(scaleLeft)
       .tickFormat(d3.format('.2f'))
       .tickSize(0);
 
@@ -290,7 +291,8 @@ class Mainchart {
       .range(range)
       .domain(ratioDomain);
     let axisRight = d3
-      .axisLeft(scaleRight)
+      // .axisLeft(scaleRight)
+      .axisRight(scaleRight)
       .tickFormat(d3.format('.2%'))
       .tickSize(0);
 
@@ -335,7 +337,7 @@ class Mainchart {
   // 渲染底部数轴
   renderBottomAxis() {
     let { width, height } = this.options;
-    let { left, right, bottom, top } = Mainchart.defaultOptions.margin;
+    let { left, right, bottom, top } = AreaAndLine.defaultOptions.margin;
     let range = linspace(0, width - left - right, 3);
     let domain = ['09:30', '13:00', '15:00'];
     let scale = d3
@@ -371,8 +373,9 @@ class Mainchart {
 
   renderChartArea() {
     let { scaleX, scaleY, data } = this;
+    let OVERFLOW_RATIO = AreaAndLine.OVERFLOW_RATIO;
 
-    scaleX.domain([Mainchart.START_INDEX, Mainchart.END_INDEX]);
+    scaleX.domain([AreaAndLine.START_INDEX, AreaAndLine.END_INDEX]);
 
     // 根据前一天收盘价计算涨跌幅
     let start = this.options.lastClose;
@@ -439,4 +442,4 @@ class Mainchart {
   }
 }
 
-export default Mainchart;
+export default AreaAndLine;

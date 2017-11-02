@@ -1,6 +1,6 @@
 import './timechart.css';
 import * as d3 from 'd3';
-import Mainchart from './Mainchart';
+import Mainchart from './AreaAndLine';
 import Volume from './Volume';
 
 const DIV = [0.8, 0.2];
@@ -64,4 +64,5 @@ class Timechart {
   }
 }
 
-export default Timechart;
+// export default Timechart;
+module.exports = Timechart;
