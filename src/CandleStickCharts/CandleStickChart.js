@@ -54,13 +54,13 @@ class CandleStickChart {
     };
 
     this.element.attr('width', width).attr('height', height);
-    // this.selectedData = [];
-    this.selectedData = this.options.data.slice(data.length - 100);
+    this.selectedData = [];
+    // this.selectedData = this.options.data.slice(data.length - 100);
 
     this.children = [];
     this.initChildren();
-    this.render();
-    this.bindEvents();
+    // this.render();
+    this.initZoom();
   }
 
   initChildren() {
@@ -103,29 +103,37 @@ class CandleStickChart {
   //   brush.initBrushBehavior();
   // }
 
-  bindEvents() {
-    var { width, height } = this.options;
-    var minStickLength = 30;
-    var percent = minStickLength / this.options.data.length;
-
-    console.log(percent);
-
-    var percentWidth = width * percent;
-
-    console.log(percentWidth);
-
-    let startIndex = 0;
-    let endIndex = this.options.data.length - 1;
+  getIndexScale() {
+    var startIndex = 0;
+    var endIndex = this.options.data.length - 1;
     var range = [0, this.options.width];
-    let indexScale = d3
+    var domain = [startIndex, endIndex];
+    var indexScale = d3
       .scaleLinear()
-      .domain([startIndex, endIndex])
+      .domain(domain)
       .range(range);
 
-    let indexScaleCopy = indexScale.copy();
+    return indexScale;
+  }
+
+  initZoom() {
+    var { width, height } = this.options;
+    // 最初展示的K线数量
+    var minStickLength = 30;
+    // 最初展示的K线数量占总K线数量的百分比
+    var percent = minStickLength / this.options.data.length;
+
+    console.log('percent', percent);
+
+    // 宽度占比，后面会根据缩放比例进行缩放
+    var percentWidth = width * percent;
+
+    // 索引——宽度 比例尺
+    var indexScaleCopy = this.getIndexScale();
 
     // console.log(indexScaleCopy.domain());
 
+    // 用于绑定缩放事件的容器
     var zoomer = this.element
       .append('rect')
       .attr('width', width)
@@ -133,16 +141,17 @@ class CandleStickChart {
       .style('fill', 'none')
       .style('pointer-events', 'all');
 
+    // 最大缩放比例
     var maxScale = this.options.width / percentWidth;
+    // 初始缩放比例
     var initScale = maxScale;
 
-    console.log(`initScale`, initScale);
+    console.log('initScale', initScale);
 
+    var startIndex = 0;
+    var endIndex = this.options.data.length - 1;
     var zoomed = () => {
       var transform = d3.event.transform;
-
-      console.log(transform);
-
       var domain = transform.rescaleX(indexScaleCopy).domain();
 
       let [selectedStartIndex, selectedEndIndex] = domain;
@@ -165,12 +174,14 @@ class CandleStickChart {
       this.render();
     };
 
+    // 初始化zoom行为
     var zoom = d3
       .zoom()
       .translateExtent([[0, 0], [width, height]])
       .scaleExtent([1, maxScale])
       .on('zoom', zoomed);
 
+    // 设置初始的缩放和平移
     var initTransform = d3.zoomIdentity
       .scale(initScale)
       .translate(-(width - percentWidth), 0); // 一开始从最右侧，也就是最新的显示
@@ -179,6 +190,7 @@ class CandleStickChart {
   }
 
   render() {
+    console.log('render fired');
     this.children.forEach(child => child.render(this.selectedData));
   }
 
@@ -203,7 +215,7 @@ class CandleStickChart {
     this.children = [];
     this.selectedData = [];
     this.initChildren();
-    this.bindEvents();
+    this.initZoom();
   }
 
   destroy() {
