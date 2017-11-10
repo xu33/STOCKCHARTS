@@ -7,8 +7,8 @@ import thunkArray from '../utils/chunkarray';
 
 class CandleSticks {
   static margin = {
-    left: 10,
-    right: 3,
+    left: 40,
+    right: 40,
     top: 20,
     bottom: 20
   };
@@ -17,9 +17,10 @@ class CandleSticks {
   static y_tick_num = 3;
   static offset_ratio = 0.05;
 
-  constructor(parentNode, { x, y, width, height, type }) {
+  constructor(parentNode, { x, y, width, height, type, parent }) {
     const { left, right, top, bottom } = CandleSticks.margin;
 
+    this.parent = parent;
     this.options = {
       x,
       y,
@@ -41,9 +42,12 @@ class CandleSticks {
     this.initGroups(); // 图形组
     this.initAxis(); // 数轴组
     this.initScales(); // 比例尺
-    this.initCrosshair(); // 辅助线
+    this.initCrosshair(); // 十字线
     this.initIndicators(); // 指示器
-    // this.initText(); // 顶部文字
+
+    // var eventLayer = this.crosshair.getLayer();
+    // console.log(eventLayer);
+    // this.parent.initZoom(eventLayer);
   }
 
   // 顶部文字
@@ -241,6 +245,9 @@ class CandleSticks {
   render(data) {
     this.data = data;
     if (!this.data || this.data.length < 1) return;
+
+    this.initCrosshair();
+
     this.renderCandleSticks();
     this.renderWicks();
     this.renderAxis();
@@ -258,6 +265,13 @@ class CandleSticks {
     scale_price.domain(domain_price);
 
     let selection = group.selectAll('.bar').data(data, d => d.timestamp);
+
+    let bandwidth = scale_band.bandwidth();
+
+    if (bandwidth <= 2) {
+      selection.remove();
+      return;
+    }
 
     selection.exit().remove();
 
@@ -369,7 +383,7 @@ class CandleSticks {
 
     if (this.leftAxis === undefined) {
       this.leftAxis = d3
-        .axisRight(this.leftAndRightAxisScale.copy())
+        .axisLeft(this.leftAndRightAxisScale.copy())
         .tickSize(0)
         .tickPadding(5)
         .tickFormat(formatter);
@@ -408,7 +422,7 @@ class CandleSticks {
 
     if (this.rightAxis === undefined) {
       this.rightAxis = d3
-        .axisLeft(this.leftAndRightAxisScale.copy())
+        .axisRight(this.leftAndRightAxisScale.copy())
         .tickSize(0)
         .tickPadding(5)
         .tickFormat(formatter);

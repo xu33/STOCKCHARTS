@@ -120,11 +120,17 @@ class AreaAndLine {
 
       // 更新顶部文字
       // this.updateText(currentDataItem);
+      if (this.parent && this.parent.options.onChange) {
+        this.parent.options.onChange(currentDataItem);
+      }
     });
 
     this.crosshair.on('end', () => {
       // 更新顶部文字
       // this.updateText(this.data[this.data.length - 1]);
+      if (this.parent && this.parent.options.onChange) {
+        this.parent.options.onChange(this.data[this.data.length - 1]);
+      }
     });
   }
 

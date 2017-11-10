@@ -9,41 +9,6 @@ class CandleStickChart {
   // static DIV = [0.7, 0.2, 0.1];
   static DIV = [0.7, 0.3];
 
-  // handleBrush = ({ brushSelection, range }) => {
-  //   let startIndex = 0;
-  //   let endIndex = this.options.data.length - 1;
-  //   let indexScale = d3
-  //     .scaleLinear()
-  //     .domain([startIndex, endIndex])
-  //     .range(range);
-
-  //   let domain = brushSelection.map(value => indexScale.invert(value));
-  //   let [selectedStartIndex, selectedEndIndex] = domain;
-  //   if (selectedStartIndex < startIndex || selectedEndIndex > endIndex) {
-  //     throw new Error('索引错误');
-  //   }
-
-  //   selectedStartIndex = Math.round(selectedStartIndex);
-  //   selectedEndIndex = Math.round(selectedEndIndex);
-
-  //   console.log(`当前数据范围:${selectedStartIndex} - ${selectedEndIndex}`);
-
-  //   // 至少显示30根K线
-  //   if (selectedEndIndex - selectedStartIndex < 30) {
-  //     return;
-  //   }
-
-  //   let selectedData = this.options.data.slice(
-  //     selectedStartIndex,
-  //     selectedEndIndex
-  //   );
-
-  //   this.currentBrushSelection = brushSelection;
-  //   this.currentRange = range;
-  //   this.selectedData = selectedData;
-  //   this.render();
-  // };
-
   constructor(selector, { width, height, type, data }) {
     this.element = d3.select(selector).append('svg');
     this.options = {
@@ -60,7 +25,7 @@ class CandleStickChart {
     this.children = [];
     this.initChildren();
     // this.render();
-    this.initZoom();
+    // this.initZoom();
   }
 
   initChildren() {
@@ -87,11 +52,14 @@ class CandleStickChart {
         y,
         width,
         height,
-        type: this.options.type
+        type: this.options.type,
+        parent: this
       });
 
       this.children.push(chart);
     }
+
+    this.initZoom(this.children[0].crosshair.getLayer());
   }
 
   // __bindEvents() {
@@ -116,8 +84,14 @@ class CandleStickChart {
     return indexScale;
   }
 
-  initZoom() {
+  initZoom(zoomer) {
     var { width, height } = this.options;
+
+    var width = zoomer.attr('width');
+    var height = zoomer.attr('height');
+
+    console.log(width, height);
+
     // 最初展示的K线数量
     var minStickLength = 30;
     // 最初展示的K线数量占总K线数量的百分比
@@ -134,15 +108,15 @@ class CandleStickChart {
     // console.log(indexScaleCopy.domain());
 
     // 用于绑定缩放事件的容器
-    var zoomer = this.element
-      .append('rect')
-      .attr('width', width)
-      .attr('height', height)
-      .style('fill', 'none')
-      .style('pointer-events', 'all');
+    // var zoomer = this.element
+    //   .append('rect')
+    //   .attr('width', width)
+    //   .attr('height', height)
+    //   .style('fill', 'none')
+    //   .style('pointer-events', 'all');
 
     // 最大缩放比例
-    var maxScale = this.options.width / percentWidth;
+    var maxScale = width / percentWidth;
     // 初始缩放比例
     var initScale = maxScale;
 
@@ -155,15 +129,15 @@ class CandleStickChart {
       var domain = transform.rescaleX(indexScaleCopy).domain();
 
       let [selectedStartIndex, selectedEndIndex] = domain;
+
+      selectedStartIndex = Math.round(selectedStartIndex);
+      selectedEndIndex = Math.round(selectedEndIndex);
       console.log(`当前数据范围: ${selectedStartIndex} - ${selectedEndIndex}`);
 
       if (selectedStartIndex < startIndex || selectedEndIndex > endIndex) {
         // throw new Error('索引错误');
         return;
       }
-
-      selectedStartIndex = Math.round(selectedStartIndex);
-      selectedEndIndex = Math.round(selectedEndIndex);
 
       let selectedData = this.options.data.slice(
         selectedStartIndex,

@@ -4,8 +4,8 @@ import { linspace } from '../utils/linspace';
 
 class Volumes {
   static margin = {
-    left: 10,
-    right: 3,
+    left: 40,
+    right: 40,
     top: 0,
     bottom: 10
   };
@@ -96,6 +96,10 @@ class Volumes {
 
     let selection = this.element.selectAll('.bar').data(data);
     selection.exit().remove();
+
+    let bandwidth = scale_band.bandwidth();
+
+    if (bandwidth <= 1) bandwidth = 1;
 
     selection
       .enter()

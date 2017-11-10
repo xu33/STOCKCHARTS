@@ -39,6 +39,8 @@ class Timechart {
         lastClose
       });
 
+      chart.parent = this;
+
       this.children.push(chart);
     });
   }

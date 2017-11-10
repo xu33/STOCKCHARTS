@@ -17,7 +17,7 @@ svg line,
 .min_path,
 .max_path,
 .text_box {
-  shape-rendering: crispEdges;
+  /* shape-rendering: crispEdges; */
 }
 
 /* 数字文字颜色 */
@@ -39,8 +39,8 @@ svg line,
 
 /* 数轴刻度线颜色 */
 .tick line {
-  stroke: #ccc;
-  opacity: 1;
+  stroke: #555;
+  opacity: 0.2;
 }
 
 .predict {
@@ -122,7 +122,7 @@ svg line,
 
 /* macd */
 .macd {
-  shape-rendering: crispEdges;
+  /* shape-rendering: crispEdges; */
 }
 .dea {
   stroke: rgb(1, 67, 117);
