@@ -32,22 +32,22 @@ class Crosshair extends EventEmitter {
       .style('fill', 'none')
       .style('pointer-events', 'all')
       .attr('class', 'event_layer')
-      .attr('transform', `translate(${x}, ${y})`);
-    // .on('mouseover', () => {
-    //   element.style('display', null);
-    // })
-    // .on('mousemove', function() {
-    //   const mousePosition = d3.mouse(this);
+      .attr('transform', `translate(${x}, ${y})`)
+      .on('mouseover', () => {
+        element.style('display', null);
+      })
+      .on('mousemove', function() {
+        const mousePosition = d3.mouse(this);
 
-    //   crossLineX.attr('x1', 0).attr('x2', width);
-    //   crossLineY.attr('y1', 0).attr('y2', height);
+        crossLineX.attr('x1', 0).attr('x2', width);
+        crossLineY.attr('y1', 0).attr('y2', height);
 
-    //   self.emit('move', mousePosition);
-    // })
-    // .on('mouseout', () => {
-    //   element.style('display', 'none');
-    //   self.emit('end');
-    // });
+        self.emit('move', mousePosition);
+      })
+      .on('mouseout', () => {
+        element.style('display', 'none');
+        self.emit('end');
+      });
   }
 
   setHorizontalCrosslinePosition(y) {

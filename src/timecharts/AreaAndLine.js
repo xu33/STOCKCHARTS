@@ -10,7 +10,7 @@ class AreaAndLine {
 
   static defaultOptions = {
     margin: {
-      top: 0,
+      top: 10,
       left: 50,
       right: 50,
       bottom: 20
@@ -28,150 +28,42 @@ class AreaAndLine {
   }
 
   initialize() {
-    // this.initText();
     this.initScales();
     this.initLines();
     this.initAxisGroups();
-    this.initCrosshair();
-    this.initIndicators();
 
     // 创建渐变色填充
     this.createGradientDef();
   }
 
-  // 顶部文字
-  initText() {
-    let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
-    let { width, height } = this.options;
+  handleMouseMove(mousePosition) {
+    const crosshair = this.parent.crosshair;
 
-    let line = d3
-      .line()
-      .x(d => d.x)
-      .y(d => d.y);
+    let data = this.data;
+    let currentIndex = this.scaleX.invert(mousePosition[0]);
 
-    let data = [
-      {
-        x: left + 1,
-        y: top
-      },
-      {
-        x: left + 1,
-        y: 1
-      },
-      {
-        x: width,
-        y: 1
-      },
-      {
-        x: width,
-        y: top
-      }
-    ];
+    currentIndex = Math.ceil(currentIndex);
 
-    this.element
-      .append('text')
-      .attr('class', 'tip_text')
-      .attr('x', 8 + left)
-      .attr('y', 15);
+    if (currentIndex < 0) currentIndex = 0;
+    if (currentIndex > data.length - 1) currentIndex = data.length - 1;
+    let currentDataItem = data[currentIndex];
 
-    this.element
-      .append('path')
-      .datum(data)
-      .attr('d', line)
-      .attr('class', 'text_box')
-      .attr('fill', 'none')
-      .attr('stroke', '#ccc');
-  }
+    // 计算十字线变化的坐标
+    let x = this.scaleX(currentIndex);
+    let y = this.scaleY(currentDataItem.current);
 
-  // 初始化十字线交互
-  initCrosshair() {
-    let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
-    let { width, height } = this.options;
+    // 更新十字线坐标
+    crosshair.setHorizontalCrosslinePosition(y);
+    crosshair.setVerticalCrosslinePosition(x);
 
-    this.crosshair = new Crosshair(this.element, {
-      x: left,
-      y: top,
-      width: width - left - right,
-      height: height - top - bottom
-    });
+    // 更新指示器内容和位置
+    this.parent.updateTimeIndicator(x, currentDataItem);
+    this.parent.updatePriceIndicator(y, currentDataItem);
+    this.parent.updateIncreaseIndicator(y, currentDataItem);
 
-    this.crosshair.on('move', mousePosition => {
-      let data = this.data;
-      let currentIndex = this.scaleX.invert(mousePosition[0]);
-
-      currentIndex = Math.ceil(currentIndex);
-
-      if (currentIndex < 0) currentIndex = 0;
-      if (currentIndex > data.length - 1) currentIndex = data.length - 1;
-      let currentDataItem = data[currentIndex];
-
-      // 计算十字线变化的坐标
-      let x = this.scaleX(currentIndex);
-      let y = this.scaleY(currentDataItem.current);
-
-      // 更新十字线坐标
-      this.crosshair.setHorizontalCrosslinePosition(y);
-      this.crosshair.setVerticalCrosslinePosition(x);
-
-      // 更新指示器内容和位置
-      this.updateTimeIndicator(x, currentDataItem);
-      this.updatePriceIndicator(y, currentDataItem);
-      this.updateIncreaseIndicator(y, currentDataItem);
-
-      // 更新顶部文字
-      // this.updateText(currentDataItem);
-      if (this.parent && this.parent.options.onChange) {
-        this.parent.options.onChange(currentDataItem);
-      }
-    });
-
-    this.crosshair.on('end', () => {
-      // 更新顶部文字
-      // this.updateText(this.data[this.data.length - 1]);
-      if (this.parent && this.parent.options.onChange) {
-        this.parent.options.onChange(this.data[this.data.length - 1]);
-      }
-    });
-  }
-
-  // 更新顶部文字
-  updateText(currentDataItem) {
-    let { avg_price, current, volume } = currentDataItem;
-    let text = `分时价：${current} 均价：${avg_price} 成交量：${volume}手`;
-    this.element.select('.tip_text').text(text);
-  }
-
-  // 渲染时间指示器
-  updateTimeIndicator(x, currentDataItem) {
-    let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
-    let { width, height } = this.options;
-    let y = height - top - bottom + 1;
-
-    this.timeIndicator.setText(
-      d3.timeFormat('%H:%M')(currentDataItem.timestamp)
-    );
-    this.timeIndicator.setPosition(x, y, 'vertical');
-  }
-
-  // 渲染价格指示器
-  updatePriceIndicator(y, currentDataItem) {
-    let x = 0;
-    let price = d3.format('.2f')(currentDataItem.current);
-
-    this.priceIndicator.setText(price);
-    this.priceIndicator.setPosition(x, y, 'horizontal');
-  }
-
-  // 渲染涨幅指示器
-  updateIncreaseIndicator(y, currentDataItem) {
-    let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
-    let { width, height, lastClose } = this.options;
-    let x = width - right - left;
-    let price = currentDataItem.current;
-    let increase = (price - lastClose) / lastClose;
-
-    this.increaseIndicator.setText(d3.format('.2%')(increase));
-    this.increaseIndicator.setPosition(x, y, 'horizontal', 'right');
+    if (this.parent && this.parent.options.onChange) {
+      this.parent.options.onChange(currentDataItem);
+    }
   }
 
   // 初始化放置数轴的容器
@@ -196,11 +88,11 @@ class AreaAndLine {
       .attr('transform', `translate(${left}, ${height - bottom})`);
 
     // 初始化辅助线
-    let range = linspace(height - top - bottom, 0, 5);
+    let range = linspace(height - top - bottom, 0, 7);
     let scale = d3
       .scaleOrdinal()
       .range(range)
-      .domain([1, 2, 3, 4, 5]);
+      .domain([1, 2, 3, 4, 5, 6, 7]);
 
     let grid_x = this.element
       .append('g')
@@ -252,33 +144,29 @@ class AreaAndLine {
     this.chartGroup.append('path').attr('class', 'area_fill');
   }
 
-  // 初始化文字指示器
-  initIndicators() {
-    // 价格指示器
-    this.priceIndicator = new Indicator(this.crosshair);
-    // 涨幅指示器
-    this.increaseIndicator = new Indicator(this.crosshair);
-    // 时间指示器
-    this.timeIndicator = new Indicator(this.crosshair);
-  }
-
   renderAxises() {
     this.renderLeftAndRightAxis();
-    this.renderBottomAxis();
   }
 
   // 渲染左右数轴
   renderLeftAndRightAxis() {
+    let tickLength = 7;
     let { width, height } = this.options;
     let { left, right, bottom, top } = AreaAndLine.defaultOptions.margin;
-    let range = linspace(height - top - bottom, 0, 3);
+    let range = linspace(height - top - bottom, 0, tickLength);
 
     // 左数轴
-    let priceDomain = linspace(this.priceDomain[0], this.priceDomain[1], 3);
+    let priceDomain = linspace(
+      this.priceDomain[0],
+      this.priceDomain[1],
+      tickLength
+    );
+
     let scaleLeft = d3
       .scaleOrdinal()
       .range(range)
       .domain(priceDomain);
+
     let axisLeft = d3
       // .axisRight(scaleLeft)
       .axisLeft(scaleLeft)
@@ -288,14 +176,19 @@ class AreaAndLine {
     this.leftAxisGroup.call(axisLeft);
 
     // 右数轴
-    let ratioDomain = linspace(this.ratioDomain[0], this.ratioDomain[1], 3);
+    let ratioDomain = linspace(
+      this.ratioDomain[0],
+      this.ratioDomain[1],
+      tickLength
+    );
 
-    ratioDomain[1] = 0;
+    // ratioDomain[1] = 0;
 
     let scaleRight = d3
       .scaleOrdinal()
       .range(range)
       .domain(ratioDomain);
+
     let axisRight = d3
       // .axisLeft(scaleRight)
       .axisRight(scaleRight)
@@ -304,38 +197,29 @@ class AreaAndLine {
 
     this.rightAxisGroup.call(axisRight);
 
-    // 调整刻度文字位置和颜色(红涨绿跌)
-    this.leftAxisGroup.selectAll('.tick text').each(function(d, i) {
-      let selection = d3.select(this);
-      if (i <= 1) {
-        selection.attr('transform', 'translate(0, -10)');
-      } else {
-        selection.attr('transform', 'translate(0, 10)');
-      }
+    // 调整左边轴的文字颜色
+    let lastClose = this.options.lastClose;
 
-      if (i > 1) {
-        selection.attr('class', 'up');
-      } else if (i < 1) {
-        selection.attr('class', 'down');
+    this.leftAxisGroup.selectAll('.tick text').attr('class', (d, i) => {
+      if (d > lastClose) {
+        return 'up';
+      } else if (d < lastClose) {
+        return 'down';
       } else {
-        selection.attr('class', 'eq');
+        return 'eq';
       }
     });
 
-    this.rightAxisGroup.selectAll('.tick text').each(function(d, i) {
-      let selection = d3.select(this);
-      if (i <= 1) {
-        selection.attr('transform', 'translate(0, -10)');
-      } else {
-        selection.attr('transform', 'translate(0, 10)');
+    // 调整右边轴的文字颜色 红涨绿跌
+    this.rightAxisGroup.selectAll('.tick text').attr('class', (d, i) => {
+      if (Math.abs(d) < 0.001) {
+        return 'eq';
       }
 
       if (d > 0) {
-        selection.attr('class', 'up');
+        return 'up';
       } else if (d < 0) {
-        selection.attr('class', 'down');
-      } else {
-        selection.attr('class', 'eq');
+        return 'down';
       }
     });
   }
@@ -372,9 +256,6 @@ class AreaAndLine {
     if (this.data.length < 1) return;
     this.renderChartArea();
     this.renderAxises();
-
-    // 顶部默认显示最后一条数据
-    this.updateText(this.data[this.data.length - 1]);
   }
 
   renderChartArea() {
@@ -385,7 +266,12 @@ class AreaAndLine {
 
     // 根据前一天收盘价计算涨跌幅
     let start = this.options.lastClose;
-    let extent = d3.extent(data, d => d.current);
+    // let extent = d3.extent(data, d => d.current);
+
+    let extent = [
+      d3.min(data, d => Math.min(d.current, d.avg_price)),
+      d3.max(data, d => Math.max(d.current, d.avg_price))
+    ];
 
     let ratioExtent = Math.max(
       Math.abs(extent[0] - start) / start,

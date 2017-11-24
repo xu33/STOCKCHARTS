@@ -10,7 +10,7 @@ class Volume {
       top: 0,
       left: 50,
       right: 50,
-      bottom: 6
+      bottom: 20
     }
   };
 
@@ -44,15 +44,23 @@ class Volume {
   initAxis() {
     let { height, width } = this;
 
+    // 左侧轴
     this.element
       .append('g')
       .attr('class', 'axis left_axis_group')
       .attr('transform', `translate(0, 0)`);
 
+    // 右侧轴
     this.element
       .append('g')
       .attr('class', 'axis right_axis_group')
       .attr('transform', `translate(${width}, 0)`);
+
+    // 底部轴
+    this.element
+      .append('g')
+      .attr('class', 'axis bottom_axis_group')
+      .attr('transform', `translate(0, ${height})`);
 
     let range = linspace(height, 0, 3);
     let scale = d3.scaleOrdinal().range(range);
@@ -83,6 +91,7 @@ class Volume {
       .attr('fill', 'none')
       .attr('stroke', (d, i) => {
         let color;
+
         if (i === 0) {
           if (d.current >= lastClose) {
             color = Volume.styles.RED;
@@ -130,6 +139,35 @@ class Volume {
 
     this.element.select('.left_axis_group').call(leftAxis);
     this.element.select('.right_axis_group').call(rightAxis);
+
+    this.renderBottomAxis();
+  }
+
+  renderBottomAxis() {
+    let { width, height } = this.options;
+    let { left, right, bottom, top } = Volume.defaultOptions.margin;
+    let range = linspace(0, width - left - right, 3);
+    let domain = ['09:30', '13:00', '15:00'];
+    let scale = d3
+      .scaleOrdinal()
+      .domain(domain)
+      .range(range);
+    let axis = d3
+      .axisBottom(scale)
+      .tickSize(0)
+      .tickPadding(5);
+
+    let bottomAxisGroup = this.element.select('.bottom_axis_group');
+    bottomAxisGroup.call(axis);
+
+    // 调整刻度文字位置
+    bottomAxisGroup.selectAll('.tick text').each(function(d, i) {
+      if (i === 0) {
+        d3.select(this).attr('transform', 'translate(15, 0)');
+      } else if (i === 2) {
+        d3.select(this).attr('transform', 'translate(-15, 0)');
+      }
+    });
   }
 
   renderGrids() {

@@ -1,5 +1,5 @@
 svg line {
-  shape-rendering: crispEdges;
+  /* shape-rendering: crispEdges; */
 }
 
 .area_fill {
@@ -19,19 +19,19 @@ svg line {
 }
 
 .axis line {
-  stroke: #cccccc;
-  fill: #cccccc;
+  stroke: #31333b;
+  stroke-opacity: 0.2;
 }
 
 .axis .tick text {
   font-size: 10px;
-  fill: #555;
+  fill: #fff;
 }
 
 .grid line {
-  stroke: #ccc;
-  /* stroke-opacity: 0.7; */
-  shape-rendering: crispEdges;
+  stroke: #31333b;
+  stroke-opacity: 0.2;
+  /* shape-rendering: crispEdges; */
 }
 
 .axis path,
@@ -48,7 +48,7 @@ svg line {
 }
 
 .eq {
-  fill: #555 !important;
+  fill: #fff !important;
 }
 
 .event_layer {
@@ -57,29 +57,25 @@ svg line {
 }
 
 .crossline {
-  stroke: #000;
-  opacity: 0.2;
-  /* stroke-dasharray: 15 10 5 10; */
+  stroke: #31333b;
+  /* opacity: 0.2; */
+  stroke-dasharray: 15 10 5 10;
 }
 
 /*游标*/
 .indicator-text {
-  fill: #525a68;
+  fill: #fff;
   font-size: 10px;
   pointer-events: none;
 }
 
 .indicator-box {
   /* fill: #525a68; */
-  fill: #f0f0f0;
+  fill: #484c5c;
   /* opacity: 0.5; */
-  stroke: #cccccc;
+  /* stroke: #cccccc; */
+  stroke: none;
   pointer-events: none;
-}
-
-/* 量图容器 */
-.volume_chart .axis line {
-  stroke: #ccc;
 }
 
 /* 顶部文字 */

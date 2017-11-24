@@ -19,13 +19,9 @@ class CandleStickChart {
     };
 
     this.element.attr('width', width).attr('height', height);
-    this.selectedData = [];
-    // this.selectedData = this.options.data.slice(data.length - 100);
 
     this.children = [];
     this.initChildren();
-    // this.render();
-    // this.initZoom();
   }
 
   initChildren() {
@@ -60,112 +56,110 @@ class CandleStickChart {
     }
 
     this.initZoom(this.children[0].crosshair.getLayer());
+
+    // this.initZoom();
   }
-
-  // __bindEvents() {
-  //   // change brush selection need to rerender all charts
-  //   const brush = this.children[this.children.length - 1];
-
-  //   brush.on('brush', this.handleBrush);
-
-  //   brush.initBrushBehavior();
-  // }
 
   getIndexScale() {
     var startIndex = 0;
     var endIndex = this.options.data.length - 1;
-    var range = [0, this.options.width];
-    var domain = [startIndex, endIndex];
     var indexScale = d3
       .scaleLinear()
-      .domain(domain)
-      .range(range);
+      .domain([startIndex, endIndex])
+      .range([0, this.options.width]);
 
     return indexScale;
   }
 
-  initZoom(zoomer) {
-    var { width, height } = this.options;
+  initZoomOnExistingNode(zoomer) {
+    let width = zoomer.attr('width');
+    let height = zoomer.attr('height');
+    let minStickLength = 30;
+    let percent = minStickLength / this.options.data.length;
+  }
 
-    var width = zoomer.attr('width');
-    var height = zoomer.attr('height');
+  initZoom() {
+    let { width, height } = this.options;
+    // 最少展示几根K线
+    let minStickLength = 30;
+    // 缩放比例 (当前放大了多少倍)
+    let scaleK = this.options.data.length / minStickLength;
+    // 索引-宽度 比例尺
+    let indexScale = this.getIndexScale();
+    // 响应缩放事件的层
+    const zoomer = this.element
+      .append('rect')
+      .attr('width', width)
+      .attr('height', height)
+      .style('fill', 'none')
+      .style('pointer-events', 'all');
 
-    console.log(width, height);
+    // zoom 事件监听函数
+    const zoomed = () => {
+      // 获取当前缩放系数
+      let transform = d3.event.transform;
 
-    // 最初展示的K线数量
-    var minStickLength = 30;
-    // 最初展示的K线数量占总K线数量的百分比
-    var percent = minStickLength / this.options.data.length;
+      console.log(transform);
+      console.log('range before:', indexScale.range());
 
-    console.log('percent', percent);
+      // 根据当前缩放系数换算 缩放后比例尺的值域
+      let currentScale = transform.rescaleX(indexScale);
+      let domain = currentScale.domain();
 
-    // 宽度占比，后面会根据缩放比例进行缩放
-    var percentWidth = width * percent;
+      console.log('range zoomed:', currentScale.range());
 
-    // 索引——宽度 比例尺
-    var indexScaleCopy = this.getIndexScale();
+      // 当前索引范围
+      let extent = domain.map(Math.round);
 
-    // console.log(indexScaleCopy.domain());
-
-    // 用于绑定缩放事件的容器
-    // var zoomer = this.element
-    //   .append('rect')
-    //   .attr('width', width)
-    //   .attr('height', height)
-    //   .style('fill', 'none')
-    //   .style('pointer-events', 'all');
-
-    // 最大缩放比例
-    var maxScale = width / percentWidth;
-    // 初始缩放比例
-    var initScale = maxScale;
-
-    console.log('initScale', initScale);
-
-    var startIndex = 0;
-    var endIndex = this.options.data.length - 1;
-    var zoomed = () => {
-      var transform = d3.event.transform;
-      var domain = transform.rescaleX(indexScaleCopy).domain();
-
-      let [selectedStartIndex, selectedEndIndex] = domain;
-
-      selectedStartIndex = Math.round(selectedStartIndex);
-      selectedEndIndex = Math.round(selectedEndIndex);
-      console.log(`当前数据范围: ${selectedStartIndex} - ${selectedEndIndex}`);
-
-      if (selectedStartIndex < startIndex || selectedEndIndex > endIndex) {
-        // throw new Error('索引错误');
-        return;
-      }
+      let [startIndexSelected, endIndexSelected] = this.bound(...extent);
 
       let selectedData = this.options.data.slice(
-        selectedStartIndex,
-        selectedEndIndex
+        startIndexSelected,
+        endIndexSelected
       );
 
-      this.selectedData = selectedData;
-      this.render();
+      // this.render(selectedData);
     };
 
-    // 初始化zoom行为
-    var zoom = d3
+    // 初始化d3缩放行为
+    let zoom = d3
       .zoom()
-      .translateExtent([[0, 0], [width, height]])
-      .scaleExtent([1, maxScale])
+      .translateExtent([[0, 0], [width, 0]])
+      .scaleExtent([1, scaleK])
       .on('zoom', zoomed);
 
-    // 设置初始的缩放和平移
-    var initTransform = d3.zoomIdentity
-      .scale(initScale)
-      .translate(-(width - percentWidth), 0); // 一开始从最右侧，也就是最新的显示
+    // 初始缩放矩阵对象(k, x, y)
+    // 从最右侧开始展示，此处x和y也会根据k进行缩放
+    let initTransform = d3.zoomIdentity.scale(scaleK).translate(-width, 0);
 
+    console.log(initTransform);
+
+    // 绑定缩放行为，并传入初始的缩放矩阵对象
     zoomer.call(zoom).call(zoom.transform, initTransform);
   }
 
-  render() {
-    console.log('render fired');
-    this.children.forEach(child => child.render(this.selectedData));
+  bound(start, end) {
+    const startIndex = 0;
+    const endIndex = this.options.data.length - 1;
+
+    if (start >= startIndex && end <= endIndex) {
+      start = start;
+      end = end;
+    } else if (start < startIndex && end <= endIndex) {
+      end = end - start;
+      start = 0;
+    } else if (start >= startIndex && end > endIndex) {
+      start = endIndex - (end - start);
+      end = endIndex;
+    } else {
+      throw new Error('范围错误');
+    }
+
+    return [start, end];
+  }
+
+  render(selectedData) {
+    this.children.forEach(child => child.render(selectedData));
   }
 
   update(items) {
@@ -187,7 +181,6 @@ class CandleStickChart {
     this.options.data = newData;
     this.children.forEach(child => child.element.remove());
     this.children = [];
-    this.selectedData = [];
     this.initChildren();
     this.initZoom();
   }

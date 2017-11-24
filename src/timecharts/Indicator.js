@@ -1,6 +1,6 @@
 /**
  * 十字线提示标签类
- * 
+ *
  * @class Indicator
  */
 class Indicator {
@@ -55,12 +55,6 @@ class Indicator {
       .attr('x', textBoundingBox.x - TEXT_PADDING)
       .attr('y', textBoundingBox.y);
 
-    // let tx = (Indicator.WIDTH - width) / 2;
-    // let tx = 0;
-    // let ty = (this.height - height) / 2;
-
-    // this.text.attr('x', tx).attr('y', ty);
-
     if (type === 'horizontal') {
       // 水平的指示器
       y = y - boxHeight / 2;
@@ -70,17 +64,21 @@ class Indicator {
       y = y + 3;
     }
 
-    if (direction === 'right') {
+    if (direction == 'left') {
       x = x - boxWidth;
     }
 
-    if (x < 0) {
-      x = 0;
-    }
+    // if (direction === 'right') {
+    //   x = x - boxWidth;
+    // }
 
-    if (x > this.parent.bound.width - boxWidth) {
-      x = this.parent.bound.width - boxWidth;
-    }
+    // if (x < 0) {
+    //   x = 0;
+    // }
+
+    // if (x > this.parent.bound.width - boxWidth) {
+    //   x = this.parent.bound.width - boxWidth;
+    // }
 
     this.element.attr('transform', `translate(${x}, ${y})`);
   }
