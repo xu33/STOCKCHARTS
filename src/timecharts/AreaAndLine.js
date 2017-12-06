@@ -273,15 +273,17 @@ class AreaAndLine {
       d3.max(data, d => Math.max(d.current, d.avg_price))
     ];
 
-    let ratioExtent = Math.max(
+    let ratioExtent = [
       Math.abs(extent[0] - start) / start,
       Math.abs(extent[1] - start) / start
-    );
-
-    let ratioDomain = [
-      1 - ratioExtent * OVERFLOW_RATIO,
-      1 + ratioExtent * OVERFLOW_RATIO
     ];
+
+    // let ratioDomain = [
+    //   1 - ratioExtent * OVERFLOW_RATIO,
+    //   1 + ratioExtent * OVERFLOW_RATIO
+    // ];
+
+    let ratioDomain = [1 - ratioExtent[0], 1 + ratioExtent[1]];
 
     this.ratioDomain = ratioDomain.map(n => n - 1);
 
