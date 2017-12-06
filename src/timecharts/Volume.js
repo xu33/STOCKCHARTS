@@ -20,29 +20,57 @@ class Volume {
   };
 
   constructor(parentNode, options) {
-    let { x, y, width, height, lastClose } = options;
+    let { x, y } = options;
     let { top, left, right, bottom } = Volume.defaultOptions.margin;
 
     this.options = options;
     this.element = parentNode.append('g').attr('class', 'volume_chart');
     this.element.attr('transform', `translate(${x + left}, ${y + top})`);
 
-    this.width = width - left - right;
-    this.height = height - top - bottom;
-
-    this.scaleX = d3
-      .scaleLinear()
-      .range([1, this.width])
-      .domain([Volume.START_INDEX, Volume.END_INDEX]);
-    this.scaleY = d3.scaleLinear().range([this.height, 0]);
-
+    this.initScales();
     this.renderGrids();
 
     this.initAxis();
   }
 
+  initScales() {
+    let { top, left, right, bottom } = Volume.defaultOptions.margin;
+    let width = this.options.width - left - right;
+    let height = this.options.height - bottom;
+
+    this.scaleX = d3
+      .scaleLinear()
+      .range([0, width])
+      .domain([Volume.START_INDEX, Volume.END_INDEX]);
+
+    this.scaleY = d3.scaleLinear().range([height, 0]);
+  }
+
+  // 缩放
+  resize(bound) {
+    let { top, left, right, bottom } = Volume.defaultOptions.margin;
+    let { x, y, width, height } = bound;
+
+    this.options = {
+      ...this.options,
+      x,
+      y,
+      width,
+      height
+    };
+
+    this.element.attr('transform', `translate(${x + left}, ${y + top})`);
+    this.initScales();
+    this.initAxis();
+
+    this.render(this.data);
+  }
+
   initAxis() {
-    let { height, width } = this;
+    let { top, left, right, bottom } = Volume.defaultOptions.margin;
+    let { height, width } = this.options;
+
+    this.element.selectAll('.axis').remove();
 
     // 左侧轴
     this.element
@@ -51,42 +79,48 @@ class Volume {
       .attr('transform', `translate(0, 0)`);
 
     // 右侧轴
+    let x = width - left - right;
     this.element
       .append('g')
       .attr('class', 'axis right_axis_group')
-      .attr('transform', `translate(${width}, 0)`);
+      .attr('transform', `translate(${x}, 0)`);
 
     // 底部轴
+    let y = height - top - bottom;
     this.element
       .append('g')
       .attr('class', 'axis bottom_axis_group')
-      .attr('transform', `translate(0, ${height})`);
+      .attr('transform', `translate(0, ${y})`);
 
-    let range = linspace(height, 0, 3);
+    let range = linspace(height - top - bottom, 0, 3);
     let scale = d3.scaleOrdinal().range(range);
 
     this.axisScale = scale;
   }
 
   render(data) {
-    let lastClose = this.options.lastClose;
-    let { scaleX, scaleY, width, height } = this;
+    this.data = data;
+
+    let { scaleX, scaleY } = this;
+    let { bottom } = Volume.defaultOptions.margin;
+    let { width, height, lastClose } = this.options;
     let extent = d3.extent(data, d => d.volume);
 
-    extent[1] = extent[1] * 1.2;
+    // extent[1] = extent[1] * 1.2;
 
     scaleY.domain(extent);
 
     let selection = this.element
-      .selectAll('.volume')
+      .selectAll('.volline')
       .data(data, d => d.timestamp);
 
-    selection.exit().remove();
-
     let prev = null;
+    let y2 = height - bottom;
+
     selection
       .enter()
       .append('line')
+      .attr('class', 'volline')
       .merge(selection)
       .attr('fill', 'none')
       .attr('stroke', (d, i) => {
@@ -113,7 +147,9 @@ class Volume {
       .attr('x1', (d, i) => scaleX(i))
       .attr('y1', d => scaleY(d.volume))
       .attr('x2', (d, i) => scaleX(i))
-      .attr('y2', height);
+      .attr('y2', y2);
+
+    selection.exit().remove();
 
     this.renderAxis(data);
   }
@@ -148,10 +184,12 @@ class Volume {
     let { left, right, bottom, top } = Volume.defaultOptions.margin;
     let range = linspace(0, width - left - right, 3);
     let domain = ['09:30', '13:00', '15:00'];
+
     let scale = d3
       .scaleOrdinal()
       .domain(domain)
       .range(range);
+
     let axis = d3
       .axisBottom(scale)
       .tickSize(0)
@@ -172,16 +210,22 @@ class Volume {
 
   renderGrids() {
     // 左至右
-    let gridGroup = this.element.append('g').attr('class', 'axis');
+    let { left, right, bottom, top } = Volume.defaultOptions.margin;
+    let width = this.options.width - left - right;
+    let height = this.options.height - top - bottom;
+
+    this.element.selectAll('.grid').remove();
+
+    let gridGroup = this.element.append('g').attr('class', 'grid');
     let domain = [1, 2, 3];
-    let range = linspace(this.height - 1, 0, 3);
+    let range = linspace(height - 1, 0, 3);
     let scale = d3
       .scaleOrdinal()
       .domain(domain)
       .range(range);
     let axis = d3
       .axisLeft(scale)
-      .tickSize(-this.width)
+      .tickSize(-width)
       .tickFormat('');
 
     gridGroup.call(axis);
@@ -189,17 +233,18 @@ class Volume {
     // 下至上
     let gridGroupBottom = this.element
       .append('g')
-      .attr('class', 'axis')
-      .attr('transform', `translate(0, ${this.height})`);
+      .attr('class', 'grid')
+      .attr('transform', `translate(0, ${height})`);
     let domain1 = [1, 2, 3];
-    let range1 = linspace(0, this.width - 1, 3);
+    let range1 = linspace(0, width - 1, 3);
     let scale1 = d3
       .scaleOrdinal()
       .domain(domain1)
       .range(range1);
+
     let axisBottom = d3
       .axisBottom(scale1)
-      .tickSize(-this.height)
+      .tickSize(-height)
       .tickFormat('');
 
     gridGroupBottom.call(axisBottom);

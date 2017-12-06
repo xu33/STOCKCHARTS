@@ -30,7 +30,7 @@ svg line {
 
 .grid line {
   stroke: #31333b;
-  stroke-opacity: 0.2;
+  stroke-opacity: 0.8;
   /* shape-rendering: crispEdges; */
 }
 

@@ -51,6 +51,31 @@ class Timechart {
     this.initCrosshair();
   }
 
+  resize(size) {
+    let totalWidth = size.width;
+    let totalHeight = size.height;
+    let lastHeight = 0;
+
+    this.element.attr('width', totalWidth);
+    this.element.attr('height', totalHeight);
+
+    for (let i = 0; i < this.children.length; i++) {
+      let height = DIV[i] * totalHeight;
+      let width = totalWidth;
+      let x = 0;
+      let y = lastHeight;
+
+      lastHeight += height;
+
+      this.children[i].resize({
+        x,
+        y,
+        width,
+        height
+      });
+    }
+  }
+
   // 初始化十字线交互
   initCrosshair() {
     // let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
@@ -83,7 +108,11 @@ class Timechart {
       height: height - top - bottom
     });
 
+    let data = this.options.data;
+
     this.crosshair.on('move', mousePosition => {
+      if (data.length < 1) return;
+
       this.children.forEach(child => {
         if (child.handleMouseMove) {
           child.handleMouseMove(mousePosition);
@@ -91,8 +120,9 @@ class Timechart {
       });
     });
 
-    let data = this.options.data;
     this.crosshair.on('end', () => {
+      if (data.length < 1) return;
+
       if (this.options.onChange) {
         this.options.onChange(data[data.length - 1]);
       }
@@ -152,6 +182,11 @@ class Timechart {
   destroy() {
     this.children.forEach(child => child.element.remove());
     this.element.remove();
+  }
+
+  redraw(data) {
+    this.options.data = data;
+    this.render();
   }
 
   update(item) {

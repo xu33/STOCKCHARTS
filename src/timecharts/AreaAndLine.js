@@ -36,6 +36,25 @@ class AreaAndLine {
     this.createGradientDef();
   }
 
+  // 缩放
+  resize(bound) {
+    let { x, y, width, height } = bound;
+
+    // 移动容器
+    this.element.attr('transform', `translate(${x}, ${y})`);
+    this.options.width = width;
+    this.options.height = height;
+
+    // reset比例尺
+    this.initScales();
+
+    // reset数轴
+    this.initAxisGroups();
+
+    // 渲染数据
+    this.render(this.data);
+  }
+
   handleMouseMove(mousePosition) {
     const crosshair = this.parent.crosshair;
 
@@ -72,20 +91,38 @@ class AreaAndLine {
     let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
     let { width, height } = this.options;
 
-    this.leftAxisGroup = this.element
-      .append('g')
-      .attr('class', 'axis left_axis_group')
-      .attr('transform', `translate(${left}, ${top})`);
+    if (!this.leftAxisGroup) {
+      this.leftAxisGroup = this.element
+        .append('g')
+        .attr('class', 'axis left_axis_group');
+    }
 
-    this.rightAxisGroup = this.element
-      .append('g')
-      .attr('class', 'axis right_axis_group')
-      .attr('transform', `translate(${width - right - 1}, ${top})`);
+    this.leftAxisGroup.attr('transform', `translate(${left}, ${top})`);
 
-    this.bottomAxisGroup = this.element
-      .append('g')
-      .attr('class', 'axis bottom_axis_group')
-      .attr('transform', `translate(${left}, ${height - bottom})`);
+    if (!this.rightAxisGroup) {
+      this.rightAxisGroup = this.element
+        .append('g')
+        .attr('class', 'axis right_axis_group');
+    }
+
+    this.rightAxisGroup.attr(
+      'transform',
+      `translate(${width - right - 1}, ${top})`
+    );
+
+    if (!this.bottomAxisGroup) {
+      this.bottomAxisGroup = this.element
+        .append('g')
+        .attr('class', 'axis bottom_axis_group');
+    }
+
+    this.bottomAxisGroup.attr(
+      'transform',
+      `translate(${left}, ${height - bottom})`
+    );
+
+    // 先清空
+    this.element.selectAll('.grid').remove();
 
     // 初始化辅助线
     let range = linspace(height - top - bottom, 0, 7);
@@ -273,17 +310,15 @@ class AreaAndLine {
       d3.max(data, d => Math.max(d.current, d.avg_price))
     ];
 
-    let ratioExtent = [
+    let ratioExtent = Math.max(
       Math.abs(extent[0] - start) / start,
       Math.abs(extent[1] - start) / start
+    );
+
+    let ratioDomain = [
+      1 - ratioExtent * OVERFLOW_RATIO,
+      1 + ratioExtent * OVERFLOW_RATIO
     ];
-
-    // let ratioDomain = [
-    //   1 - ratioExtent * OVERFLOW_RATIO,
-    //   1 + ratioExtent * OVERFLOW_RATIO
-    // ];
-
-    let ratioDomain = [1 - ratioExtent[0], 1 + ratioExtent[1]];
 
     this.ratioDomain = ratioDomain.map(n => n - 1);
 
