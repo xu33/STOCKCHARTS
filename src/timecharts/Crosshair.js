@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import EventEmitter from 'events';
+import Indicator from './Indicator';
 
 class Crosshair extends EventEmitter {
   constructor(parentNode, bound) {
@@ -17,7 +18,21 @@ class Crosshair extends EventEmitter {
 
     this.crossLineY = this.element.append('line').attr('class', 'crossline');
 
+    this.initScales();
     this.createEventLayer();
+    this.createIndicators();
+  }
+
+  initScales() {
+    let { width, height, x, y } = this.bound;
+    this.scaleX = d3.scaleLinear().range([0, width]);
+    this.scaleY = d3.scaleLinear().range([height, 0]);
+  }
+
+  createIndicators() {
+    this.priceIndicator = new Indicator(this);
+    this.increaseIndicator = new Indicator(this);
+    this.timeIndicator = new Indicator(this);
   }
 
   createEventLayer() {
@@ -25,27 +40,33 @@ class Crosshair extends EventEmitter {
     let { element, crossLineX, crossLineY } = this;
     let self = this;
 
+    let handleMouseover = function() {
+      element.style('display', null);
+    };
+
+    let handleMousemove = function() {
+      const mousePosition = d3.mouse(this);
+
+      crossLineX.attr('x1', 0).attr('x2', width);
+      crossLineY.attr('y1', 0).attr('y2', height);
+
+      self.emit('move', mousePosition);
+    };
+
+    let handleMouseout = function() {
+      element.style('display', 'none');
+      self.emit('end');
+    };
+
     this.layer = this.parentNode
       .append('rect')
       .attr('width', width)
       .attr('height', height)
       .attr('class', 'event_layer')
       .attr('transform', `translate(${x}, ${y})`)
-      .on('mouseover', () => {
-        element.style('display', null);
-      })
-      .on('mousemove', function() {
-        const mousePosition = d3.mouse(this);
-
-        crossLineX.attr('x1', 0).attr('x2', width);
-        crossLineY.attr('y1', 0).attr('y2', height);
-
-        self.emit('move', mousePosition);
-      })
-      .on('mouseout', () => {
-        element.style('display', 'none');
-        self.emit('end');
-      });
+      .on('mouseover', handleMouseover)
+      .on('mousemove', handleMousemove)
+      .on('mouseout', handleMouseout);
   }
 
   setHorizontalCrosslinePosition(y) {

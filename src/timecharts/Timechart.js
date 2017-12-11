@@ -79,23 +79,23 @@ class Timechart {
   // 初始化十字线交互
   initCrosshair() {
     // let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
-
-    const { width, height } = this.options;
-    const top = Timechart.TYPES[0].defaultOptions.margin.top;
-    const bottom = Timechart.TYPES[1].defaultOptions.margin.bottom;
+    let childTypes = Timechart.TYPES;
+    let { width, height } = this.options;
+    let top = childTypes[0].defaultOptions.margin.top;
+    let bottom = childTypes[childTypes.length - 1].defaultOptions.margin.bottom;
     let left, right;
 
-    for (let i = 0; i < Timechart.TYPES.length; i++) {
+    for (let i = 0; i < childTypes.length; i++) {
       if (!left) {
-        left = Timechart.TYPES[i].defaultOptions.margin.left;
+        left = childTypes[i].defaultOptions.margin.left;
       } else {
-        left = Math.max(left, Timechart.TYPES[i].defaultOptions.margin.left);
+        left = Math.max(left, childTypes[i].defaultOptions.margin.left);
       }
 
       if (!right) {
-        right = Timechart.TYPES[i].defaultOptions.margin.right;
+        right = childTypes[i].defaultOptions.margin.right;
       } else {
-        right = Math.max(right, Timechart.TYPES[i].defaultOptions.margin.right);
+        right = Math.max(right, childTypes[i].defaultOptions.margin.right);
       }
     }
 
@@ -105,30 +105,31 @@ class Timechart {
       x: left,
       y: top,
       width: width - left - right,
-      height: height - top - bottom
+      height: height - top - bottom,
+      data: this.options.data
     });
 
-    let data = this.options.data;
+    // let data = this.options.data;
 
-    this.crosshair.on('move', mousePosition => {
-      if (data.length < 1) return;
+    // this.crosshair.on('move', mousePosition => {
+    //   if (data.length < 1) return;
 
-      this.children.forEach(child => {
-        if (child.handleMouseMove) {
-          child.handleMouseMove(mousePosition);
-        }
-      });
-    });
+    //   this.children.forEach(child => {
+    //     if (child.handleMouseMove) {
+    //       child.handleMouseMove(mousePosition);
+    //     }
+    //   });
+    // });
 
-    this.crosshair.on('end', () => {
-      if (data.length < 1) return;
+    // this.crosshair.on('end', () => {
+    //   if (data.length < 1) return;
 
-      if (this.options.onChange) {
-        this.options.onChange(data[data.length - 1]);
-      }
-    });
+    //   if (this.options.onChange) {
+    //     this.options.onChange(data[data.length - 1]);
+    //   }
+    // });
 
-    this.initIndicators();
+    // this.initIndicators();
   }
 
   // 初始化文字指示器

@@ -28,9 +28,8 @@ class Volume {
     this.element.attr('transform', `translate(${x + left}, ${y + top})`);
 
     this.initScales();
-    this.renderGrids();
-
     this.initAxis();
+    this.renderGrids();
   }
 
   initScales() {
@@ -62,6 +61,7 @@ class Volume {
     this.element.attr('transform', `translate(${x + left}, ${y + top})`);
     this.initScales();
     this.initAxis();
+    this.renderGrids();
 
     this.render(this.data);
   }
