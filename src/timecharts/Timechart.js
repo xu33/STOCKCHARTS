@@ -106,7 +106,8 @@ class Timechart {
       y: top,
       width: width - left - right,
       height: height - top - bottom,
-      data: this.options.data
+      data: this.options.data,
+      lastClose: this.options.lastClose
     });
 
     // let data = this.options.data;
