@@ -6,12 +6,21 @@
   <title>Title</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0,,minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
+    html {
+      width: 100%;
+      height: 100%;
+    }
+
     body {
       background: #1e2126;
+      display: flex;
+      width: 100%;
+      height: 100%;
     }
 
     div {
-      margin-top: 20px;
+      /* margin-top: 20px; */
+      flex: 1;
     }
 
     .tabs {
@@ -36,9 +45,9 @@
 </head>
 
 <body>
-  <div id="container" style="margin-left:10px;margin-top:10px;"></div>
+  <!-- <div id="container" style="margin-left:10px;margin-top:10px;"></div> -->
   <!-- <div id="timechart"></div> -->
-  <ul class="tabs">
+  <!-- <ul class="tabs">
     <li data-type="1">1分</li>
     <li data-type="5">5分</li>
     <li data-type="15">15分</li>
@@ -47,7 +56,7 @@
     <li data-type="D">日k</li>
     <li data-type="W">周k</li>
     <li data-type="M">月k</li>
-  </ul>
+  </ul> -->
   <div id="refactor"></div>
   <script src="/static/common.js"></script>
   <script src="/static/st.js"></script>

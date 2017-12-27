@@ -2,7 +2,15 @@ import './candle_stick_chart.css';
 import * as d3 from 'd3';
 import CandleSticks from './CandleSticks';
 import Volumes from './Volumes';
-import Brush from './Brush';
+// import Brush from './Brush';
+
+function setAttrs(el, attrs) {
+  for (var key in attrs) {
+    el.attr(key, attrs[key]);
+  }
+
+  return el;
+}
 
 class CandleStickChart {
   // 每个子图形占比
@@ -18,7 +26,10 @@ class CandleStickChart {
       data
     };
 
-    this.element.attr('width', width).attr('height', height);
+    setAttrs(this.element, {
+      width: this.options.width,
+      height: this.element.height
+    });
 
     this.children = [];
     this.initChildren();
@@ -55,9 +66,7 @@ class CandleStickChart {
       this.children.push(chart);
     }
 
-    this.initZoom(this.children[0].crosshair.getLayer());
-
-    // this.initZoom();
+    this.initZoom();
   }
 
   getIndexScale() {
@@ -87,12 +96,14 @@ class CandleStickChart {
     // 索引-宽度 比例尺
     let indexScale = this.getIndexScale();
     // 响应缩放事件的层
-    const zoomer = this.element
-      .append('rect')
-      .attr('width', width)
-      .attr('height', height)
-      .style('fill', 'none')
-      .style('pointer-events', 'all');
+    // const zoomer = this.element
+    //   .append('rect')
+    //   .attr('width', width)
+    //   .attr('height', height)
+    //   .style('fill', 'none')
+    //   .style('pointer-events', 'all');
+
+    const zoomer = this.element;
 
     // zoom 事件监听函数
     const zoomed = () => {
@@ -160,6 +171,18 @@ class CandleStickChart {
 
   render(selectedData) {
     this.children.forEach(child => child.render(selectedData));
+  }
+
+  resize(width, height) {
+    this.options = Object.assign(this.options, {
+      width,
+      height
+    });
+
+    setAttrs(this.element, {
+      width,
+      height
+    });
   }
 
   update(items) {
