@@ -50,6 +50,8 @@ class CandleSticks {
     // this.parent.initZoom(eventLayer);
   }
 
+  resize() {}
+
   // 顶部文字
   initText() {
     let { top, left, right, bottom } = CandleSticks.margin;
