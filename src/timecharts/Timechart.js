@@ -54,6 +54,10 @@ class Timechart {
   resize(size) {
     let totalWidth = size.width;
     let totalHeight = size.height;
+
+    this.options.width = totalWidth;
+    this.options.height = totalHeight;
+
     let lastHeight = 0;
 
     this.element.attr('width', totalWidth);
@@ -74,63 +78,76 @@ class Timechart {
         height
       });
     }
+
+    var bound = this.calculateCrosshairBound();
+    this.crosshair.resize({
+      x: bound.left,
+      y: bound.top,
+      width: bound.width,
+      height: bound.height
+    });
   }
 
-  // 初始化十字线交互
-  initCrosshair() {
-    // let { top, left, right, bottom } = AreaAndLine.defaultOptions.margin;
+  // 计算十字线位置
+  calculateCrosshairBound() {
     let childTypes = Timechart.TYPES;
     let { width, height } = this.options;
-    let top = childTypes[0].defaultOptions.margin.top;
-    let bottom = childTypes[childTypes.length - 1].defaultOptions.margin.bottom;
-    let left, right;
+    let first = 0;
+    let last = childTypes.length - 1;
+    let top = childTypes[first].defaultOptions.margin.top;
+    let bottom = childTypes[last].defaultOptions.margin.bottom;
+    let left = 0,
+      right = 0,
+      margin;
 
     for (let i = 0; i < childTypes.length; i++) {
-      if (!left) {
-        left = childTypes[i].defaultOptions.margin.left;
-      } else {
-        left = Math.max(left, childTypes[i].defaultOptions.margin.left);
-      }
-
-      if (!right) {
-        right = childTypes[i].defaultOptions.margin.right;
-      } else {
-        right = Math.max(right, childTypes[i].defaultOptions.margin.right);
-      }
+      margin = childTypes[i].defaultOptions.margin;
+      left = Math.max(left, margin.left);
+      right = Math.max(right, margin.right);
     }
 
     this.margin = { left, right, bottom, top };
 
+    return {
+      left,
+      top,
+      width: width - left - right,
+      height: height - top - bottom
+    };
+  }
+
+  // 初始化十字线交互
+  initCrosshair() {
+    let { left, top, width, height } = this.calculateCrosshairBound();
+
     this.crosshair = new Crosshair(this.element, {
       x: left,
       y: top,
-      width: width - left - right,
-      height: height - top - bottom,
-      data: this.options.data,
-      lastClose: this.options.lastClose
+      width: width,
+      height: height
     });
 
-    // let data = this.options.data;
+    let data = this.options.data;
 
-    // this.crosshair.on('move', mousePosition => {
-    //   if (data.length < 1) return;
+    this.crosshair.on('move', mousePosition => {
+      if (data.length < 1) return;
 
-    //   this.children.forEach(child => {
-    //     if (child.handleMouseMove) {
-    //       child.handleMouseMove(mousePosition);
-    //     }
-    //   });
-    // });
+      this.children.forEach(child => {
+        if (child.handleMouseMove) {
+          child.handleMouseMove(mousePosition);
+        }
+      });
+    });
 
-    // this.crosshair.on('end', () => {
-    //   if (data.length < 1) return;
+    this.crosshair.on('end', () => {
+      if (data.length < 1) return;
 
-    //   if (this.options.onChange) {
-    //     this.options.onChange(data[data.length - 1]);
-    //   }
-    // });
+      if (this.options.onChange) {
+        this.options.onChange(data[data.length - 1]);
+      }
+    });
 
-    // this.initIndicators();
+    this.initIndicators();
   }
 
   // 初始化文字指示器

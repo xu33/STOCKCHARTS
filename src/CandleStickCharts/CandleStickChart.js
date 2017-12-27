@@ -118,7 +118,7 @@ class CandleStickChart {
         endIndexSelected
       );
 
-      // this.render(selectedData);
+      this.render(selectedData);
     };
 
     // 初始化d3缩放行为

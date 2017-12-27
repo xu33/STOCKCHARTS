@@ -138,6 +138,8 @@ class CandleSticks {
     });
 
     this.crosshair.on('move', mousePosition => {
+      console.log('move fire');
+
       let data = this.data;
       let l = data.length;
       let scale_x = this.scale_band;

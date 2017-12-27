@@ -107,7 +107,7 @@ class AreaAndLine {
 
     this.rightAxisGroup.attr(
       'transform',
-      `translate(${width - right - 1}, ${top})`
+      `translate(${width - right}, ${top})`
     );
 
     if (!this.bottomAxisGroup) {
@@ -142,7 +142,7 @@ class AreaAndLine {
 
     grid_x.call(axis);
 
-    let range_y = linspace(0, width - right - left - 1, 3);
+    let range_y = linspace(0, width - right - left, 3);
     let scale_y = d3
       .scaleOrdinal()
       .range(range_y)
@@ -295,43 +295,37 @@ class AreaAndLine {
     this.renderAxises();
   }
 
-  getDomainX() {
-    this.timeDomain = [AreaAndLine.START_INDEX, AreaAndLine.END_INDEX];
-  }
-
-  getDomainY() {
-    let start = this.options.lastClose;
-    let data = this.data;
-    // 最大值
-    let min = d3.min(data, d => Math.min(d.current, d.avg_price));
-    // 最小值
-    let max = d3.max(data, d => Math.max(d.current, d.avg_price));
-    // 最大跌幅
-    let ratioLow = (min - start) / start;
-    // 最大涨幅
-    let ratioHigh = (max - start) / start;
-    // 最大幅度变化
-    let ratioMax = Math.max(Math.abs(ratioLow), Math.abs(ratioHigh));
-    // 价格范围
-    let priceDomain = [start * (1 - ratioMax), start * (1 + ratioMax)];
-    // 服务范围
-    let ratioDomain = [-ratioMax, ratioMax];
-
-    this.priceDomain = priceDomain;
-    this.ratioDomain = ratioDomain;
-  }
-
-  updateScaleDomain() {
-    this.scaleX.domain(this.timeDomain);
-    this.scaleY.domain(this.priceDomain);
-  }
-
   renderChartArea() {
-    this.getDomainX();
-    this.getDomainY();
-    this.updateScaleDomain();
-
     let { scaleX, scaleY, data } = this;
+    let OVERFLOW_RATIO = AreaAndLine.OVERFLOW_RATIO;
+
+    scaleX.domain([AreaAndLine.START_INDEX, AreaAndLine.END_INDEX]);
+
+    // 根据前一天收盘价计算涨跌幅
+    let start = this.options.lastClose;
+    // let extent = d3.extent(data, d => d.current);
+
+    let extent = [
+      d3.min(data, d => Math.min(d.current, d.avg_price)),
+      d3.max(data, d => Math.max(d.current, d.avg_price))
+    ];
+
+    let ratioExtent = Math.max(
+      Math.abs(extent[0] - start) / start,
+      Math.abs(extent[1] - start) / start
+    );
+
+    let ratioDomain = [
+      1 - ratioExtent * OVERFLOW_RATIO,
+      1 + ratioExtent * OVERFLOW_RATIO
+    ];
+
+    this.ratioDomain = ratioDomain.map(n => n - 1);
+
+    let priceDomain = [start * ratioDomain[0], start * ratioDomain[1]];
+    this.priceDomain = priceDomain;
+
+    scaleY.domain(priceDomain);
 
     let area = d3
       .area()
