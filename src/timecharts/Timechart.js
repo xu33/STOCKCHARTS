@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import Mainchart from './AreaAndLine';
 import Volume from './Volume';
 import Crosshair from './Crosshair';
-import Indicator from './Indicator';
+import Indicator from '../shares/Indicator';
 
 const DIV = [0.7, 0.3];
 

@@ -27,7 +27,6 @@ class Crosshair extends EventEmitter {
 
   renderEventLayer() {
     let { width, height, x, y } = this.bound;
-    console.log('renderEventLayer', width, height, x, y);
     let { element, crossLineX, crossLineY } = this;
     let self = this;
 

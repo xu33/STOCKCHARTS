@@ -1,4 +1,5 @@
 import CandleStickChart from './CandleStickCharts/CandleStickChart';
+import $ from 'jquery';
 // import Timechart from './timecharts/Timechart';
 
 // let { chartlist } = require('./fake_data/stocklist.json');
@@ -37,8 +38,6 @@ import CandleStickChart from './CandleStickCharts/CandleStickChart';
 //   csc.update(data.chartlist[data.chartlist.length - 1]);
 // }, 2000);
 
-import $ from 'jquery';
-
 // 类型更新例子
 // $('.tabs').on('click', 'li', function(e) {
 //   csc.destroy();
@@ -75,6 +74,22 @@ import $ from 'jquery';
 //     });
 //   });
 // });
+
+function throttle(fn, duration) {
+  var timer;
+  var start;
+  return function(e) {
+    if (timer) {
+      return;
+    }
+
+    timer = setTimeout(function() {
+      fn(e);
+      timer = undefined;
+    }, duration);
+  };
+}
+
 $(document).ready(function() {
   var element = document.getElementById('refactor');
   var chart;
@@ -82,15 +97,20 @@ $(document).ready(function() {
   $.ajax({
     url: `http://hq.test.whup.com/hq/kline/8/0/000001`
   }).done(data => {
+    var width = element.clientWidth;
+    var height = element.clientHeight;
+
     chart = new CandleStickChart('#refactor', {
-      width: element.clientWidth,
-      height: element.clientHeight,
+      width: width,
+      height: height,
       data: data.vAnalyData,
       type: 'W'
     });
   });
 
-  $(window).resize(function() {
-    chart.resize(element.clientWidth, element.clientHeight);
-  });
+  $(window).resize(
+    throttle(function() {
+      chart.resize(element.clientWidth, element.clientHeight);
+    }, 300)
+  );
 });

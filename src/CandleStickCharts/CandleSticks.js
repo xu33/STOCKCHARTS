@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import colors from './colors';
 import Crosshair from './Crosshair';
-import Indicator from './Indicator';
+import Indicator from '../shares/Indicator';
 import { linspace } from '../utils/linspace';
 import thunkArray from '../utils/chunkarray';
 
@@ -44,56 +44,60 @@ class CandleSticks {
     this.initScales(); // 比例尺
     this.initCrosshair(); // 十字线
     this.initIndicators(); // 指示器
-
-    // var eventLayer = this.crosshair.getLayer();
-    // console.log(eventLayer);
-    // this.parent.initZoom(eventLayer);
   }
 
-  resize() {}
+  updateAxis() {
+    var { width, height } = this.options;
 
-  // 顶部文字
-  initText() {
-    let { top, left, right, bottom } = CandleSticks.margin;
+    this.element
+      .select('.right_axis')
+      .attr('transform', `translate(${width}, 0)`);
+    this.element
+      .select('.bottom_axis')
+      .attr('transform', `translate(0, ${height})`);
+
+    this.element.select('.grid_y').attr('transform', `translate(0, ${height})`);
+  }
+
+  updateScales() {
+    let { left, right, bottom, top } = CandleSticks.margin;
     let { width, height } = this.options;
+    this.range_x = [0, width];
+    this.range_y = [height, 0];
 
-    let line = d3
-      .line()
-      .x(d => d.x)
-      .y(d => d.y);
+    this.scale_band.range(this.range_x);
+    this.scale_price.range(this.range_y);
+  }
 
-    let data = [
-      {
-        x: 0,
-        y: top
-      },
-      {
-        x: 0,
-        y: 1
-      },
-      {
-        x: width,
-        y: 1
-      },
-      {
-        x: width,
-        y: top
-      }
-    ];
+  resize(boundingBox) {
+    var { left, right, top, bottom } = CandleSticks.margin;
+    var { x, y, width, height } = boundingBox;
 
-    this.element
-      .append('text')
-      .attr('class', 'tip_text')
-      .attr('x', 8)
-      .attr('y', 15);
+    this.options = Object.assign(this.options, {
+      x,
+      y,
+      width: width - left - right,
+      height: height - top - bottom
+    });
 
-    this.element
-      .append('path')
-      .datum(data)
-      .attr('d', line)
-      .attr('class', 'text_box')
-      .attr('fill', 'none')
-      .attr('stroke', '#ccc');
+    var tx = x + left;
+    var ty = y + top;
+
+    this.element.attr('transform', `translate(${tx}, ${ty})`);
+    // 更新比例尺和数轴容器
+    this.updateScales();
+    this.updateAxis();
+    this.updateCrosshair();
+    this.render(this.data);
+  }
+
+  updateCrosshair() {
+    this.crosshair.resize({
+      x: 0,
+      y: 0,
+      width: this.options.width,
+      height: this.options.height
+    });
   }
 
   extent() {
@@ -183,7 +187,7 @@ class CandleSticks {
     let price = d3.format('.2f')(currentDataItem.close);
 
     this.priceIndicator.setText(price);
-    this.priceIndicator.setPosition(x, y, 'horizontal');
+    this.priceIndicator.setPosition(x, y, 'horizontal', 'left');
   }
 
   initGroups() {
@@ -228,13 +232,17 @@ class CandleSticks {
       .attr('transform', `translate(0, ${height})`);
 
     // 水平辅助线
-    this.element.append('g').attr('class', 'axis grid_x');
+    var gridx = this.element.select('.grid_x');
+    if (gridx.empty()) {
+      gridx = this.element.append('g').attr('class', 'axis grid_x');
+    }
 
     // 垂直辅助线
-    this.element
-      .append('g')
-      .attr('class', 'axis grid_y')
-      .attr('transform', `translate(0, ${height})`);
+    var gridy = this.element.select('.grid_y');
+    if (gridy.empty()) {
+      gridy = this.element.append('g').attr('class', 'axis grid_y');
+    }
+    gridy.attr('transform', `translate(0, ${height})`);
 
     // 边框
     // this.element
@@ -247,11 +255,10 @@ class CandleSticks {
   }
 
   render(data) {
+    if (data.length < 1) {
+      return;
+    }
     this.data = data;
-    if (!this.data || this.data.length < 1) return;
-
-    this.initCrosshair();
-
     this.renderCandleSticks();
     this.renderWicks();
     this.renderAxis();
@@ -355,20 +362,17 @@ class CandleSticks {
   }
 
   calculateLeftAndRightAxisScale() {
-    const lengthNeed = 4;
+    let lengthNeed = 4;
     let { left, right, bottom, top } = CandleSticks.margin;
     let { width, height } = this.options;
-    let domain = this.extent();
-
-    domain = linspace(domain[1], domain[0], lengthNeed);
+    let extent = this.extent();
+    let domain = linspace(extent[1], extent[0], lengthNeed);
     let range = linspace(0, height, lengthNeed);
 
-    let scale = d3
+    this.leftAndRightAxisScale = d3
       .scaleOrdinal()
       .domain(domain)
       .range(range);
-
-    this.leftAndRightAxisScale = scale;
   }
 
   renderAxis() {

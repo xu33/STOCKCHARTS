@@ -17,37 +17,50 @@ class Crosshair extends EventEmitter {
 
     this.crossLineY = this.element.append('line').attr('class', 'crossline');
 
-    this.createEventLayer();
+    this.renderEventLayer();
   }
 
-  createEventLayer() {
+  resize(bound) {
+    this.bound = bound;
+    this.element.attr('transform', `translate(${bound.x}, ${bound.y})`);
+
+    this.renderEventLayer();
+  }
+
+  renderEventLayer() {
     let { width, height, x, y } = this.bound;
     let { element, crossLineX, crossLineY } = this;
     let self = this;
 
-    this.layer = this.parentNode
-      .append('rect')
+    if (!this.layer) {
+      this.layer = this.parentNode
+        .append('rect')
+        .style('fill', 'none')
+        .style('pointer-events', 'all')
+        .attr('class', 'event_layer');
+
+      this.layer
+        .on('mouseover', () => {
+          element.style('display', null);
+        })
+        .on('mousemove', function() {
+          const mousePosition = d3.mouse(this);
+
+          crossLineX.attr('x1', 0).attr('x2', self.bound.width);
+          crossLineY.attr('y1', 0).attr('y2', self.bound.height);
+
+          self.emit('move', mousePosition);
+        })
+        .on('mouseout', () => {
+          element.style('display', 'none');
+          self.emit('end');
+        });
+    }
+
+    this.layer
       .attr('width', width)
       .attr('height', height)
-      .style('fill', 'none')
-      .style('pointer-events', 'all')
-      .attr('class', 'event_layer')
-      .attr('transform', `translate(${x}, ${y})`)
-      .on('mouseover', () => {
-        element.style('display', null);
-      })
-      .on('mousemove', function() {
-        const mousePosition = d3.mouse(this);
-
-        crossLineX.attr('x1', 0).attr('x2', width);
-        crossLineY.attr('y1', 0).attr('y2', height);
-
-        self.emit('move', mousePosition);
-      })
-      .on('mouseout', () => {
-        element.style('display', 'none');
-        self.emit('end');
-      });
+      .attr('transform', `translate(${x}, ${y})`);
   }
 
   setHorizontalCrosslinePosition(y) {

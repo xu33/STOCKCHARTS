@@ -2,21 +2,30 @@ import './candle_stick_chart.css';
 import * as d3 from 'd3';
 import CandleSticks from './CandleSticks';
 import Volumes from './Volumes';
-// import Brush from './Brush';
 
 function setAttrs(el, attrs) {
   for (var key in attrs) {
-    el.attr(key, attrs[key]);
+    el = el.attr(key, attrs[key]);
   }
 
   return el;
 }
 
-class CandleStickChart {
-  // 每个子图形占比
-  // static DIV = [0.7, 0.2, 0.1];
-  static DIV = [0.7, 0.3];
+const ChildTypes = [
+  {
+    type: CandleSticks,
+    percent: 0.7
+  },
+  {
+    type: Volumes,
+    percent: 0.3
+  }
+];
 
+const MIN_WIDTH = 400;
+const MIN_HEIGHT = 200;
+
+class CandleStickChart {
   constructor(selector, { width, height, type, data }) {
     this.element = d3.select(selector).append('svg');
     this.options = {
@@ -28,45 +37,40 @@ class CandleStickChart {
 
     setAttrs(this.element, {
       width: this.options.width,
-      height: this.element.height
+      height: this.options.height
     });
 
     this.children = [];
     this.initChildren();
+
+    this.currentTransform = null;
+    this.initZoom();
   }
 
   initChildren() {
-    let totalHeight = this.options.height;
-    let totalWidth = this.options.width;
-    // let types = [CandleSticks, Volumes, Brush];
-    let types = [CandleSticks, Volumes];
+    var totalHeight = this.options.height;
+    var totalWidth = this.options.width;
+    var lastHeight = 0; // 前一个图形的高度
 
-    // 前一个图形的高度
-    let lastHeight = 0;
+    ChildTypes.forEach((child, index) => {
+      var type = child.type;
+      var percent = child.percent;
+      var height = percent * totalHeight;
+      var x = 0;
+      var y = lastHeight;
+      var parent = this;
 
-    for (let i = 0; i < types.length; i++) {
-      let type = types[i];
-      let height = CandleStickChart.DIV[i] * totalHeight;
-      let width = totalWidth;
-      let x = 0;
-      // 下一个图形的y坐标等于上面图形高度的和，外边距由每个图形自己处理
-      let y = lastHeight;
-
-      lastHeight += height;
-
-      let chart = new type(this.element, {
+      this.children[index] = new type(this.element, {
         x,
         y,
-        width,
+        width: totalWidth,
         height,
-        type: this.options.type,
-        parent: this
+        type,
+        parent
       });
 
-      this.children.push(chart);
-    }
-
-    this.initZoom();
+      lastHeight += height;
+    });
   }
 
   getIndexScale() {
@@ -78,13 +82,6 @@ class CandleStickChart {
       .range([0, this.options.width]);
 
     return indexScale;
-  }
-
-  initZoomOnExistingNode(zoomer) {
-    let width = zoomer.attr('width');
-    let height = zoomer.attr('height');
-    let minStickLength = 30;
-    let percent = minStickLength / this.options.data.length;
   }
 
   initZoom() {
@@ -110,14 +107,16 @@ class CandleStickChart {
       // 获取当前缩放系数
       let transform = d3.event.transform;
 
-      console.log(transform);
-      console.log('range before:', indexScale.range());
+      this.currentTransform = transform;
+
+      console.log('currentTransform:', transform);
+      // console.log('range before:', indexScale.range());
 
       // 根据当前缩放系数换算 缩放后比例尺的值域
       let currentScale = transform.rescaleX(indexScale);
       let domain = currentScale.domain();
 
-      console.log('range zoomed:', currentScale.range());
+      // console.log('range zoomed:', currentScale.range());
 
       // 当前索引范围
       let extent = domain.map(Math.round);
@@ -139,14 +138,18 @@ class CandleStickChart {
       .scaleExtent([1, scaleK])
       .on('zoom', zoomed);
 
-    // 初始缩放矩阵对象(k, x, y)
-    // 从最右侧开始展示，此处x和y也会根据k进行缩放
-    let initTransform = d3.zoomIdentity.scale(scaleK).translate(-width, 0);
+    if (!this.currentTransform) {
+      // 初始缩放矩阵对象(k, x, y)
+      // 从最右侧开始展示，此处x和y也会根据k进行缩放
+      let initTransform = d3.zoomIdentity.scale(scaleK).translate(-width, 0);
 
-    console.log(initTransform);
+      // console.log(initTransform);
 
-    // 绑定缩放行为，并传入初始的缩放矩阵对象
-    zoomer.call(zoom).call(zoom.transform, initTransform);
+      // 绑定缩放行为，并传入初始的缩放矩阵对象
+      zoomer.call(zoom).call(zoom.transform, initTransform);
+    } else {
+      zoomer.call(zoom).call(zoom.transform, this.currentTransform);
+    }
   }
 
   bound(start, end) {
@@ -174,6 +177,10 @@ class CandleStickChart {
   }
 
   resize(width, height) {
+    if (width < MIN_WIDTH || height < MIN_HEIGHT) {
+      return;
+    }
+
     this.options = Object.assign(this.options, {
       width,
       height
@@ -183,6 +190,42 @@ class CandleStickChart {
       width,
       height
     });
+
+    this.resizeChidren(width, height);
+    this.resetZoomBehavior();
+  }
+
+  resizeChidren(width, height) {
+    var parentHeight = this.options.height;
+    var width = this.options.width;
+    var lastHeight = 0;
+
+    ChildTypes.forEach((child, index) => {
+      var { type, percent } = child;
+      var height = parentHeight * percent;
+      var x = 0;
+      var y = lastHeight;
+
+      if (
+        this.children[index].resize &&
+        typeof this.children[index].resize === 'function'
+      ) {
+        this.children[index].resize({
+          x,
+          y,
+          width,
+          height
+        });
+      }
+
+      lastHeight += height;
+    });
+  }
+
+  resetZoomBehavior() {
+    console.log('resetZoomBehavior fired');
+    this.element.on('.zoom', null);
+    this.initZoom();
   }
 
   update(items) {
