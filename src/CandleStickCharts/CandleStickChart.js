@@ -42,8 +42,6 @@ class CandleStickChart {
 
     this.children = [];
     this.initChildren();
-
-    this.currentTransform = null;
     this.initZoom();
   }
 
@@ -74,49 +72,33 @@ class CandleStickChart {
   }
 
   getIndexScale() {
-    var startIndex = 0;
-    var endIndex = this.options.data.length - 1;
-    var indexScale = d3
+    return d3
       .scaleLinear()
-      .domain([startIndex, endIndex])
+      .domain([0, this.options.data.length - 1])
       .range([0, this.options.width]);
-
-    return indexScale;
   }
 
-  initZoom() {
+  _initZoom() {
     let { width, height } = this.options;
     // 最少展示几根K线
     let minStickLength = 30;
     // 缩放比例 (当前放大了多少倍)
-    let scaleK = this.options.data.length / minStickLength;
+    let maxScale = this.options.data.length / minStickLength;
     // 索引-宽度 比例尺
     let indexScale = this.getIndexScale();
-    // 响应缩放事件的层
-    // const zoomer = this.element
-    //   .append('rect')
-    //   .attr('width', width)
-    //   .attr('height', height)
-    //   .style('fill', 'none')
-    //   .style('pointer-events', 'all');
 
+    this.indexScale = indexScale;
+
+    // zoom事件会清除元素上的其他鼠标事件，所以不能绑定在已经绑定了其他鼠标事件的元素上，这里绑定在svg根元素上
     const zoomer = this.element;
 
     // zoom 事件监听函数
     const zoomed = () => {
       // 获取当前缩放系数
       let transform = d3.event.transform;
-
-      this.currentTransform = transform;
-
-      console.log('currentTransform:', transform);
-      // console.log('range before:', indexScale.range());
-
       // 根据当前缩放系数换算 缩放后比例尺的值域
       let currentScale = transform.rescaleX(indexScale);
       let domain = currentScale.domain();
-
-      // console.log('range zoomed:', currentScale.range());
 
       // 当前索引范围
       let extent = domain.map(Math.round);
@@ -128,6 +110,8 @@ class CandleStickChart {
         endIndexSelected
       );
 
+      this.startIndexSelected = startIndexSelected;
+      this.endIndexSelected = endIndexSelected;
       this.render(selectedData);
     };
 
@@ -135,21 +119,17 @@ class CandleStickChart {
     let zoom = d3
       .zoom()
       .translateExtent([[0, 0], [width, 0]])
-      .scaleExtent([1, scaleK])
+      .scaleExtent([1, maxScale])
       .on('zoom', zoomed);
 
-    if (!this.currentTransform) {
-      // 初始缩放矩阵对象(k, x, y)
-      // 从最右侧开始展示，此处x和y也会根据k进行缩放
-      let initTransform = d3.zoomIdentity.scale(scaleK).translate(-width, 0);
+    this.zoom = zoom;
 
-      // console.log(initTransform);
-
-      // 绑定缩放行为，并传入初始的缩放矩阵对象
-      zoomer.call(zoom).call(zoom.transform, initTransform);
-    } else {
-      zoomer.call(zoom).call(zoom.transform, this.currentTransform);
-    }
+    // 初始缩放矩阵对象(k, x, y)
+    // 从最右侧开始展示，此处x和y也会根据k进行缩放
+    let initTransform = d3.zoomIdentity.scale(maxScale).translate(-width, 0);
+    console.log(initTransform);
+    // 绑定缩放行为，并传入初始的缩放矩阵对象
+    zoomer.call(zoom).call(zoom.transform, initTransform);
   }
 
   bound(start, end) {
@@ -181,6 +161,8 @@ class CandleStickChart {
       return;
     }
 
+    let k = width / this.options.width;
+
     this.options = Object.assign(this.options, {
       width,
       height
@@ -192,7 +174,7 @@ class CandleStickChart {
     });
 
     this.resizeChidren(width, height);
-    this.resetZoomBehavior();
+    this.resetZoomBehavior(k);
   }
 
   resizeChidren(width, height) {
@@ -222,8 +204,49 @@ class CandleStickChart {
     });
   }
 
-  resetZoomBehavior() {
-    console.log('resetZoomBehavior fired');
+  initZoom() {
+    let width = this.options.width;
+    let minInterval = 30;
+    let length = this.options.data.length;
+    let maxScale = length / minInterval;
+    let indexScale = this.getIndexScale();
+    let endIndex = this.endIndex ? this.endIndex : length - 1;
+    let startIndex = this.startIndex ? this.startIndex : endIndex - minInterval;
+
+    let zoomed = () => {
+      let transform = d3.event.transform;
+      // console.log('on zoom:', transform);
+      let currentScale = transform.rescaleX(indexScale);
+      let domain = currentScale.domain();
+      let extent = domain.map(Math.round);
+      let [startIndex, endIndex] = this.bound(...extent);
+      let interval = this.options.data.slice(startIndex, endIndex);
+      this.startIndex = startIndex;
+      this.endIndex = endIndex;
+      this.render(interval);
+    };
+
+    let zoom = d3
+      .zoom()
+      .translateExtent([[0, 0], [width, 0]])
+      .scaleExtent([1, maxScale])
+      .on('zoom', zoomed);
+
+    // 初始缩放
+    let k = width / (indexScale(endIndex) - indexScale(startIndex));
+    if (k > maxScale) k = maxScale;
+    if (k < 1) k = 1;
+    // 初始位移
+    let x = -indexScale(startIndex);
+    // 初始transform
+    let transform = d3.zoomIdentity.scale(k).translate(x, 0);
+    // 绑定事件，并设置初始偏移量
+    this.element.call(zoom).call(zoom.transform, transform);
+  }
+
+  // k缩放比例
+  resetZoomBehavior(k) {
+    console.log('resetZoomBehavior fired', k);
     this.element.on('.zoom', null);
     this.initZoom();
   }
