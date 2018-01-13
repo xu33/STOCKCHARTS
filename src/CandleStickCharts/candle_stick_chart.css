@@ -100,24 +100,24 @@ svg line,
 .ma5,
 .ma10,
 .ma20,
-.ma30 {
+.ma60 {
   fill: none;
 }
 
 .ma5 {
-  stroke: #cd4343;
+  stroke: #ffffff;
 }
 
 .ma10 {
-  stroke: #8c3037;
+  stroke: #ffff00;
 }
 
 .ma20 {
-  stroke: #ffca53;
+  stroke: #7b14fe;
 }
 
-.ma30 {
-  stroke: #0055a2;
+.ma60 {
+  stroke: #00ff00;
 }
 
 /* macd */
@@ -193,4 +193,9 @@ svg line,
 .handle--e,
 .handle--w {
   fill: #cccccc;
+}
+
+.min_price,
+.max_price {
+  fill: #fff;
 }

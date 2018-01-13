@@ -1,5 +1,6 @@
 import CandleStickChart from './CandleStickCharts/CandleStickChart';
 import $ from 'jquery';
+import computeMa from './utils/computeMa';
 // import Timechart from './timecharts/Timechart';
 
 // let { chartlist } = require('./fake_data/stocklist.json');
@@ -95,16 +96,20 @@ $(document).ready(function() {
   var chart;
 
   $.ajax({
-    url: `http://hq.test.whup.com/hq/kline/8/0/000001`
+    url: `http://hq.test.whup.com/hq/kline/8/0/002405`
   }).done(data => {
     var width = element.clientWidth;
     var height = element.clientHeight;
+    var list = data.vAnalyData;
+    computeMa(list, 'close', 5);
+    computeMa(list, 'close', 10);
+    computeMa(data.vAnalyData, 'close', 20);
+    computeMa(data.vAnalyData, 'close', 60);
 
     chart = new CandleStickChart('#refactor', {
       width: width,
       height: height,
-      data: data.vAnalyData,
-      type: 'W'
+      data: list
     });
   });
 

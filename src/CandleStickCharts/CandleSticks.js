@@ -66,7 +66,8 @@ class CandleSticks {
     this.range_y = [height, 0];
 
     this.scale_band.range(this.range_x);
-    this.scale_price.range(this.range_y);
+    this.scalePrice.range(this.range_y);
+    this.scaleIndex.range([0, this.options.width]);
   }
 
   resize(boundingBox) {
@@ -102,21 +103,29 @@ class CandleSticks {
 
   extent() {
     let data = this.data;
-    // 如果画均线 需要把均线的价格计算在内
-    // let min = d3.min(data, d =>
-    //   Math.min(d.low, d.high, d.ma5, d.ma10, d.ma20, d.ma30)
-    // );
-    // let max = d3.max(data, d =>
-    //   Math.max(d.low, d.high, d.ma5, d.ma10, d.ma20, d.ma30)
-    // );
 
-    let min = d3.min(data, d => d.low);
-    let max = d3.max(data, d => d.high);
+    // let min = d3.min(data, d => d.low);
+    // let max = d3.max(data, d => d.high);
+
+    // 如果画均线 需要把均线的价格计算在内
+    var min = d3.min(data, function(d) {
+      var vals = [d.low, d.ma5, d.ma10, d.ma20, d.ma60].filter(Boolean);
+      return Math.min.apply(Math, vals);
+    });
+
+    var max = d3.max(data, function(d) {
+      var vals = [d.high, d.ma5, d.ma10, d.ma20, d.ma60].filter(Boolean);
+      return Math.max.apply(Math, vals);
+    });
+
+    console.log(min, max);
+
+    // console.log(min, max);
 
     max = max * (1 + CandleSticks.offset_ratio);
     min = min - max * CandleSticks.offset_ratio;
 
-    if (min < 0) min = 0;
+    // if (min < 0) min = 0;
 
     // return [
     //   min * (1 - CandleSticks.offset_ratio),
@@ -147,7 +156,7 @@ class CandleSticks {
       let data = this.data;
       let l = data.length;
       let scale_x = this.scale_band;
-      let scale_y = this.scale_price;
+      let scale_y = this.scalePrice;
       let mouse_x = mousePosition[0];
       let each_band_width = scale_x.step();
       let index = Math.round(mouse_x / each_band_width);
@@ -209,7 +218,9 @@ class CandleSticks {
 
     let range_y = [height, 0];
     // 纵向价格比例尺
-    this.scale_price = d3.scaleLinear().range(range_y);
+    this.scalePrice = d3.scaleLinear().range(range_y);
+    // 均线比例尺
+    this.scaleIndex = d3.scaleLinear().range([0, this.options.width]);
   }
 
   initAxis() {
@@ -260,10 +271,12 @@ class CandleSticks {
     this.renderCandleSticks();
     this.renderWicks();
     this.renderAxis();
+
+    this.renderMa5();
   }
 
   renderCandleSticks() {
-    let { scale_band, scale_price } = this;
+    let { scale_band, scalePrice } = this;
     let group = this.element.select('.candle_sticks');
     let data = this.data;
 
@@ -271,7 +284,7 @@ class CandleSticks {
     let domain_x = data.map((o, i) => i);
 
     scale_band.domain(domain_x);
-    scale_price.domain(domain_price);
+    scalePrice.domain(domain_price);
 
     let selection = group.selectAll('.bar').data(data, d => d.timestamp);
 
@@ -290,17 +303,17 @@ class CandleSticks {
       .merge(selection)
       .attr('class', 'bar')
       .attr('x', (d, i) => scale_band(i))
-      .attr('y', ({ open, close }) => scale_price(Math.max(open, close)))
+      .attr('y', ({ open, close }) => scalePrice(Math.max(open, close)))
       .attr('width', scale_band.bandwidth())
       .attr('height', ({ open, close }) =>
-        Math.round(Math.abs(scale_price(open) - scale_price(close)))
+        Math.round(Math.abs(scalePrice(open) - scalePrice(close)))
       )
       .attr('fill', calColor);
   }
 
   renderWicks() {
     let group = this.element.select('.candle_sticks');
-    let { scale_band, scale_price, data } = this;
+    let { scale_band, scalePrice, data } = this;
     let line = d3
       .line()
       .x(d => d.x)
@@ -324,8 +337,8 @@ class CandleSticks {
       .attr('class', 'shadow')
       .attr('d', (d, i) => {
         var x = scale_band(i) + scale_band.bandwidth() / 2;
-        var y1 = scale_price(d.high);
-        var y2 = scale_price(d.low);
+        var y1 = scalePrice(d.high);
+        var y2 = scalePrice(d.low);
 
         if (d.high >= maxPrice) {
           maxPrice = d.high;
@@ -354,9 +367,46 @@ class CandleSticks {
       minPrice
     );
 
-    // console.log(scale_price.domain());
+    // console.log(scalePrice.domain());
 
     // console.log(maxOneX, maxOneY, minOneX, minOneY);
+  }
+
+  // 绘制5日均线
+  renderMa5() {
+    this.renderMaBy(5);
+    this.renderMaBy(10);
+    this.renderMaBy(20);
+    this.renderMaBy(60);
+  }
+
+  renderMaBy(days) {
+    if (typeof days !== 'number') {
+      throw '均线日期必须为数字';
+    }
+
+    this.scaleIndex.domain([0, this.data.length - 1]);
+
+    var scaleIndex = this.scaleIndex;
+    var scalePrice = this.scalePrice;
+    var line = d3
+      .line()
+      .x(function(d, i) {
+        return scaleIndex(i);
+      })
+      .y(function(d, i) {
+        return scalePrice(d[`ma${days}`]);
+      })
+      .defined(function(d) {
+        return d.hasOwnProperty(`ma${days}`);
+      });
+
+    var path = this.element.select(`.ma${days}`);
+    if (path.empty()) {
+      path = this.element.append('path').attr('class', `ma${days}`);
+    }
+
+    path.attr('d', line(this.data));
   }
 
   calculateLeftAndRightAxisScale() {
