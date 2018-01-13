@@ -22,7 +22,7 @@ svg line,
 
 /* 数字文字颜色 */
 .axis text {
-  fill: #888888;
+  fill: #fff;
   font-size: 12px;
 }
 
