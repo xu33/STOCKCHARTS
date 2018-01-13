@@ -234,6 +234,8 @@ class CandleStickChart {
       .scaleExtent([1, maxScale])
       .on('zoom', zoomed);
 
+    /* 以下为拖动&缩放行为的核心代码 */
+
     // 初始缩放
     let k = width / (indexScale(endIndex) - indexScale(startIndex));
     if (k > maxScale) k = maxScale;
