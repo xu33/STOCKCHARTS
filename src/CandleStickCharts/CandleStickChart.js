@@ -210,8 +210,9 @@ class CandleStickChart {
     let length = this.options.data.length;
     let maxScale = length / minInterval;
     let indexScale = this.getIndexScale();
-    let endIndex = this.endIndex ? this.endIndex : length - 1;
-    let startIndex = this.startIndex ? this.startIndex : endIndex - minInterval;
+    let endIndex = this.endIndex !== undefined ? this.endIndex : length - 1;
+    let startIndex =
+      this.startIndex !== undefined ? this.startIndex : endIndex - minInterval;
 
     let zoomed = () => {
       let transform = d3.event.transform;
@@ -223,6 +224,7 @@ class CandleStickChart {
       let interval = this.options.data.slice(startIndex, endIndex);
       this.startIndex = startIndex;
       this.endIndex = endIndex;
+
       this.render(interval);
     };
 
@@ -246,7 +248,7 @@ class CandleStickChart {
 
   // k缩放比例
   resetZoomBehavior(k) {
-    console.log('resetZoomBehavior fired', k);
+    console.log('resetZoomBehavior fired');
     this.element.on('.zoom', null);
     this.initZoom();
   }
