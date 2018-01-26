@@ -78,60 +78,6 @@ class CandleStickChart {
       .range([0, this.options.width]);
   }
 
-  _initZoom() {
-    let { width, height } = this.options;
-    // 最少展示几根K线
-    let minStickLength = 30;
-    // 缩放比例 (当前放大了多少倍)
-    let maxScale = this.options.data.length / minStickLength;
-    // 索引-宽度 比例尺
-    let indexScale = this.getIndexScale();
-
-    this.indexScale = indexScale;
-
-    // zoom事件会清除元素上的其他鼠标事件，所以不能绑定在已经绑定了其他鼠标事件的元素上，这里绑定在svg根元素上
-    const zoomer = this.element;
-
-    // zoom 事件监听函数
-    const zoomed = () => {
-      // 获取当前缩放系数
-      let transform = d3.event.transform;
-      // 根据当前缩放系数换算 缩放后比例尺的值域
-      let currentScale = transform.rescaleX(indexScale);
-      let domain = currentScale.domain();
-
-      // 当前索引范围
-      let extent = domain.map(Math.round);
-
-      let [startIndexSelected, endIndexSelected] = this.bound(...extent);
-
-      let selectedData = this.options.data.slice(
-        startIndexSelected,
-        endIndexSelected
-      );
-
-      this.startIndexSelected = startIndexSelected;
-      this.endIndexSelected = endIndexSelected;
-      this.render(selectedData);
-    };
-
-    // 初始化d3缩放行为
-    let zoom = d3
-      .zoom()
-      .translateExtent([[0, 0], [width, 0]])
-      .scaleExtent([1, maxScale])
-      .on('zoom', zoomed);
-
-    this.zoom = zoom;
-
-    // 初始缩放矩阵对象(k, x, y)
-    // 从最右侧开始展示，此处x和y也会根据k进行缩放
-    let initTransform = d3.zoomIdentity.scale(maxScale).translate(-width, 0);
-    console.log(initTransform);
-    // 绑定缩放行为，并传入初始的缩放矩阵对象
-    zoomer.call(zoom).call(zoom.transform, initTransform);
-  }
-
   bound(start, end) {
     const startIndex = 0;
     const endIndex = this.options.data.length - 1;

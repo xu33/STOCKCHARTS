@@ -628,7 +628,7 @@ class CandleSticks {
           }
         ]);
       })
-      .attr('stroke', '#000');
+      .attr('stroke', '#ccc');
 
     group
       .select('.min_path')
@@ -644,7 +644,7 @@ class CandleSticks {
           }
         ]);
       })
-      .attr('stroke', '#000');
+      .attr('stroke', '#ccc');
 
     // console.log(maxPrice, minPrice);
 

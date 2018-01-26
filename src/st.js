@@ -101,6 +101,7 @@ $(document).ready(function() {
     var width = element.clientWidth;
     var height = element.clientHeight;
     var list = data.vAnalyData;
+
     computeMa(list, 'close', 5);
     computeMa(list, 'close', 10);
     computeMa(data.vAnalyData, 'close', 20);
