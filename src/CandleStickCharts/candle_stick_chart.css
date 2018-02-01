@@ -159,8 +159,11 @@ svg line,
 
 /*十字线*/
 .crossline {
+  /* stroke: #fff;
+  opacity: 0.3; */
   stroke: #fff;
-  opacity: 0.3;
+  opacity: 0.6;
+  stroke-dasharray: 15 10 5 10;
 }
 
 /*游标*/

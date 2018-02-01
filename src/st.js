@@ -96,7 +96,7 @@ $(document).ready(function() {
   var chart;
 
   $.ajax({
-    url: `http://hq.test.whup.com/hq/kline/8/0/002405`
+    url: `http://hq.test.whup.com/hq/kline/5/0/002405`
   }).done(data => {
     var width = element.clientWidth;
     var height = element.clientHeight;

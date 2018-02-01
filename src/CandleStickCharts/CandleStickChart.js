@@ -178,11 +178,21 @@ class CandleStickChart {
       .zoom()
       .translateExtent([[0, 0], [width, 0]])
       .scaleExtent([1, maxScale])
+      .on('start', () => {
+        this.children.forEach(childInst => {
+          childInst.handleZoomStart && childInst.handleZoomStart();
+        });
+      })
+      .on('end', childInst => {
+        this.children.forEach(childInst => {
+          childInst.handleZoomEnd && childInst.handleZoomEnd();
+        });
+      })
       .on('zoom', zoomed);
 
     /* 以下为拖动&缩放行为的核心代码 */
 
-    // 初始缩放
+    // 初始缩放系数
     let k = width / (indexScale(endIndex) - indexScale(startIndex));
     if (k > maxScale) k = maxScale;
     if (k < 1) k = 1;
@@ -196,7 +206,6 @@ class CandleStickChart {
 
   // k缩放比例
   resetZoomBehavior(k) {
-    console.log('resetZoomBehavior fired');
     this.element.on('.zoom', null);
     this.initZoom();
   }

@@ -76,6 +76,14 @@ class Crosshair extends EventEmitter {
   getLayer() {
     return this.layer;
   }
+
+  hide() {
+    this.element.attr('visibility', 'hidden');
+  }
+
+  show() {
+    this.element.attr('visibility', null);
+  }
 }
 
 export default Crosshair;

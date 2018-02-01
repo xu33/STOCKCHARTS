@@ -118,8 +118,6 @@ class CandleSticks {
       return Math.max.apply(Math, vals);
     });
 
-    console.log(min, max);
-
     // console.log(min, max);
 
     max = max * (1 + CandleSticks.offset_ratio);
@@ -152,29 +150,49 @@ class CandleSticks {
       height
     });
 
-    this.crosshair.on('move', mousePosition => {
-      let data = this.data;
-      let l = data.length;
-      let scale_x = this.scale_band;
-      let scale_y = this.scalePrice;
-      let mouse_x = mousePosition[0];
-      let each_band_width = scale_x.step();
-      let index = Math.round(mouse_x / each_band_width);
-      if (index < 0) index = 0;
-      if (index > l - 1) index = l - 1;
-      let item = data[index];
+    this.crosshair.on('move', this.handleMouseMove.bind(this));
+  }
 
-      let x = scale_x(index) + scale_x.bandwidth() / 2;
-      let y = scale_y(item.close);
+  handleMouseMove(mousePosition) {
+    let data = this.data;
+    let l = data.length;
+    let scale_x = this.scale_band;
+    let scale_y = this.scalePrice;
+    let mouse_x = mousePosition[0];
+    let each_band_width = scale_x.step();
+    let index = Math.round(mouse_x / each_band_width);
+    if (index < 0) index = 0;
+    if (index > l - 1) index = l - 1;
+    let item = data[index];
 
-      // 更新十字线坐标
-      this.crosshair.setHorizontalCrosslinePosition(y);
-      this.crosshair.setVerticalCrosslinePosition(x);
+    let x = scale_x(index) + scale_x.bandwidth() / 2;
+    let y = scale_y(item.close);
 
-      // 更新指示器内容和位置
-      this.updateTimeIndicator(x, item);
-      this.updatePriceIndicator(y, item);
-    });
+    // 更新十字线坐标
+    this.crosshair.setHorizontalCrosslinePosition(y);
+    this.crosshair.setVerticalCrosslinePosition(x);
+
+    // 更新指示器内容和位置
+    this.updateTimeIndicator(x, item);
+    this.updatePriceIndicator(y, item);
+
+    this.currentMousePosition = mousePosition;
+  }
+
+  handleZoomStart() {
+    // 缩放行为时 隐藏十字辅助线的显示
+    if (this.crosshair && this.currentMousePosition) {
+      this.crosshair.hide();
+    }
+  }
+
+  handleZoomEnd() {
+    // 缩放行为结束后 恢复十字辅助线的显示
+    // 并使用上次保存的鼠标位置 对十字线进行重新定位
+    if (this.crosshair && this.currentMousePosition) {
+      this.handleMouseMove(this.currentMousePosition);
+      this.crosshair.show();
+    }
   }
 
   // 渲染时间指示器
@@ -272,7 +290,7 @@ class CandleSticks {
     this.renderWicks();
     this.renderAxis();
 
-    this.renderMa5();
+    this.renderMaLines();
   }
 
   renderCandleSticks() {
@@ -366,14 +384,10 @@ class CandleSticks {
       maxPrice,
       minPrice
     );
-
-    // console.log(scalePrice.domain());
-
-    // console.log(maxOneX, maxOneY, minOneX, minOneY);
   }
 
-  // 绘制5日均线
-  renderMa5() {
+  // 绘制日均线
+  renderMaLines() {
     this.renderMaBy(5);
     this.renderMaBy(10);
     this.renderMaBy(20);
@@ -389,27 +403,29 @@ class CandleSticks {
 
     var scaleIndex = this.scaleIndex;
     var scalePrice = this.scalePrice;
+    var key = 'ma' + days;
     var line = d3
       .line()
       .x(function(d, i) {
         return scaleIndex(i);
       })
       .y(function(d, i) {
-        return scalePrice(d[`ma${days}`]);
+        return scalePrice(d[key]);
       })
       .defined(function(d) {
-        return d.hasOwnProperty(`ma${days}`);
+        return d.hasOwnProperty(key);
       });
 
-    var path = this.element.select(`.ma${days}`);
+    var path = this.element.select(`.${key}`);
     if (path.empty()) {
-      path = this.element.append('path').attr('class', `ma${days}`);
+      path = this.element.append('path').attr('class', key);
     }
 
     path.attr('d', line(this.data));
   }
 
-  calculateLeftAndRightAxisScale() {
+  // 使用序数比例尺
+  __calculateLeftAndRightAxisScale() {
     let lengthNeed = 4;
     let { left, right, bottom, top } = CandleSticks.margin;
     let { width, height } = this.options;
@@ -419,6 +435,19 @@ class CandleSticks {
 
     this.leftAndRightAxisScale = d3
       .scaleOrdinal()
+      .domain(domain)
+      .range(range);
+  }
+
+  // 使用线性比例尺
+  calculateLeftAndRightAxisScale() {
+    let { height } = this.options;
+    let extent = this.extent();
+    let domain = [extent[1], extent[0]];
+    let range = [0, height];
+
+    this.leftAndRightAxisScale = d3
+      .scaleLinear()
       .domain(domain)
       .range(range);
   }
@@ -449,16 +478,17 @@ class CandleSticks {
 
     this.element.select('.left_axis').call(this.leftAxis);
 
-    this.element
-      .select('.left_axis')
-      .selectAll('.tick text')
-      .attr('transform', (d, i) => {
-        if (i === 0) {
-          return `translate(0, 10)`;
-        } else {
-          return `translate(0, -10)`;
-        }
-      });
+    // 微调文字的位置
+    // this.element
+    //   .select('.left_axis')
+    //   .selectAll('.tick text')
+    //   .attr('transform', (d, i) => {
+    //     if (i === 0) {
+    //       return `translate(0, 10)`;
+    //     } else {
+    //       return `translate(0, -10)`;
+    //     }
+    //   });
 
     this.renderHorizontalGridLines();
   }
@@ -487,16 +517,17 @@ class CandleSticks {
     this.rightAxis.scale(this.leftAndRightAxisScale.copy());
     this.element.select('.right_axis').call(this.rightAxis);
 
-    this.element
-      .select('.right_axis')
-      .selectAll('.tick text')
-      .attr('transform', (d, i) => {
-        if (i === 0) {
-          return `translate(0, 10)`;
-        } else {
-          return `translate(0, -10)`;
-        }
-      });
+    // 微调文字的位置
+    // this.element
+    //   .select('.right_axis')
+    //   .selectAll('.tick text')
+    //   .attr('transform', (d, i) => {
+    //     if (i === 0) {
+    //       return `translate(0, 10)`;
+    //     } else {
+    //       return `translate(0, -10)`;
+    //     }
+    //   });
   }
 
   getBottomAxisTickFormatter() {
@@ -513,13 +544,43 @@ class CandleSticks {
       case 'W':
       case 'M':
       case 'Y':
-        return d3.timeFormat('%Y-%m-%d');
       default:
         return d3.timeFormat('%Y-%m-%d');
     }
   }
 
+  // 使用线性比例尺
   renderBottomAxis() {
+    let { left, right, bottom, top } = CandleSticks.margin;
+    let { width, height } = this.options;
+    let domain = [
+      this.data[0].timestamp,
+      this.data[this.data.length - 1].timestamp
+    ];
+    let range = [0, width];
+
+    let scale = d3
+      .scaleLinear()
+      .domain(domain)
+      .range(range);
+    let formatter = this.getBottomAxisTickFormatter();
+    let bottomAxis = d3
+      .axisBottom(scale)
+      .tickSize(0)
+      .tickPadding(8)
+      .tickFormat(formatter);
+
+    this.element.select('.bottom_axis').call(bottomAxis);
+    this.element.select('.grid_y').call(
+      d3
+        .axisBottom(scale)
+        .tickSize(-height)
+        .tickFormat('')
+    );
+  }
+
+  // 使用序数比例尺
+  __renderBottomAxis() {
     let { left, right, bottom, top } = CandleSticks.margin;
     let { width, height } = this.options;
     let lengthNeed = 4;
