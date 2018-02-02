@@ -40,7 +40,7 @@ class CandleStickChart {
       height: this.options.height
     });
 
-    this.children = [];
+    this.children = new Array(ChildTypes.length);
     this.initChildren();
     this.initZoom();
   }
