@@ -152,9 +152,11 @@ class CandleStickChart {
 
   initZoom() {
     let width = this.options.width;
-    let minInterval = 30;
+    let minInterval = 20;
+    let maxInterval = 300;
     let length = this.options.data.length;
     let maxScale = length / minInterval;
+    let minScale = length / maxInterval;
     let indexScale = this.getIndexScale();
     let endIndex = this.endIndex !== undefined ? this.endIndex : length - 1;
     let startIndex =
@@ -162,7 +164,6 @@ class CandleStickChart {
 
     let zoomed = () => {
       let transform = d3.event.transform;
-      // console.log('on zoom:', transform);
       let currentScale = transform.rescaleX(indexScale);
       let domain = currentScale.domain();
       let extent = domain.map(Math.round);
@@ -174,21 +175,35 @@ class CandleStickChart {
       this.render(interval);
     };
 
+    let zoomStart = () => {
+      this.children.forEach(function(childInstance) {
+        if (
+          childInstance.handleZoomStart &&
+          typeof childInstance.handleZoomStart === 'function'
+        ) {
+          childInstance.handleZoomStart();
+        }
+      });
+    };
+
+    let zoomEnd = () => {
+      this.children.forEach(function(childInstance) {
+        if (
+          childInstance.handleZoomEnd &&
+          typeof childInstance.handleZoomEnd === 'function'
+        ) {
+          childInstance.handleZoomEnd();
+        }
+      });
+    };
+
     let zoom = d3
       .zoom()
       .translateExtent([[0, 0], [width, 0]])
-      .scaleExtent([1, maxScale])
-      .on('start', () => {
-        this.children.forEach(childInst => {
-          childInst.handleZoomStart && childInst.handleZoomStart();
-        });
-      })
-      .on('end', childInst => {
-        this.children.forEach(childInst => {
-          childInst.handleZoomEnd && childInst.handleZoomEnd();
-        });
-      })
-      .on('zoom', zoomed);
+      .scaleExtent([minScale, maxScale])
+      .on('start', zoomStart)
+      .on('zoom', zoomed)
+      .on('end', zoomEnd);
 
     /* 以下为拖动&缩放行为的核心代码 */
 
@@ -196,6 +211,7 @@ class CandleStickChart {
     let k = width / (indexScale(endIndex) - indexScale(startIndex));
     if (k > maxScale) k = maxScale;
     if (k < 1) k = 1;
+
     // 初始位移
     let x = -indexScale(startIndex);
     // 初始transform

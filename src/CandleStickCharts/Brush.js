@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import EventEmitter from 'events';
 
-/* bursh区域 */
+// bursh区域 底部的拖拽bar 暂时弃用
 
 class Brush extends EventEmitter {
   static margin = {

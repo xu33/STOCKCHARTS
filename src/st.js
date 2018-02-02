@@ -65,7 +65,7 @@ import computeMa from './utils/computeMa';
 //   }
 
 //   $.ajax({
-//     url: `http://hq.test.whup.com/hq/kline/${klineType}/0/000001`
+//     url: `http://hq.test.whup.com/hq/kline/${klineType}/0/000002`
 //   }).done(data => {
 //     csc = new CandleStickChart('#refactor', {
 //       width: 500,
@@ -96,7 +96,7 @@ $(document).ready(function() {
   var chart;
 
   $.ajax({
-    url: `http://hq.test.whup.com/hq/kline/5/0/002405`
+    url: `http://hq.test.whup.com/hq/kline/0/0/000001`
   }).done(data => {
     var width = element.clientWidth;
     var height = element.clientHeight;

@@ -65,7 +65,7 @@ class CandleSticks {
     this.range_x = [0, width];
     this.range_y = [height, 0];
 
-    this.scale_band.range(this.range_x);
+    this.scaleBand.range(this.range_x);
     this.scalePrice.range(this.range_y);
     this.scaleIndex.range([0, this.options.width]);
   }
@@ -155,14 +155,14 @@ class CandleSticks {
 
   handleMouseMove(mousePosition) {
     let data = this.data;
-    let l = data.length;
-    let scale_x = this.scale_band;
+    let len = data.length;
+    let scale_x = this.scaleBand;
     let scale_y = this.scalePrice;
     let mouse_x = mousePosition[0];
     let each_band_width = scale_x.step();
     let index = Math.round(mouse_x / each_band_width);
     if (index < 0) index = 0;
-    if (index > l - 1) index = l - 1;
+    if (index > len - 1) index = len - 1;
     let item = data[index];
 
     let x = scale_x(index) + scale_x.bandwidth() / 2;
@@ -180,7 +180,7 @@ class CandleSticks {
   }
 
   handleZoomStart() {
-    // 缩放行为时 隐藏十字辅助线的显示
+    // 缩放行为时 如果十字线已经初始化过 隐藏十字辅助线的显示
     if (this.crosshair && this.currentMousePosition) {
       this.crosshair.hide();
     }
@@ -229,7 +229,7 @@ class CandleSticks {
     // 公用的横轴range
     let range_x = (this.range_x = [0, width]);
     // 蜡烛图比例尺
-    this.scale_band = d3
+    this.scaleBand = d3
       .scaleBand()
       .range(range_x)
       .padding(0.2);
@@ -289,24 +289,23 @@ class CandleSticks {
     this.renderCandleSticks();
     this.renderWicks();
     this.renderAxis();
-
     this.renderMaLines();
   }
 
   renderCandleSticks() {
-    let { scale_band, scalePrice } = this;
+    let { scaleBand, scalePrice } = this;
     let group = this.element.select('.candle_sticks');
     let data = this.data;
 
     let domain_price = this.extent();
     let domain_x = data.map((o, i) => i);
 
-    scale_band.domain(domain_x);
+    scaleBand.domain(domain_x);
     scalePrice.domain(domain_price);
 
     let selection = group.selectAll('.bar').data(data, d => d.timestamp);
 
-    let bandwidth = scale_band.bandwidth();
+    let bandwidth = scaleBand.bandwidth();
 
     if (bandwidth <= 2) {
       selection.remove();
@@ -320,9 +319,9 @@ class CandleSticks {
       .append('rect')
       .merge(selection)
       .attr('class', 'bar')
-      .attr('x', (d, i) => scale_band(i))
+      .attr('x', (d, i) => scaleBand(i))
       .attr('y', ({ open, close }) => scalePrice(Math.max(open, close)))
-      .attr('width', scale_band.bandwidth())
+      .attr('width', scaleBand.bandwidth())
       .attr('height', ({ open, close }) =>
         Math.round(Math.abs(scalePrice(open) - scalePrice(close)))
       )
@@ -331,7 +330,7 @@ class CandleSticks {
 
   renderWicks() {
     let group = this.element.select('.candle_sticks');
-    let { scale_band, scalePrice, data } = this;
+    let { scaleBand, scalePrice, data } = this;
     let line = d3
       .line()
       .x(d => d.x)
@@ -354,7 +353,7 @@ class CandleSticks {
       .merge(wicks)
       .attr('class', 'shadow')
       .attr('d', (d, i) => {
-        var x = scale_band(i) + scale_band.bandwidth() / 2;
+        var x = scaleBand(i) + scaleBand.bandwidth() / 2;
         var y1 = scalePrice(d.high);
         var y2 = scalePrice(d.low);
 
