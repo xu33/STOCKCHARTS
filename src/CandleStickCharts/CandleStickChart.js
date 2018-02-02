@@ -24,6 +24,8 @@ const ChildTypes = [
 
 const MIN_WIDTH = 400;
 const MIN_HEIGHT = 200;
+const MIN_DISPLAY_STICKS = 20;
+const MAX_DISPLAY_STICKS = 300;
 
 class CandleStickChart {
   constructor(selector, { width, height, type, data }) {
@@ -36,8 +38,8 @@ class CandleStickChart {
     };
 
     setAttrs(this.element, {
-      width: this.options.width,
-      height: this.options.height
+      width,
+      height
     });
 
     this.children = new Array(ChildTypes.length);
@@ -152,15 +154,15 @@ class CandleStickChart {
 
   initZoom() {
     let width = this.options.width;
-    let minInterval = 20;
-    let maxInterval = 300;
     let length = this.options.data.length;
-    let maxScale = length / minInterval;
-    let minScale = length / maxInterval;
+    let maxScale = length / MIN_DISPLAY_STICKS;
+    let minScale = length / MAX_DISPLAY_STICKS;
     let indexScale = this.getIndexScale();
     let endIndex = this.endIndex !== undefined ? this.endIndex : length - 1;
     let startIndex =
-      this.startIndex !== undefined ? this.startIndex : endIndex - minInterval;
+      this.startIndex !== undefined
+        ? this.startIndex
+        : endIndex - MIN_DISPLAY_STICKS;
 
     let zoomed = () => {
       let transform = d3.event.transform;
