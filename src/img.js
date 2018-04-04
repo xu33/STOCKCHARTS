@@ -1,13 +1,19 @@
 import './css/img.css';
+import computeMa from './utils/computeMa';
 const d3 = require('d3');
-const data = require('./img_data');
 const GREEN = '#27B666';
 const RED = '#F54646';
 const BLANK = '#FFFFFF';
-const width = 400;
-const height = 300;
-const buyIcon = require('./css/star@1x.png');
+const width = 600;
+const height = 400;
+const buyIcon = require('./css/star.png');
 const sellIcon = require('./css/sell@1x.png');
+
+let data = require('./img_data');
+computeMa(data, 'close', 5);
+computeMa(data, 'close', 10);
+computeMa(data, 'close', 20);
+
 const margin = {
   left: 0,
   right: 0,
@@ -39,7 +45,7 @@ const scaleY = d3
   .range([height - margin.bottom, 0]);
 
 function render() {
-  renderWicks();
+  const flags = renderWicks();
   const bandwidth = scale.bandwidth();
 
   svg
@@ -74,6 +80,9 @@ function render() {
         return RED;
       }
     });
+
+  renderFlags(flags);
+  renderMultiAvgLine();
 }
 
 function renderWicks() {
@@ -81,6 +90,8 @@ function renderWicks() {
     .line()
     .x(d => d.x)
     .y(d => d.y);
+
+  const flags = [];
 
   svg
     .selectAll('.shadow')
@@ -93,26 +104,7 @@ function renderWicks() {
       const y1 = scaleY(d.high);
       const y2 = scaleY(d.low);
 
-      // 加买卖点图片并定位
-      if (i == 2 || i == 58) {
-        svg
-          .append('svg:image')
-          .attr('xlink:href', buyIcon)
-          .attr('width', 27.5)
-          .attr('height', 32)
-          .attr('x', x - 13.25)
-          .attr('y', y2);
-      } else if (i == 5 || i == 19) {
-        svg
-          .append('svg:image')
-          .attr('xlink:href', sellIcon)
-          .attr('width', 14)
-          .attr('height', 21)
-          .attr('x', x - 7)
-          .attr('y', y2);
-      }
-
-      return line([
+      const coords = [
         {
           x: x,
           y: y1
@@ -121,7 +113,23 @@ function renderWicks() {
           x: x,
           y: y2
         }
-      ]);
+      ];
+
+      if (i == 2 || i == 58) {
+        flags.push({
+          type: 'buy',
+          coord: [x, y2]
+        });
+      }
+
+      if (i == 5 || i == 18) {
+        flags.push({
+          type: 'sell',
+          coord: [x, y2]
+        });
+      }
+
+      return line(coords);
     })
     .attr('stroke', d => {
       if (d.open > d.close) {
@@ -130,8 +138,69 @@ function renderWicks() {
         return RED;
       }
     });
+
+  return flags;
 }
 
-function renderFlags() {}
+function renderFlags(flagCoords) {
+  flagCoords.forEach(flagCoord => {
+    // 加买卖点图片并定位
+    var [x, y] = flagCoord.coord;
+    if (flagCoord.type == 'buy') {
+      svg
+        .append('svg:image')
+        .attr('xlink:href', buyIcon)
+        .attr('width', 27.5)
+        .attr('height', 32)
+        .attr('x', x - 13.25)
+        .attr('y', y);
+    } else if (flagCoord.type == 'sell') {
+      svg
+        .append('svg:image')
+        .attr('xlink:href', sellIcon)
+        .attr('width', 14)
+        .attr('height', 21)
+        .attr('x', x - 7)
+        .attr('y', y);
+    }
+  });
+}
+
+const scaleIndex = d3
+  .scaleLinear()
+  .domain([0, data.length - 1])
+  .range([0, width]);
+
+function renderAvgLines(days) {
+  const key = 'ma' + days;
+  const line = d3
+    .line()
+    .x((d, i) => {
+      return scaleIndex(i);
+    })
+    .y((d, i) => {
+      return scaleY(d[key]);
+    })
+    .defined(d => {
+      return d.hasOwnProperty(key);
+    });
+
+  let path = svg.select('.' + key);
+  if (path.empty()) {
+    path = svg.append('path').attr('class', key);
+  }
+
+  path.attr('d', line(data));
+}
+
+function renderMultiAvgLine() {
+  renderAvgLines(5);
+  renderAvgLines(10);
+  renderAvgLines(20);
+}
+
+function renderCells() {
+  let scaleX = d3.scaleOrdinal().domain();
+}
 
 render();

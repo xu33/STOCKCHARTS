@@ -1,5 +1,20 @@
-svg rect,
-svg line,
-svg path {
+svg rect {
   shape-rendering: crispEdges;
+}
+
+.ma5,
+.ma10,
+.ma20 {
+  fill: none;
+}
+.ma5 {
+  stroke: #6395ee;
+}
+
+.ma10 {
+  stroke: #ef7f21;
+}
+
+.ma20 {
+  stroke: #ba1dff;
 }
