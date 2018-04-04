@@ -5,8 +5,8 @@ const d3 = require('d3');
 const GREEN = '#27B666';
 const RED = '#F54646';
 const BLANK = '#FFFFFF';
-const width = 400;
-const height = 250;
+const width = 750;
+const height = 500;
 const buyIcon = require('./css/star.png');
 const sellIcon = require('./css/sell@1x.png');
 
