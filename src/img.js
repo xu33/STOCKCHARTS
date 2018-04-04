@@ -132,4 +132,6 @@ function renderWicks() {
     });
 }
 
+function renderFlags() {}
+
 render();
