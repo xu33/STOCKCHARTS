@@ -44,6 +44,10 @@ app.get('/huice', (req, res) => {
   res.sendFile(path.join(__dirname, 'example/huice.html'));
 });
 
+app.get('/image', (req, res) => {
+  res.sendFile(path.join(__dirname, 'example/image.html'));
+});
+
 app.listen(3003, function(err) {
   if (err) {
     return console.error(err);

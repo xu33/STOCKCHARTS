@@ -10,7 +10,8 @@ module.exports = {
     index: './src/index.js',
     d3example: './src/d3example.js',
     line: './src/line.js',
-    st: './src/st.js'
+    st: './src/st.js',
+    img: './src/img.js'
   },
   output: {
     path: path.join(__dirname, 'dist'),
@@ -40,6 +41,10 @@ module.exports = {
             options: { minimize: true }
           }
         ]
+      },
+      {
+        test: /\.(png|jpe?g|gif)$/,
+        loader: 'url-loader'
       }
     ]
   },
