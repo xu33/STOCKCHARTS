@@ -1,4 +1,5 @@
-svg rect {
+svg rect,
+svg line {
   shape-rendering: crispEdges;
 }
 
@@ -17,4 +18,8 @@ svg rect {
 
 .ma20 {
   stroke: #ba1dff;
+}
+.tick line,
+.domain {
+  stroke: #eee;
 }

@@ -1,4 +1,4 @@
-export function linspace(a, b, n) {
+function linspace(a, b, n) {
   if (typeof n === 'undefined') n = Math.max(Math.round(b - a) + 1, 1);
   if (n < 2) {
     return n === 1 ? [a] : [];
@@ -11,3 +11,5 @@ export function linspace(a, b, n) {
   }
   return ret;
 }
+
+export { linspace };

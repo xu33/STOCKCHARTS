@@ -1,11 +1,12 @@
 import './css/img.css';
 import computeMa from './utils/computeMa';
+import { linspace } from './utils/linspace';
 const d3 = require('d3');
 const GREEN = '#27B666';
 const RED = '#F54646';
 const BLANK = '#FFFFFF';
-const width = 600;
-const height = 400;
+const width = 400;
+const height = 250;
 const buyIcon = require('./css/star.png');
 const sellIcon = require('./css/sell@1x.png');
 
@@ -29,7 +30,7 @@ const scale = d3
   .scaleBand()
   .domain(data.map((item, idx) => idx))
   .range([0, width])
-  .padding(0.2);
+  .padding(0.4);
 
 const min = d3.min(data, d => {
   return d.low;
@@ -115,14 +116,14 @@ function renderWicks() {
         }
       ];
 
-      if (i == 2 || i == 58) {
+      if (i == 2 || i == 50) {
         flags.push({
           type: 'buy',
           coord: [x, y2]
         });
       }
 
-      if (i == 5 || i == 18) {
+      if (i == 30 || i == 18) {
         flags.push({
           type: 'sell',
           coord: [x, y2]
@@ -200,7 +201,41 @@ function renderMultiAvgLine() {
 }
 
 function renderCells() {
-  let scaleX = d3.scaleOrdinal().domain();
+  let cellsDomain = [0, 1, 2, 3, 4, 5];
+  let cellsRange = linspace(0, width - 1, 6);
+
+  let scale = d3
+    .scaleOrdinal()
+    .domain(cellsDomain)
+    .range(cellsRange);
+
+  let bottomAxis = d3
+    .axisBottom(scale)
+    .tickSize(-height)
+    .tickFormat('');
+
+  svg
+    .append('g')
+    .attr('transform', `translate(0, ${height})`)
+    .call(bottomAxis);
+
+  cellsDomain = [0, 1, 2];
+  cellsRange = linspace(height - 1, 0, 3);
+
+  scale = d3
+    .scaleOrdinal()
+    .domain(cellsDomain)
+    .range(cellsRange);
+
+  let leftAxis = d3
+    .axisLeft(scale)
+    .tickSize(-width)
+    .tickFormat('');
+  svg
+    .append('g')
+    .attr('transform', `translate(0, 0)`)
+    .call(leftAxis);
 }
 
+renderCells();
 render();
