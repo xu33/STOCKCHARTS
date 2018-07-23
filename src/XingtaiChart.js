@@ -1,16 +1,19 @@
-import './css/bschart.css';
+import './css/img.css';
+import computeMa from './utils/computeMa';
 import { linspace } from './utils/linspace';
+import { curveMonotoneY } from 'd3';
 const d3 = require('d3');
 const GREEN = '#27B666';
 const RED = '#F54646';
 const BLANK = '#FFFFFF';
-const buyIcon = require('./css/天使@2x.png');
-const sellIcon = require('./css/魔鬼@2x.png');
+const width = 750;
+const height = 500;
+const buyIcon = require('./css/star.png');
+const sellIcon = require('./css/sell@1x.png');
+const rangeColor = '#3691e1';
 
-const buyIconWidth = 28 / 2;
-const buyIconHeight = 28 / 2;
-const sellIconWidth = 28 / 2;
-const sellIconHeight = 28 / 2;
+// let data = require('./img_data');
+// console.log(data.length);
 
 const KlineBuySellChart = function(element, options) {
   let data = options.data;
@@ -18,15 +21,11 @@ const KlineBuySellChart = function(element, options) {
   let height = options.height;
 
   const margin = {
-    left: 0,
-    right: 0,
-    bottom: 0,
-    top: 20
+    left: 10,
+    right: 10,
+    bottom: 60,
+    top: 10
   };
-
-  margin.bottom = Math.max(buyIconHeight, sellIconHeight);
-  margin.left = Math.max(buyIconWidth, sellIconWidth) / 2;
-  margin.right = Math.max(buyIconWidth, sellIconWidth) / 2;
 
   const svg = d3.select(element).append('svg');
 
@@ -43,7 +42,7 @@ const KlineBuySellChart = function(element, options) {
     .scaleBand()
     .domain(data.map((item, idx) => idx))
     .range([0, width - margin.left - margin.right])
-    .paddingInner(0.2)
+    .paddingInner(0.4)
     .paddingOuter(0);
 
   const min = d3.min(data, d => {
@@ -60,7 +59,7 @@ const KlineBuySellChart = function(element, options) {
     .range([height - margin.top - margin.bottom, 0]);
 
   const flags = [];
-  const minMaxFlags = {};
+  const minMaxFlags = [];
 
   function render() {
     renderWicks();
@@ -98,9 +97,7 @@ const KlineBuySellChart = function(element, options) {
           return RED;
         }
       });
-
     renderMultiAvgLine();
-    renderFlags();
     // renderMinMaxFlags();
   }
 
@@ -135,34 +132,37 @@ const KlineBuySellChart = function(element, options) {
           }
         ];
 
-        if (d.mField.B != 0) {
-          flags.push({
-            type: 'buy',
-            coord: [x, y2]
-          });
-        }
-
-        if (d.mField.S != 0) {
-          flags.push({
-            type: 'sell',
-            coord: [x, y1]
-          });
-        }
+        // if (d.mField.star >= 3) {
+        //   flags.push({
+        //     type: 'star',
+        //     coord: [x, y2]
+        //   });
+        // } else if (d.mField.B != 0) {
+        //   flags.push({
+        //     type: 'buy',
+        //     coord: [x, y2]
+        //   });
+        // } else if (d.mField.S != 0) {
+        //   flags.push({
+        //     type: 'sell',
+        //     coord: [x, y1]
+        //   });
+        // }
 
         if (d.low == minPrice) {
-          minMaxFlags.min = {
+          minMaxFlags.push({
             index: i,
             text: minPrice,
             coord: [x, y2]
-          };
+          });
         }
 
         if (d.high == maxPrice) {
-          minMaxFlags.max = {
+          minMaxFlags.push({
             index: i,
             text: maxPrice,
             coord: [x, y1]
-          };
+          });
         }
 
         if (d.high == d.low && d.close == d.open && d.open == d.high) {
@@ -185,8 +185,7 @@ const KlineBuySellChart = function(element, options) {
   }
 
   function renderMinMaxFlags() {
-    for (var key in minMaxFlags) {
-      let flag = minMaxFlags[key];
+    minMaxFlags.forEach(flag => {
       let [x, y] = flag.coord;
       let { text, index } = flag;
 
@@ -225,30 +224,6 @@ const KlineBuySellChart = function(element, options) {
       }
 
       path.attr('stroke-dasharray', '4 2');
-    }
-  }
-
-  function renderFlags() {
-    flags.forEach(flagCoord => {
-      // 加买卖点图片并定位
-      var [x, y] = flagCoord.coord;
-      if (flagCoord.type == 'buy') {
-        group
-          .append('svg:image')
-          .attr('xlink:href', buyIcon)
-          .attr('width', buyIconWidth)
-          .attr('height', buyIconHeight)
-          .attr('x', x - buyIconWidth / 2)
-          .attr('y', y);
-      } else if (flagCoord.type == 'sell') {
-        group
-          .append('svg:image')
-          .attr('xlink:href', sellIcon)
-          .attr('width', sellIconWidth)
-          .attr('height', sellIconHeight)
-          .attr('x', x - sellIconWidth / 2)
-          .attr('y', y - sellIconHeight);
-      }
     });
   }
 
@@ -283,7 +258,6 @@ const KlineBuySellChart = function(element, options) {
     renderAvgLines(5);
     renderAvgLines(10);
     renderAvgLines(20);
-    renderAvgLines(60);
   }
 
   function renderCells() {
@@ -323,7 +297,111 @@ const KlineBuySellChart = function(element, options) {
       .call(leftAxis);
   }
 
+  // 框选形态
+  function renderRangeBox() {
+    if (!options.rangeIdxs) {
+      return;
+    }
+    let rangeIdxs = options.rangeIdxs;
+    let rangeData = [];
+
+    // 需要替换成真实逻辑
+    data.forEach(function(item, idx) {
+      if (rangeIdxs.indexOf(idx) > -1) {
+        item.idx = idx;
+        rangeData.push(item);
+      }
+    });
+
+    // console.log(rangeData);
+
+    let paddingVertical = 5;
+    let paddingHorz = 2;
+    let max = d3.max(rangeData, d => d.high);
+    let min = d3.min(rangeData, d => d.low);
+    let len = rangeData.length;
+    // 保存x后面tip使用
+    let tipX, tipX2, tipWidth;
+    let area = d3
+      .area()
+      .x((d, i) => {
+        if (i == 0) {
+          // let x = scaleIndex(d.idx) - paddingHorz;
+          let x = scale(d.idx) - paddingHorz;
+          // 保存x后面tip使用
+          tipX = x;
+          return x;
+        } else if (i == len - 1) {
+          // return (
+          //   scaleIndex(d.idx + 1) -
+          //   (scale.step() - scale.bandwidth()) +
+          //   paddingHorz
+          // );
+          tipX2 = scale(d.idx) + scale.bandwidth() + paddingHorz;
+          return scale(d.idx) + scale.bandwidth() + paddingHorz;
+        } else {
+          // return scaleIndex(d.idx);
+          return scale(d.idx);
+        }
+      })
+      .y0(scaleY(max) - paddingVertical)
+      .y1(scaleY(min) + paddingVertical);
+
+    group
+      .append('path')
+      .attr('d', area(rangeData))
+      .attr('fill', rangeColor)
+      .attr('opacity', 0.4);
+
+    renderRangeTip(tipX, scaleY(min) + paddingVertical, tipX2 - tipX);
+  }
+
+  function renderRangeTip(x, y, boundWidth) {
+    if (!options.rangeName) {
+      return;
+    }
+    // 先设置一个长的避免换行
+    var foWidth = 600;
+    var triangleHeight = 4;
+    var fo = svg.append('foreignObject').attr('width', foWidth);
+
+    var div = fo
+      .append('xhtml:div')
+      .append('div')
+      .attr('class', 'tooltip')
+      .html(options.rangeName);
+
+    var triangle = div.append('div').attr('class', 'tri');
+    var boundingBox = div.node().getBoundingClientRect();
+    var foHeight = boundingBox.height;
+    var foWidth = boundingBox.width;
+
+    // fo.attr('height', foHeight);
+    // fo.attr('width', foWidth);
+
+    if (x + margin.left + foWidth > options.width) {
+      triangle.attr('class', 'tri_right');
+      // 35不是准确值，应该根据上下box的差计算，后续有时间修改
+      fo.attr('x', x + margin.left - (foWidth - boundWidth));
+      fo.attr('y', y + margin.top + triangleHeight);
+    } else {
+      // foreignObject不会继承group的transform?
+      fo.attr('x', x + margin.left);
+      fo.attr('y', y + margin.top + triangleHeight);
+    }
+
+    if (options.backgroundColor) {
+      console.log('enter here', options.backgroundColor);
+      triangle.style(
+        'border-color',
+        `transparent transparent ${options.backgroundColor} transparent`
+      );
+      div.style('background', options.backgroundColor);
+    }
+  }
+
   render();
+  renderRangeBox();
 
   return {
     destroy: function() {
@@ -332,14 +410,15 @@ const KlineBuySellChart = function(element, options) {
   };
 };
 
-// export default KlineBuySellChart;
-
 module.exports = KlineBuySellChart;
 
 // 测试数据
-// let data = require('./bsData');
+// let rangeIdxs = [61, 62];
 // let chart = new KlineBuySellChart(document.body, {
 //   data: data,
 //   width: 400,
-//   height: 250
+//   height: 250,
+//   rangeIdxs: rangeIdxs,
+//   // backgroundColor: '#ff0000',
+//   rangeName: '出现启明之星，预示大涨</br>随后涨幅高达107.01%'
 // });

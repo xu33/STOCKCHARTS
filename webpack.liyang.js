@@ -4,7 +4,8 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   entry: {
-    LineChart: './src/line.js'
+    // LineChart: './src/line.js',
+    KlineForm: './src/img.js'
   },
   output: {
     publicPath: 'assets/',
@@ -44,18 +45,27 @@ module.exports = {
     ]
   },
   externals: {
-    'd3': 'd3'
+    d3: 'd3'
   },
   plugins: [
-    new HtmlWebpackPlugin({
-      template: 'liyang/template.html',
-      filename: '[name].html',
-      inject: 'head'
+    new webpack.optimize.UglifyJsPlugin({
+      comments: false,
+      compress: {
+        warnings: false,
+        drop_console: true
+      }
     })
-  ],
-  devServer: {
-    contentBase: path.join(__dirname, 'liyang'),
-    compress: false,
-    port: 9000
-  }
+  ]
+  // plugins: [
+  //   new HtmlWebpackPlugin({
+  //     template: 'liyang/template.html',
+  //     filename: '[name].html',
+  //     inject: 'head'
+  //   })
+  // ],
+  // devServer: {
+  //   contentBase: path.join(__dirname, 'liyang'),
+  //   compress: false,
+  //   port: 9000
+  // }
 };

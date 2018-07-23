@@ -1,0 +1,25 @@
+.ma5,
+.ma10,
+.ma20,
+.ma60 {
+  fill: none;
+}
+.ma5 {
+  stroke: #6395ee;
+}
+
+.ma10 {
+  stroke: #ef7f21;
+}
+
+.ma20 {
+  stroke: #ba1dff;
+}
+
+.ma60 {
+  stroke: #02b392;
+}
+.tick line,
+.domain {
+  stroke: #eee;
+}
