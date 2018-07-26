@@ -13,6 +13,28 @@
     body {
       background: #000;
     }
+
+    .wrap {
+      /* width: 200px; */
+      height: 20px;
+      border: 1px solid #000;
+      border-top: 0;
+      border-bottom: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .line {
+      flex: 1;
+      height: 1px;
+      background: #000;
+    }
+
+    .text {
+      flex: 1;
+      text-align: center;
+    }
   </style>
 </head>
 
@@ -24,6 +46,11 @@
   <div id="container"></div>
   <!-- <script src="/static/common.js"></script> -->
   <script src="/static/d3example.js"></script>
+  <!-- <div class="wrap">
+    <div class="line"></div>
+    <div class="text">预测走势</div>
+    <div class="line"></div>
+  </div> -->
 </body>
 
 </html>

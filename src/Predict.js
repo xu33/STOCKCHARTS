@@ -10,7 +10,7 @@ const d3 = require('d3');
 const PREDICT_PERCENT = 0.7;
 const MARGIN_BOTTOM = 15;
 const MARGIN_RIGHT = 2;
-const TEXT_MARGIN = 5;
+const TEXT_MARGIN = 10;
 const VOL_HEIGHT = 66;
 const EventEmitter = require('events');
 
@@ -311,7 +311,8 @@ class Predict extends EventEmitter {
         candleData[candleData.length - 1].time,
         // predictData[predictData.length - 1].time
 
-        '预测走势',
+        // '预测走势',
+        '',
         ''
       ])
       .range([0, offset, width - (width - offset) / 2, width]);
@@ -376,12 +377,12 @@ class Predict extends EventEmitter {
     axisXElement
       .selectAll('.tick text')
       .select(function(d, i) {
-        if (i == 2) {
+        if (i == 1) {
           return this;
         }
       })
-      .attr('text-anchor', 'middle');
-    // .attr('transform', `translate(-2, 0)`);
+      // .attr('text-anchor', 'end')
+      .attr('transform', `translate(-5, 0)`);
 
     axisYElement.selectAll('.tick text').each(function(d, i) {
       if (i == 2) {
@@ -401,7 +402,26 @@ class Predict extends EventEmitter {
       }
     });
 
-    console.log(selection);
+    // 预测走势
+    var foWidth = width - offset;
+    var triangleHeight = 4;
+    var fo = this.svg.append('foreignObject').attr('width', foWidth);
+
+    var div = fo
+      .append('xhtml:div')
+      .append('div')
+      .attr('class', 'tooltip').html(`
+      <div class="wrap" style="width:${foWidth}">
+    <div class="line"></div>
+    <div class="text">预测走势</div>
+    <div class="line"></div>
+  </div>
+      `);
+
+    fo.style(
+      'transform',
+      `translate(${offset}px, ${this.candleStickAreaHeight + 5}px)`
+    );
   }
 
   /* 显示折线 */
@@ -493,7 +513,7 @@ class Predict extends EventEmitter {
         interactiveEnabled = false;
       });
     } else {
-      this.svg.on('mouseover', function() {
+      this.svg.on('mouseenter', function() {
         let [x, y] = d3.mouse(this);
         t.handleDragStart(x, y);
       });
@@ -503,7 +523,7 @@ class Predict extends EventEmitter {
         t.handleDragMove(x, y);
       });
 
-      this.svg.on('mouseout', () => {
+      this.svg.on('mouseleave', () => {
         t.handleDragEnd();
       });
     }
@@ -602,6 +622,7 @@ class Predict extends EventEmitter {
     var { x, y, point } = this.getHelperLineXY(x);
 
     if (x === -1) return;
+    if (!this.horizontalLine) return;
 
     var hData = [
       {
@@ -629,7 +650,6 @@ class Predict extends EventEmitter {
       .line()
       .x(d => d.x)
       .y(d => d.y);
-
     this.horizontalLine.datum(hData).attr('d', line);
     this.verticalLine.datum(vData).attr('d', line);
 

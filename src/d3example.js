@@ -7,7 +7,7 @@ var Predict = require('./Predict');
 var p = new Predict(document.querySelector('#container'), {
   candleData: candleData,
   predictData: predictData,
-  width: 600,
+  width: 700,
   height: 400,
   // volume: true,
   interactive: true

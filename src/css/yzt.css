@@ -38,7 +38,7 @@ svg line {
 }
 
 .tick text {
-  fill: #575757;
+  fill: #565a60;
 }
 
 .tick-line {
@@ -88,7 +88,7 @@ svg line {
 
 /* 参考线 */
 .help {
-  stroke: #d8d8d8;
+  stroke: #565a60;
 }
 
 /* brush area */
@@ -139,4 +139,28 @@ svg line {
 .dif {
   stroke: rgb(221, 34, 0);
   fill: none;
+}
+/* 预测走势部分 */
+.wrap {
+  /* width: 200px; */
+  height: 15px;
+  border: 1px solid #565a60;
+  border-top: 0;
+  border-bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.line {
+  flex: 1;
+  height: 1px;
+  background: #565a60;
+}
+
+.text {
+  color: #565a60;
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
 }
