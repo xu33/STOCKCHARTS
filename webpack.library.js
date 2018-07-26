@@ -3,7 +3,8 @@ var webpack = require('webpack');
 
 module.exports = {
   entry: {
-    Timechart: './src/timecharts/Timechart.js'
+    PredictChartMobile: './src/Predict.js'
+    // Timechart: './src/timecharts/Timechart.js'
   },
   output: {
     path: path.join(__dirname, 'dist'),
@@ -33,5 +34,20 @@ module.exports = {
         ]
       }
     ]
-  }
+  },
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin({
+      // Eliminate comments
+      comments: false,
+
+      // Compression specific options
+      compress: {
+        // remove warnings
+        warnings: false,
+
+        // Drop console statements
+        drop_console: true
+      }
+    })
+  ]
 };

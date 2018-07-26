@@ -5,11 +5,11 @@ module.exports = {
   entry: {
     // PredictChart: './src/PredictChart.js',
     // ChartWithVolume: './src/ChartWithVolume.js',
-    // PredictChartMobile: './src/Predict.js',
+    PredictChartMobile: './src/Predict.js',
     // SampleChart: './src/Sample.js',
     // StockChart: './src/StockChart.js',
     // TimeTrendChart: './src/mobile/TimeTrendChart.js',
-    CandleStickChart: './src/CandleStickCharts/CandleStickChart.js',
+    // CandleStickChart: './src/CandleStickCharts/CandleStickChart.js',
     d3: ['d3']
   },
   output: {
@@ -43,19 +43,19 @@ module.exports = {
     new webpack.optimize.CommonsChunkPlugin({
       names: ['d3'],
       minChunks: 3
+    }),
+    new webpack.optimize.UglifyJsPlugin({
+      // Eliminate comments
+      comments: false,
+
+      // Compression specific options
+      compress: {
+        // remove warnings
+        warnings: false,
+
+        // Drop console statements
+        drop_console: true
+      }
     })
-    // new webpack.optimize.UglifyJsPlugin({
-    //   // Eliminate comments
-    //   comments: false,
-
-    //   // Compression specific options
-    //   compress: {
-    //     // remove warnings
-    //     warnings: false,
-
-    //     // Drop console statements
-    //     drop_console: true
-    //   }
-    // })
   ]
 };

@@ -6,12 +6,12 @@ module.exports = {
   target: 'web',
   devtool: 'inline-source-map',
   entry: {
-    test: './src/test.js',
-    index: './src/index.js',
-    d3example: './src/d3example.js',
-    line: './src/line.js',
-    st: './src/st.js',
-    img: './src/img.js'
+    // test: './src/test.js',
+    // index: './src/index.js',
+    d3example: './src/d3example.js'
+    // line: './src/line.js',
+    // st: './src/st.js',
+    // img: './src/img.js'
   },
   output: {
     path: path.join(__dirname, 'dist'),
@@ -49,13 +49,13 @@ module.exports = {
     ]
   },
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin({
-      name: 'common',
-      minChunks: function(module, count) {
-        let context = module.context;
-        return context && context.indexOf('node_modules') >= 0;
-      }
-    }),
+    // new webpack.optimize.CommonsChunkPlugin({
+    //   name: 'common',
+    //   minChunks: function(module, count) {
+    //     let context = module.context;
+    //     return context && context.indexOf('node_modules') >= 0;
+    //   }
+    // }),
     new HtmlWebpackPlugin({
       filename: '[name].html'
     })
