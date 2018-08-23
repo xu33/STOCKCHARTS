@@ -48,6 +48,10 @@ app.get('/image', (req, res) => {
   res.sendFile(path.join(__dirname, 'example/image.html'));
 });
 
+app.get('/canvas', (req, res) => {
+  res.sendFile(path.join(__dirname, 'example/canvas.html'));
+});
+
 app.listen(3003, function(err) {
   if (err) {
     return console.error(err);

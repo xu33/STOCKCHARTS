@@ -8,10 +8,14 @@ module.exports = {
   entry: {
     // test: './src/test.js',
     // index: './src/index.js',
+    canvas: './src/canvas.js',
     d3example: './src/d3example.js'
     // line: './src/line.js',
     // st: './src/st.js',
     // img: './src/img.js'
+  },
+  externals: {
+    d3: 'd3'
   },
   output: {
     path: path.join(__dirname, 'dist'),
@@ -56,8 +60,8 @@ module.exports = {
     //     return context && context.indexOf('node_modules') >= 0;
     //   }
     // }),
-    new HtmlWebpackPlugin({
-      filename: '[name].html'
-    })
+    // new HtmlWebpackPlugin({
+    //   filename: '[name].html'
+    // })
   ]
 };
