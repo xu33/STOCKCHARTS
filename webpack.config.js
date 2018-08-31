@@ -9,9 +9,10 @@ module.exports = {
     // test: './src/test.js',
     // index: './src/index.js',
     canvas: './src/canvas.js',
-    d3example: './src/d3example.js'
+    d3example: './src/d3example.js',
     // line: './src/line.js',
-    // st: './src/st.js',
+    st: './src/st.js',
+    h5: './src/h5/chart.js'
     // img: './src/img.js'
   },
   externals: {
@@ -53,15 +54,15 @@ module.exports = {
     ]
   },
   plugins: [
-    // new webpack.optimize.CommonsChunkPlugin({
-    //   name: 'common',
-    //   minChunks: function(module, count) {
-    //     let context = module.context;
-    //     return context && context.indexOf('node_modules') >= 0;
-    //   }
-    // }),
-    // new HtmlWebpackPlugin({
-    //   filename: '[name].html'
-    // })
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'common',
+      minChunks: function(module, count) {
+        let context = module.context;
+        return context && context.indexOf('node_modules') >= 0;
+      }
+    }),
+    new HtmlWebpackPlugin({
+      filename: '[name].html'
+    })
   ]
 };

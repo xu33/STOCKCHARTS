@@ -1,10 +1,10 @@
 var path = require('path');
 var webpack = require('webpack');
-// var webpack = 'commonjs webpack'
 var express = require('express');
 var config = require('./webpack.config');
 var app = express();
 var compiler = webpack(config);
+var fs = require('fs');
 
 app.use(express.static('dist'));
 
@@ -50,6 +50,18 @@ app.get('/image', (req, res) => {
 
 app.get('/canvas', (req, res) => {
   res.sendFile(path.join(__dirname, 'example/canvas.html'));
+});
+
+fs.readdir('./example', (err, files) => {
+  if (err) {
+    console.log(err);
+  } else {
+    files.forEach(fl => {
+      app.get('/' + fl, (req, res) => {
+        res.sendFile(path.resolve(__dirname, 'example', fl));
+      });
+    });
+  }
 });
 
 app.listen(3003, function(err) {

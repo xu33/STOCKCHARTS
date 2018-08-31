@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/xu33/STOCKCHARTS#readme",
   "dependencies": {
+    "@up/hq": "^1.2.19",
     "babel-core": "^6.18.2",
     "babel-loader": "^6.2.8",
     "babel-preset-env": "^1.6.0",
@@ -48,6 +49,8 @@
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "css-loader": "^0.26.1",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2",
     "style-loader": "^0.13.2"
   }
 }

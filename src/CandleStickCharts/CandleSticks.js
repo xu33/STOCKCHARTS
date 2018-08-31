@@ -312,12 +312,11 @@ class CandleSticks {
       return;
     }
 
-    selection.exit().remove();
+    let exit = selection.exit();
+    let enter = selection.enter().append('rect');
 
     selection
-      .enter()
-      .append('rect')
-      .merge(selection)
+      .merge(enter)
       .attr('class', 'bar')
       .attr('x', (d, i) => scaleBand(i))
       .attr('y', ({ open, close }) => scalePrice(Math.max(open, close)))
@@ -326,6 +325,8 @@ class CandleSticks {
         Math.round(Math.abs(scalePrice(open) - scalePrice(close)))
       )
       .attr('fill', calColor);
+
+    exit.remove();
   }
 
   renderWicks() {
@@ -423,14 +424,32 @@ class CandleSticks {
     path.attr('d', line(this.data));
   }
 
-  // 使用序数比例尺
-  __calculateLeftAndRightAxisScale() {
-    let lengthNeed = 4;
-    let { left, right, bottom, top } = CandleSticks.margin;
-    let { width, height } = this.options;
-    let extent = this.extent();
-    let domain = linspace(extent[1], extent[0], lengthNeed);
-    let range = linspace(0, height, lengthNeed);
+  // 纵坐标轴使用序数比例尺
+  calculateLeftAndRightAxisScale() {
+    // let lengthNeed = 4;
+    // let { left, right, bottom, top } = CandleSticks.margin;
+    // let { width, height } = this.options;
+    // let extent = this.extent();
+    // let domain = linspace(extent[1], extent[0], lengthNeed);
+    // let range = linspace(0, height, lengthNeed);
+
+    // this.leftAndRightAxisScale = d3
+    //   .scaleOrdinal()
+    //   .domain(domain)
+    //   .range(range);
+
+    var ticks = 6;
+    var extent = this.extent();
+    var height = this.options.height;
+    var interpolator = d3.interpolateNumber(extent[1], extent[0]);
+    var interpolatorR = d3.interpolateNumber(0, height);
+    var domain = [];
+    var range = [];
+    var step = 1 / ticks;
+    for (var i = 0; i <= ticks; i++) {
+      domain.push(interpolator(step * i).toFixed(2));
+      range.push(interpolatorR(step * i).toFixed(2));
+    }
 
     this.leftAndRightAxisScale = d3
       .scaleOrdinal()
@@ -438,8 +457,8 @@ class CandleSticks {
       .range(range);
   }
 
-  // 使用线性比例尺
-  calculateLeftAndRightAxisScale() {
+  // 纵坐标轴使用线性比例尺
+  _calculateLeftAndRightAxisScale() {
     let { height } = this.options;
     let extent = this.extent();
     let domain = [extent[1], extent[0]];
@@ -550,7 +569,6 @@ class CandleSticks {
 
   // 使用线性比例尺
   renderBottomAxis() {
-    let { left, right, bottom, top } = CandleSticks.margin;
     let { width, height } = this.options;
     let domain = [
       this.data[0].timestamp,
@@ -562,9 +580,11 @@ class CandleSticks {
       .scaleLinear()
       .domain(domain)
       .range(range);
+
     let formatter = this.getBottomAxisTickFormatter();
     let bottomAxis = d3
       .axisBottom(scale)
+      .ticks(3)
       .tickSize(0)
       .tickPadding(8)
       .tickFormat(formatter);
@@ -576,48 +596,6 @@ class CandleSticks {
         .tickSize(-height)
         .tickFormat('')
     );
-  }
-
-  // 使用序数比例尺
-  __renderBottomAxis() {
-    let { left, right, bottom, top } = CandleSticks.margin;
-    let { width, height } = this.options;
-    let lengthNeed = 4;
-    let chunks = thunkArray([...this.data], lengthNeed);
-    let domain = chunks.map(chunk => new Date(chunk[0].timestamp));
-    let range = linspace(0, width, lengthNeed + 1);
-
-    if (domain.length > lengthNeed) domain.pop();
-
-    domain.push(new Date());
-
-    // console.log(domain, range);
-
-    let scale = d3
-      .scaleOrdinal()
-      .domain(domain)
-      .range(range);
-
-    let formatter = this.getBottomAxisTickFormatter();
-
-    let bottomAxis = d3
-      .axisBottom(scale)
-      .tickSize(0)
-      .tickPadding(8)
-      .tickFormat(formatter);
-
-    let element = this.element.select('.bottom_axis');
-
-    element.call(bottomAxis);
-    element
-      .selectAll('.tick text')
-      .attr('text-anchor', 'start')
-      .style('display', (d, i) => {
-        if (i === range.length - 1) return 'none';
-        else return null;
-      });
-
-    this.renderVerticalGridLines(scale);
   }
 
   renderVerticalGridLines(scale) {
