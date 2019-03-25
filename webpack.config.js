@@ -1,7 +1,9 @@
 var path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+var webpack = require('webpack');
 
 module.exports = {
+  mode: 'development',
   devtool: 'inline-source-map',
   devServer: {
     publicPath: '/static/',
@@ -14,7 +16,8 @@ module.exports = {
     // canvas: './src/canvas.js',
     // d3example: './src/d3example.js',
     // line: './src/line.js',
-    st: './src/st.js'
+    st: './src/st.js',
+    canvasversion: './src/canvasversion.js'
     // h5: './src/h5/chart.js'
     // img: './src/img.js'
   },
@@ -56,16 +59,30 @@ module.exports = {
       }
     ]
   },
-  plugins: [
-    // new webpack.optimize.CommonsChunkPlugin({
-    //   name: 'common',
-    //   minChunks: function(module, count) {
-    //     let context = module.context;
-    //     return context && context.indexOf('node_modules') >= 0;
-    //   }
-    // }),
-    // new HtmlWebpackPlugin({
-    //   filename: '[name].html'
-    // })
-  ]
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/](.*).js$/,
+          chunks: 'all',
+          name: 'vendor'
+        }
+      }
+    },
+    runtimeChunk: {
+      name: 'runtime'
+    }
+  }
+  // plugins: [
+  //   new webpack.optimize.CommonsChunkPlugin({
+  //     name: 'common',
+  //     minChunks: function(module, count) {
+  //       let context = module.context;
+  //       return context && context.indexOf('node_modules') >= 0;
+  //     }
+  //   }),
+  //   new HtmlWebpackPlugin({
+  //     filename: '[name].html'
+  //   })
+  // ]
 };

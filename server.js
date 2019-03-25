@@ -53,6 +53,10 @@ app.get('/canvas', (req, res) => {
   res.sendFile(path.join(__dirname, 'example/canvas.html'));
 });
 
+app.get('/canvasversion', (req, res) => {
+  res.sendFile(path.join(__dirname, 'example/canvasversion.html'));
+});
+
 fs.readdir('./example', (err, files) => {
   if (err) {
     console.log(err);
@@ -82,7 +86,7 @@ app.get('/getkline', (req, res) => {
   var stockCode = '000001'; //股票代码
   var type = 0; //K线类型 0=日K 参考 Common.jce HISTORY_DATA_TYPE 枚举
   var start = 0; //起始位置
-  var wantNum = 1000; //请求K线个数
+  var wantNum = req.query.wantNum || 100; //请求K线个数
   var bXRXDFlag = false; //复权标识  默认false  选填   false：不复权  true：前复权
   hq.getKline(market, stockCode, type, start, wantNum, bXRXDFlag).then(data => {
     let ret = data.vAnalyData.map(
