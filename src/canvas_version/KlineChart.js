@@ -24,41 +24,85 @@ function KlineChart(element, options) {
   const context = canvas.getContext('2d');
 
   let priceHeightScale = d3.scaleLinear().range([height, 0]);
+  let startIndex = 0;
+  let endIndex = 30;
+
+  let indexScale = d3
+    .scaleLinear()
+    .domain([0, data.length])
+    .range([0, width]);
+
+  const handleZoom = () => {
+    let transform = d3.event.transform;
+    let currentIndexScale = transform.rescaleX(indexScale);
+    let domain = currentIndexScale.domain();
+
+    startIndex = domain[0] >> 0;
+    endIndex = domain[1] >> 0;
+
+    if (startIndex < 0) startIndex = 0;
+    if (endIndex > data.length - 1) endIndex = data.length - 1;
+
+    console.log(startIndex, endIndex);
+    computePriceHeightScale();
+    renderSticks();
+  };
+
+  const initZoom = () => {
+    let k = data.length / (endIndex - startIndex);
+
+    if (k < 1) {
+      k = 1;
+    }
+
+    let tx = 0;
+    let ty = 0;
+    let transform = d3.zoomIdentity.scale(k).translate(tx, ty);
+    let zoom = d3
+      .zoom()
+      .translateExtent([[0, 0], [width, 0]])
+      .scaleExtent([1, k])
+      .on('zoom', handleZoom);
+
+    d3.select(element)
+      .call(zoom)
+      .call(zoom.transform, transform);
+  };
 
   const computePriceHeightScale = () => {
     console.log(data);
+    let part = data.slice(startIndex, endIndex);
     let min = Math.min.apply(
       Math,
-      data.map(v => {
+      part.map(v => {
         return Math.min(v.fClose, v.fLow, v.fOpen, v.fHigh);
       })
     );
 
     let max = Math.max.apply(
       Math,
-      data.map(v => {
+      part.map(v => {
         return Math.max(v.fClose, v.fLow, v.fOpen, v.fHigh);
       })
     );
-
-    console.log(min, max);
 
     priceHeightScale.domain([min, max]);
   };
 
   const renderSticks = () => {
+    context.clearRect(0, 0, width, height);
+    let part = data.slice(startIndex, endIndex);
     const scale = d3
       .scaleBand()
       .range([0, width])
-      .domain(data.map((value, index) => index))
+      .domain(part.map((value, index) => index))
       .padding(0.3);
 
     const rectWidth = scale.bandwidth();
-    console.log('width:', rectWidth);
 
-    for (let i = 0; i < data.length; i++) {
+    for (let i = 0; i < part.length; i++) {
       context.save();
-      let { fOpen, fClose, fLow, fHigh } = data[i];
+      let { fOpen, fClose, fLow, fHigh } = part[i];
 
       // 蜡烛
       let x = scale(i);
@@ -74,8 +118,6 @@ function KlineChart(element, options) {
       } else {
         color = EQUAL;
       }
-
-      console.log(x, y, width, height);
 
       context.fillStyle = color;
       context.strokeStyle = color;
@@ -99,6 +141,8 @@ function KlineChart(element, options) {
 
   element.appendChild(canvas);
   computePriceHeightScale();
+
+  initZoom();
 
   renderSticks();
 }

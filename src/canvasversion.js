@@ -4,7 +4,7 @@ import axios from 'axios';
 axios
   .get('/getkline', {
     params: {
-      wantNum: 50
+      wantNum: 500
     }
   })
   .then(({ data }) => {
