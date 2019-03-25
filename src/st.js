@@ -95,28 +95,44 @@ $(document).ready(function() {
   var element = document.getElementById('refactor');
   var chart;
 
-  $.ajax({
-    url: `http://hq.test.whup.com/hq/kline/0/0/000001`
-  }).done(data => {
-    var width = element.clientWidth;
-    var height = element.clientHeight;
-    var list = data.vAnalyData;
+  // $.ajax({
+  //   // url: `http://hq.test.whup.com/hq/kline/0/0/000001`
+  //   url: '/getKlineTest'
+  // }).done(data => {
+  //   var width = element.clientWidth;
+  //   var height = element.clientHeight;
+  //   var list = data.vAnalyData;
 
-    computeMa(list, 'close', 5);
-    computeMa(list, 'close', 10);
-    computeMa(data.vAnalyData, 'close', 20);
-    computeMa(data.vAnalyData, 'close', 60);
+  //   computeMa(list, 'close', 5);
+  //   computeMa(list, 'close', 10);
+  //   computeMa(data.vAnalyData, 'close', 20);
+  //   computeMa(data.vAnalyData, 'close', 60);
 
-    chart = new CandleStickChart('#refactor', {
-      width: width,
-      height: height,
-      data: list
-    });
+  //   chart = new CandleStickChart('#refactor', {
+  //     width: width,
+  //     height: height,
+  //     data: list
+  //   });
+  // });
+  var data = require('./fake_data/000001.json');
+  var width = element.clientWidth;
+  var height = element.clientHeight;
+  var list = data.vAnalyData;
+
+  computeMa(list, 'close', 5);
+  computeMa(list, 'close', 10);
+  computeMa(data.vAnalyData, 'close', 20);
+  computeMa(data.vAnalyData, 'close', 60);
+
+  chart = new CandleStickChart('#refactor', {
+    width: width,
+    height: height,
+    data: list
   });
 
-  $(window).resize(
-    throttle(function() {
-      chart.resize(element.clientWidth, element.clientHeight);
-    }, 300)
-  );
+  // $(window).resize(
+  //   throttle(function() {
+  //     chart.resize(element.clientWidth, element.clientHeight);
+  //   }, 300)
+  // );
 });

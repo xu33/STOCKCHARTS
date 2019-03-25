@@ -448,7 +448,7 @@ class CandleSticks {
     var step = 1 / ticks;
     for (var i = 0; i <= ticks; i++) {
       domain.push(interpolator(step * i).toFixed(2));
-      range.push(interpolatorR(step * i).toFixed(2));
+      range.push(interpolatorR(step * i));
     }
 
     this.leftAndRightAxisScale = d3
@@ -483,16 +483,18 @@ class CandleSticks {
 
   renderLeftAxis() {
     let formatter = d3.format('.2f');
-
+    let scaleCopy = this.leftAndRightAxisScale.copy();
     if (this.leftAxis === undefined) {
       this.leftAxis = d3
-        .axisLeft(this.leftAndRightAxisScale.copy())
+        .axisLeft(scaleCopy)
         .tickSize(0)
         .tickPadding(5)
         .tickFormat(formatter);
     }
 
-    this.leftAxis.scale(this.leftAndRightAxisScale.copy());
+    // console.log(scaleCopy.domain(), scaleCopy.range());
+
+    this.leftAxis.scale(scaleCopy);
 
     this.element.select('.left_axis').call(this.leftAxis);
 

@@ -1,22 +1,25 @@
 var path = require('path');
-var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  target: 'web',
   devtool: 'inline-source-map',
+  devServer: {
+    publicPath: '/static/',
+    host: 'localhost',
+    port: '8080'
+  },
   entry: {
     // test: './src/test.js',
     // index: './src/index.js',
-    canvas: './src/canvas.js',
-    d3example: './src/d3example.js',
+    // canvas: './src/canvas.js',
+    // d3example: './src/d3example.js',
     // line: './src/line.js',
-    st: './src/st.js',
-    h5: './src/h5/chart.js'
+    st: './src/st.js'
+    // h5: './src/h5/chart.js'
     // img: './src/img.js'
   },
   externals: {
-    d3: 'd3'
+    // d3: 'd3'
   },
   output: {
     path: path.join(__dirname, 'dist'),
@@ -54,15 +57,15 @@ module.exports = {
     ]
   },
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin({
-      name: 'common',
-      minChunks: function(module, count) {
-        let context = module.context;
-        return context && context.indexOf('node_modules') >= 0;
-      }
-    }),
-    new HtmlWebpackPlugin({
-      filename: '[name].html'
-    })
+    // new webpack.optimize.CommonsChunkPlugin({
+    //   name: 'common',
+    //   minChunks: function(module, count) {
+    //     let context = module.context;
+    //     return context && context.indexOf('node_modules') >= 0;
+    //   }
+    // }),
+    // new HtmlWebpackPlugin({
+    //   filename: '[name].html'
+    // })
   ]
 };

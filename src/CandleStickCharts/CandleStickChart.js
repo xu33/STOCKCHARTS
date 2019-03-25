@@ -24,7 +24,7 @@ const ChildTypes = [
 
 const MIN_WIDTH = 400;
 const MIN_HEIGHT = 200;
-const MIN_DISPLAY_STICKS = 20;
+const MIN_DISPLAY_STICKS = 50;
 const MAX_DISPLAY_STICKS = 300;
 
 class CandleStickChart {
@@ -43,6 +43,7 @@ class CandleStickChart {
     });
 
     this.children = new Array(ChildTypes.length);
+    this.getIndexScale();
     this.initChildren();
     this.initZoom();
   }
@@ -74,7 +75,7 @@ class CandleStickChart {
   }
 
   getIndexScale() {
-    return d3
+    this.indexScale = d3
       .scaleLinear()
       .domain([0, this.options.data.length - 1])
       .range([0, this.options.width]);
@@ -101,7 +102,9 @@ class CandleStickChart {
   }
 
   render(selectedData) {
-    this.children.forEach(child => child.render(selectedData));
+    this.children.forEach(child => {
+      child.render(selectedData);
+    });
   }
 
   resize(width, height) {
@@ -152,30 +155,44 @@ class CandleStickChart {
     });
   }
 
+  handleZoom = () => {
+    let indexScale = this.indexScale;
+    let transform = d3.event.transform;
+    let currentScale = transform.rescaleX(indexScale);
+    let domain = currentScale.domain();
+    let extent = domain.map(Math.round);
+    let [startIndex, endIndex] = this.bound(...extent);
+    let interval = this.options.data.slice(startIndex, endIndex);
+    this.startIndex = startIndex;
+    this.endIndex = endIndex;
+
+    this.render(interval);
+  };
+
   initZoom() {
     let width = this.options.width;
     let length = this.options.data.length;
     let maxScale = length / MIN_DISPLAY_STICKS;
     let minScale = length / MAX_DISPLAY_STICKS;
-    let indexScale = this.getIndexScale();
+    let indexScale = this.indexScale;
     let endIndex = this.endIndex !== undefined ? this.endIndex : length - 1;
     let startIndex =
       this.startIndex !== undefined
         ? this.startIndex
         : endIndex - MIN_DISPLAY_STICKS;
 
-    let zoomed = () => {
-      let transform = d3.event.transform;
-      let currentScale = transform.rescaleX(indexScale);
-      let domain = currentScale.domain();
-      let extent = domain.map(Math.round);
-      let [startIndex, endIndex] = this.bound(...extent);
-      let interval = this.options.data.slice(startIndex, endIndex);
-      this.startIndex = startIndex;
-      this.endIndex = endIndex;
+    // let zoomed = () => {
+    //   let transform = d3.event.transform;
+    //   let currentScale = transform.rescaleX(indexScale);
+    //   let domain = currentScale.domain();
+    //   let extent = domain.map(Math.round);
+    //   let [startIndex, endIndex] = this.bound(...extent);
+    //   let interval = this.options.data.slice(startIndex, endIndex);
+    //   this.startIndex = startIndex;
+    //   this.endIndex = endIndex;
 
-      this.render(interval);
-    };
+    //   this.render(interval);
+    // };
 
     let zoomStart = () => {
       this.children.forEach(function(childInstance) {
@@ -204,20 +221,36 @@ class CandleStickChart {
       .translateExtent([[0, 0], [width, 0]])
       .scaleExtent([minScale, maxScale])
       .on('start', zoomStart)
-      .on('zoom', zoomed)
+      .on('zoom', this.handleZoom)
       .on('end', zoomEnd);
 
     /* 以下为拖动&缩放行为的核心代码 */
 
     // 初始缩放系数
+    // 解释，例如总共1000根k线，满屏显示
+    // 现在要求满屏只显示100根
+    // 相当于k线放大了10倍
+    // 所以初始缩放就是10，以此类推
     let k = width / (indexScale(endIndex) - indexScale(startIndex));
+
+    console.log('k:', k);
+    console.log('nk:', this.options.data.length / (endIndex - startIndex));
+
     if (k > maxScale) k = maxScale;
     if (k < 1) k = 1;
 
     // 初始位移
     let x = -indexScale(startIndex);
+
+    console.log('x:', x);
+    console.log('nx:', -width * k + width);
     // 初始transform
     let transform = d3.zoomIdentity.scale(k).translate(x, 0);
+    // console.log('先scale后translate：', transform);
+    // console.log(
+    //   '先translate后scale：',
+    //   d3.zoomIdentity.translate(x, 0).scale(k)
+    // );
     // 绑定事件，并设置初始偏移量
     this.element.call(zoom).call(zoom.transform, transform);
   }
