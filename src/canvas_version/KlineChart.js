@@ -1,30 +1,31 @@
-const RED = '#d20';
-const GREEN = '#093';
-const EQUAL = '#999999';
-const GRID_COLOR = '#edf0f5';
-const BLUE = '#07d';
+import * as d3 from "d3";
+
+const RED = "#d20";
+const GREEN = "#093";
+const EQUAL = "#999999";
+const GRID_COLOR = "#edf0f5";
+const BLUE = "#07d";
 
 const KlineChart = (element, options) => {
+  const devicePixelRatio = 1; //window.devicePixelRatio;
+  console.log(devicePixelRatio);
   let { data } = options;
   let { width, height } = element.getBoundingClientRect();
-  // width = width * 2;
-  // height = height * 2;
+  width = width * devicePixelRatio;
+  height = height * devicePixelRatio;
 
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  // canvas.style.width = width / 2 + 'px';
-  // canvas.style.height = height / 2 + 'px';
+  canvas.style.width = width / devicePixelRatio + "px";
+  canvas.style.height = height / devicePixelRatio + "px";
 
-  const context = canvas.getContext('2d');
+  const context = canvas.getContext("2d");
 
   let startIndex = 0;
   let endIndex = 30;
 
-  let indexScale = d3
-    .scaleLinear()
-    .domain([0, data.length])
-    .range([0, width]);
+  let indexScale = d3.scaleLinear().domain([0, data.length]).range([0, width]);
 
   const handleZoom = () => {
     let transform = d3.event.transform;
@@ -55,11 +56,9 @@ const KlineChart = (element, options) => {
       .zoom()
       .translateExtent([[0, 0], [width, 0]])
       .scaleExtent([1, k])
-      .on('zoom', handleZoom);
+      .on("zoom", handleZoom);
 
-    d3.select(element)
-      .call(zoom)
-      .call(zoom.transform, transform);
+    d3.select(element).call(zoom).call(zoom.transform, transform);
   };
 
   const marginBetween = 20;
@@ -81,8 +80,8 @@ const KlineChart = (element, options) => {
   let priceHeightScale = d3.scaleLinear().range([mainBound.height, 0]);
 
   const drawRect = (x, y, width, height, fill = true) => {
-    x = parseInt(x) + 0.5;
-    y = parseInt(y) + 0.5;
+    x = parseInt(x);
+    y = parseInt(y);
     width = parseInt(width); //+ 0.5;
     height = parseInt(height); //+ 0.5;
 
@@ -91,6 +90,8 @@ const KlineChart = (element, options) => {
     if (fill) {
       context.fillRect(x, y, width, height);
     } else {
+      x += 0.50;
+      y += 0.50;
       context.strokeRect(x, y, width, height);
     }
   };
@@ -172,7 +173,7 @@ const KlineChart = (element, options) => {
   };
 
   const renderVerGrids = () => {
-    let interpolator = d3.interpolateNumber(0, mainBound.width);
+    let interpolator = d3.interpolateNumber(0, mainBound.width - 1);
     let range = [];
     let lineNumbers = 4;
     for (let i = 0; i <= lineNumbers; i++) {
@@ -189,10 +190,7 @@ const KlineChart = (element, options) => {
     context.restore();
   };
 
-  const scale = d3
-    .scaleBand()
-    .range([0, mainBound.width])
-    .padding(0.3);
+  const scale = d3.scaleBand().range([0, mainBound.width]).padding(0.3);
 
   const renderSticks = () => {
     context.clearRect(0, 0, width, height);
@@ -313,7 +311,9 @@ const KlineChart = (element, options) => {
 
       let x = scale(i);
       let y = volumeHeightScale(lVolume);
-      let rectHeight = volumeHeightScale(0);
+      let rectHeight = volumeHeightScale(minVol) - y;
+
+      console.log(rectHeight);
       let color;
 
       if (fClose > fOpen) {
@@ -344,7 +344,7 @@ const KlineChart = (element, options) => {
 
   return {
     destroy: () => {
-      d3.select(element).on('.zoom', null);
+      d3.select(element).on(".zoom", null);
       element.removeChild(canvas);
     }
   };
