@@ -4,13 +4,17 @@ const EQUAL = '#999999';
 const GRID_COLOR = '#edf0f5';
 const BLUE = '#07d';
 
-function KlineChart(element, options) {
+const KlineChart = (element, options) => {
   let { data } = options;
   let { width, height } = element.getBoundingClientRect();
+  // width = width * 2;
+  // height = height * 2;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
+  // canvas.style.width = width / 2 + 'px';
+  // canvas.style.height = height / 2 + 'px';
 
   const context = canvas.getContext('2d');
 
@@ -79,8 +83,10 @@ function KlineChart(element, options) {
   const drawRect = (x, y, width, height, fill = true) => {
     x = parseInt(x) + 0.5;
     y = parseInt(y) + 0.5;
-    width = parseInt(width) + 0.5;
-    height = parseInt(height) + 0.5;
+    width = parseInt(width); //+ 0.5;
+    height = parseInt(height); //+ 0.5;
+
+    // console.log(x, y, width, height);
 
     if (fill) {
       context.fillRect(x, y, width, height);
@@ -105,16 +111,14 @@ function KlineChart(element, options) {
 
   const computePriceHeightScale = () => {
     let part = data.slice(startIndex, endIndex);
-    let min = Math.min.apply(
-      Math,
-      part.map(v => {
+    let min = Math.min(
+      ...part.map(v => {
         return Math.min(v.fClose, v.fLow, v.fOpen, v.fHigh);
       })
     );
 
-    let max = Math.max.apply(
-      Math,
-      part.map(v => {
+    let max = Math.max(
+      ...part.map(v => {
         return Math.max(v.fClose, v.fLow, v.fOpen, v.fHigh);
       })
     );
@@ -210,7 +214,6 @@ function KlineChart(element, options) {
       context.save();
       context.strokeStyle = BLUE;
       context.beginPath();
-
       for (let i = 0; i < part.length; i++) {
         let { fClose } = part[i];
         let x = scale(i);
@@ -225,6 +228,7 @@ function KlineChart(element, options) {
 
       context.stroke();
       context.closePath();
+
       context.restore();
     } else {
       for (let i = 0; i < part.length; i++) {
@@ -339,8 +343,11 @@ function KlineChart(element, options) {
   initZoom();
 
   return {
-    render: renderSticks
+    destroy: () => {
+      d3.select(element).on('.zoom', null);
+      element.removeChild(canvas);
+    }
   };
-}
+};
 
 export default KlineChart;
