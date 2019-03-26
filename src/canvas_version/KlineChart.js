@@ -14,7 +14,6 @@ function KlineChart(element, options) {
 
   const context = canvas.getContext('2d');
 
-  let priceHeightScale = d3.scaleLinear().range([height, 0]);
   let startIndex = 0;
   let endIndex = 30;
 
@@ -59,11 +58,30 @@ function KlineChart(element, options) {
       .call(zoom.transform, transform);
   };
 
+  const marginBetween = 20;
+
+  const mainBound = {
+    top: 0,
+    left: 0,
+    width: width,
+    height: height * (200 / 260)
+  };
+
+  const viceBound = {
+    top: mainBound.height + marginBetween,
+    left: 0,
+    width: width,
+    height: height - (mainBound.height + marginBetween)
+  };
+
+  let priceHeightScale = d3.scaleLinear().range([mainBound.height, 0]);
+
   const drawRect = (x, y, width, height, fill = true) => {
     x = parseInt(x) + 0.5;
     y = parseInt(y) + 0.5;
     width = parseInt(width) + 0.5;
     height = parseInt(height) + 0.5;
+
     if (fill) {
       context.fillRect(x, y, width, height);
     } else {
@@ -108,7 +126,7 @@ function KlineChart(element, options) {
   const renderLeftAxis = () => {
     let priceDomain = priceHeightScale.domain();
     let [min, max] = priceDomain;
-    let i1 = d3.interpolateNumber(height, 0);
+    let i1 = d3.interpolateNumber(mainBound.height, 0);
     let i2 = d3.interpolateNumber(min, max);
 
     for (let i = 0; i <= 6; i++) {
@@ -121,7 +139,6 @@ function KlineChart(element, options) {
       } else {
         y -= 4;
       }
-      console.log(i, x, y, text);
 
       context.fillText(text, x, y);
     }
@@ -129,25 +146,12 @@ function KlineChart(element, options) {
 
   // 辅助线
   const renderGrids = () => {
-    // let interpolator = d3.interpolateNumber(height, 0);
-    // let range = [];
-    // let lineNumbers = 6;
-    // for (let i = 0; i <= lineNumbers; i++) {
-    //   range.push(interpolator(i / lineNumbers));
-    // }
-
-    // context.save();
-    // context.strokeStyle = GRID_COLOR;
-    // range.forEach(y => {
-    //   drawLine(0, y, width, y);
-    // });
-    // context.restore();
     renderHozGrids();
     renderVerGrids();
   };
 
   const renderHozGrids = () => {
-    let interpolator = d3.interpolateNumber(height, 0);
+    let interpolator = d3.interpolateNumber(mainBound.height, 0);
     let range = [];
     let lineNumbers = 6;
     for (let i = 0; i <= lineNumbers; i++) {
@@ -158,13 +162,13 @@ function KlineChart(element, options) {
     context.strokeWidth = 2;
     context.strokeStyle = GRID_COLOR;
     range.forEach(y => {
-      drawLine(0, y, width, y);
+      drawLine(0, y, mainBound.width, y);
     });
     context.restore();
   };
 
   const renderVerGrids = () => {
-    let interpolator = d3.interpolateNumber(0, width);
+    let interpolator = d3.interpolateNumber(0, mainBound.width);
     let range = [];
     let lineNumbers = 4;
     for (let i = 0; i <= lineNumbers; i++) {
@@ -176,12 +180,15 @@ function KlineChart(element, options) {
 
     context.strokeStyle = GRID_COLOR;
     range.forEach(x => {
-      drawLine(x, 0, x, height);
+      drawLine(x, 0, x, mainBound.height);
     });
     context.restore();
   };
 
-  // renderGrids();
+  const scale = d3
+    .scaleBand()
+    .range([0, mainBound.width])
+    .padding(0.3);
 
   const renderSticks = () => {
     context.clearRect(0, 0, width, height);
@@ -192,17 +199,14 @@ function KlineChart(element, options) {
     renderLeftAxis();
 
     let part = data.slice(startIndex, endIndex);
-    const scale = d3
-      .scaleBand()
-      .range([0, width])
-      .domain(part.map((value, index) => index))
-      .padding(0.3);
+
+    scale.domain(part.map((value, index) => index));
 
     const rectWidth = scale.bandwidth();
     // context.globalCompositeOperation = 'destination-out';
     // context.globalAlpha = 1;
 
-    if (rectWidth < 4) {
+    if (rectWidth < 3) {
       context.save();
       context.strokeStyle = BLUE;
       context.beginPath();
@@ -240,14 +244,33 @@ function KlineChart(element, options) {
         context.strokeStyle = color;
 
         let x = scale(i);
-
-        // 影线
-        let y1 = priceHeightScale(fLow);
-        let y2 = priceHeightScale(fHigh);
         let x1 = x + rectWidth / 2;
         let x2 = x1;
 
-        drawLine(x1, y1, x2, y2);
+        // 上影线
+        {
+          let y1 = priceHeightScale(fHigh);
+          let y2;
+          if (fOpen > fClose) {
+            y2 = priceHeightScale(fOpen);
+          } else {
+            y2 = priceHeightScale(fClose);
+          }
+
+          drawLine(x1, y1, x2, y2);
+        }
+
+        // 下影线
+        {
+          let y1 = priceHeightScale(fLow);
+          let y2;
+          if (fOpen > fClose) {
+            y2 = priceHeightScale(fClose);
+          } else {
+            y2 = priceHeightScale(fOpen);
+          }
+          drawLine(x1, y1, x2, y2);
+        }
 
         // 蜡烛
         let y = priceHeightScale(Math.max(fOpen, fClose));
@@ -255,11 +278,59 @@ function KlineChart(element, options) {
         let height = Math.abs(
           priceHeightScale(fOpen) - priceHeightScale(fClose)
         );
+
         drawRect(x, y, width, height, fill);
 
         context.restore();
       }
     }
+
+    viceChart(part);
+  };
+
+  const volumeHeightScale = d3.scaleLinear();
+
+  const viceChart = data => {
+    const { top, left, height } = viceBound;
+    let minVol = 0;
+    let maxVol = Math.max(...data.map(o => o.lVolume));
+
+    volumeHeightScale.domain([minVol, maxVol]).range([height, 0]);
+
+    context.save();
+    context.translate(left, top);
+
+    let rectWidth = scale.bandwidth();
+
+    for (let i = 0, j = data.length; i < j; i++) {
+      context.save();
+
+      let { lVolume, fClose, fOpen } = data[i];
+
+      let x = scale(i);
+      let y = volumeHeightScale(lVolume);
+      let rectHeight = volumeHeightScale(0);
+      let color;
+
+      if (fClose > fOpen) {
+        color = RED;
+      } else {
+        color = GREEN;
+      }
+
+      context.fillStyle = color;
+      context.strokeStyle = color;
+
+      if (rectWidth > 2) {
+        drawRect(x, y, rectWidth, rectHeight, color === GREEN);
+      } else {
+        drawLine(x, y, x, height);
+      }
+
+      context.restore();
+    }
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.restore();
   };
 
   element.appendChild(canvas);
