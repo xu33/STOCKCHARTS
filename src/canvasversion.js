@@ -1,8 +1,10 @@
 import KlineChart from './canvas_version/KlineChart';
-import { data } from './canvas_version/data';
-KlineChart(document.getElementById('container'), {
+import data from './canvas_version/data.js';
+// console.log(data.length);
+let chart = KlineChart(document.getElementById('container'), {
   data: data
 });
+chart.render();
 // const element = document.getElementById('container');
 // const { width, height } = element.getBoundingClientRect();
 // const canvas = document.createElement('canvas');
