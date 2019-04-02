@@ -71,6 +71,8 @@ const KlineChart = (element, options) => {
     endIndex = end;
   };
 
+  const handleZoomEnd = () => {};
+
   const initZoom = () => {
     let k = data.length / (endIndex - startIndex);
 
@@ -85,7 +87,8 @@ const KlineChart = (element, options) => {
       .zoom()
       .translateExtent([[0, 0], [width, 0]])
       .scaleExtent([1, k])
-      .on('zoom', handleZoom);
+      .on('zoom', handleZoom)
+      .on('end', handleZoomEnd);
 
     d3.select(element)
       .call(zoom)
@@ -379,15 +382,28 @@ const KlineChart = (element, options) => {
       let x = e.pageX;
       let y = e.pageY;
 
+      // 减去偏移量
       x = x - left;
       y = y - top;
 
+      // 计算落在哪跟k线
+      let step = scale.step();
+      let paddingOuter = scale.paddingOuter();
+      let n = Math.floor((x - paddingOuter) / step);
+      let theX = scale(n);
+
+      x = theX + scale.bandwidth() / 2;
+
+      ctx.save();
+      ctx.setLineDash([3, 4]);
+
       // 画线 垂直
       ctx.clearRect(0, 0, width, height);
-      ctx.strokeStyle = '#CCC';
+      ctx.strokeStyle = '#555';
       drawLineWith(ctx, x, 0, x, height);
       // 水平
       drawLineWith(ctx, 0, y, width, y);
+      ctx.restore();
     };
 
     const handleMouseout = e => {
@@ -410,8 +426,8 @@ const KlineChart = (element, options) => {
       element.appendChild(canvas);
       element.appendChild(overlay);
 
+      // 绘制
       renderSticks();
-
       // 绑定缩放事件
       initZoom();
       // 绑定交互
