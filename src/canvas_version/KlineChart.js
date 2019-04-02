@@ -106,9 +106,15 @@ const KlineChart = (element, options) => {
     if (fill) {
       context.fillRect(x, y, width, height);
     } else {
-      x += 0.5;
-      y += 0.5;
-      context.strokeRect(x, y, width, height);
+      // x += 0.5;
+      // y += 0.5;
+      // context.strokeRect(x, y, width, height);
+
+      context.fillRect(x, y, width, height);
+      context.fillStyle = '#FFF';
+      // x += 0.5;
+      // y += 0.5;
+      context.fillRect(x + 1, y + 1, width - 2, height - 2);
     }
   };
 
@@ -277,30 +283,34 @@ const KlineChart = (element, options) => {
         let x1 = x + rectWidth / 2;
         let x2 = x1;
 
-        // 上影线
-        {
-          let y1 = priceHeightScale(fHigh);
-          let y2;
-          if (fOpen > fClose) {
-            y2 = priceHeightScale(fOpen);
-          } else {
-            y2 = priceHeightScale(fClose);
-          }
+        // // 上影线
+        // {
+        //   let y1 = priceHeightScale(fHigh);
+        //   let y2;
+        //   if (fOpen > fClose) {
+        //     y2 = priceHeightScale(fOpen);
+        //   } else {
+        //     y2 = priceHeightScale(fClose);
+        //   }
 
-          drawLine(x1, y1, x2, y2);
-        }
+        //   drawLine(x1, y1, x2, y2);
+        // }
 
-        // 下影线
-        {
-          let y1 = priceHeightScale(fLow);
-          let y2;
-          if (fOpen > fClose) {
-            y2 = priceHeightScale(fClose);
-          } else {
-            y2 = priceHeightScale(fOpen);
-          }
-          drawLine(x1, y1, x2, y2);
-        }
+        // // 下影线
+        // {
+        //   let y1 = priceHeightScale(fLow);
+        //   let y2;
+        //   if (fOpen > fClose) {
+        //     y2 = priceHeightScale(fClose);
+        //   } else {
+        //     y2 = priceHeightScale(fOpen);
+        //   }
+        //   drawLine(x1, y1, x2, y2);
+        // }
+
+        let y1 = priceHeightScale(fHigh);
+        let y2 = priceHeightScale(fLow);
+        drawLine(x1, y1, x2, y2);
 
         // 蜡烛
         let y = priceHeightScale(Math.max(fOpen, fClose));
@@ -310,6 +320,11 @@ const KlineChart = (element, options) => {
         );
 
         drawRect(x, y, width, height, fill);
+
+        // 空心阳线
+        // if (fOpen < fClose) {
+        //   context.clearRect(x, y, width, height);
+        // }
 
         context.restore();
       }
